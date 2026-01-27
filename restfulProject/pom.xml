@@ -136,6 +136,13 @@
 		    <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 		    <version>2.3.0</version>
 		</dependency>
+	
+		<!--Google genai -->
+		<dependency>
+			<groupId>com.google.genai</groupId>
+			<artifactId>google-genai</artifactId>
+			<version>1.0.0</version>
+		</dependency>	
 		
 	</dependencies>
 
