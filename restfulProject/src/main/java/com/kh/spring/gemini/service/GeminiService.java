@@ -1,4 +1,4 @@
-package com.kh.spring.gemini;
+package com.kh.spring.gemini.service;
 
 import org.springframework.stereotype.Service;
 import com.google.genai.Client;
