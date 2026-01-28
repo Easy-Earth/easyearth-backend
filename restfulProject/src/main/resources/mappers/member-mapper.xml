@@ -66,14 +66,13 @@
 	<!-- 회원 정보 수정 매퍼 -->
 	<update id="updateMember" parameterType="MemberVO">
 		UPDATE MEMBER
-		SET LOGIN_ID = #{loginId},
-		      PASSWORD = #{password},
+		SET PASSWORD = #{password},
 		      NAME = #{userName},
 		      BIRTHDAY = #{birthday},
 		      GENDER = #{gender},
 		      ADDRESS = #{address},
 		      UPDATE_AT = SYSDATE
-		WHERE MEMBER_ID = #{memberId}
+		WHERE LOGIN_ID = #{loginId}
 	</update>
 	
 	<!-- 회원 탈퇴 매퍼 -->

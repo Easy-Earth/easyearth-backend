@@ -108,7 +108,7 @@ public class MemberController {
 		}else { //비밀번호 오류
 			
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-					 .body("아이디 또는 비밀번호가 일치하지 않습니다."); //이이디 잘못입력한경우
+					 .body("아이디 또는 비밀번호가 일치하지 않습니다."); //아이디 잘못입력한경우
 		}
 		
 	}
@@ -126,7 +126,7 @@ public class MemberController {
 	//회원 정보 수정
 	@Operation(summary = "회원 정보 수정", description = "회원 정보 수정")
 	@PutMapping("/update")
-	public ResponseEntity<?> updateMember(MemberVO m){
+	public ResponseEntity<?> updateMember(@RequestBody MemberVO m){
 		
 		int result = service.updateMember(m);
 		
