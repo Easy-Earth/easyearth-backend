@@ -55,7 +55,9 @@ public class MemberController {
 		
 		MemberVO member = service.loginMember(m);
 		
-		return null;
+		return ResponseEntity.status(HttpStatus.CREATED) //201
+				 .body("로그인이 완료되었습니다.");
+
 	}
 	
 	//로그아웃
