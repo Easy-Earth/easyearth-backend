@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="memberMapper">
+  	
+  	<!-- 회원 회원가입 매퍼 -->
+    <insert id="insertMember" parameterType="com.kh.spring.member.model.vo.MemberVO">
+	  INSERT INTO MEMBER (
+	      MEMBER_ID,
+	      LOGIN_ID,
+	      PASSWORD,
+	      NAME,
+	      BIRTHDAY,
+	      GENDER,
+	      ADDRESS,
+	      STATUS,
+	      QUIZ_ATTEMPT_COUNT,
+	      QUIZ_CORRECT_COUNT,
+	      CREATED_AT,
+	      UPDATE_AT
+	  )
+	  VALUES (
+	      MEMBER_SEQ.NEXTVAL,
+	      #{loginId},
+	      #{password},
+	      #{userName},
+	      #{birthday},
+	      #{gender},
+	      #{address},
+	      NVL(#{status},'ACTIVE'),
+	      0,
+	      0,
+	      SYSDATE,
+	      SYSDATE
+	  )
+	</insert>
+		
+	<select id="loginMember" parameterType="MemberVO" resultType="MemberVO">
+		SELECT MEMBER_ID,
+		      LOGIN_ID,
+		      PASSWORD,
+		      NAME,
+		      BIRTHDAY,
+		      GENDER,
+		      ADDRESS,
+		      STATUS,
+		      QUIZ_ATTEMPT_COUNT,
+		      QUIZ_CORRECT_COUNT,
+		      CREATED_AT,
+		      UPDATE_AT
+		FROM MEMBER
+		WHERE LOGIN_ID = #{loginId}
+	</select>
+
+  	
+  
+</mapper>
