@@ -88,8 +88,6 @@ public class MemberController {
 		//사용자가 입력한 id로 회원 정보 조회
 		MemberVO loginMember = service.loginMember(m);
 
-
-
 		if(loginMember==null) {
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
 								 .body("존재하지 않는 회원입니다."); //이이디 잘못입력한경우
@@ -151,15 +149,15 @@ public class MemberController {
 	//회원탈퇴
 	@Operation(summary = "회원 탈퇴", description = "회원 탈퇴")
 	@DeleteMapping("/delete/{memberId}")
-	public ResponseEntity<?> deleteMember(@PathVariable String loginId, @PathVariable String password){
+	public ResponseEntity<?> deleteMember(@PathVariable String memberId, @PathVariable String password){
 		
-		MemberVO m = MemberVO.builder().loginId(loginId).password(password).build();
+		MemberVO m = MemberVO.builder().loginId(memberId).password(password).build();
 		
 		MemberVO loginMember = service.loginMember(m);
 		
 		if(loginMember != null && bcrypt.matches(m.getPassword(), loginMember.getPassword())) {
 		
-			int result = service.deleteMember(loginId);
+			int result = service.deleteMember(memberId);
 			
 			if(result>0) {
 				

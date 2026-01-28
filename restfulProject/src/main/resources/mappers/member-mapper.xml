@@ -78,7 +78,7 @@
 	<!-- 회원 탈퇴 매퍼 -->
 	<delete id="deleteMember" parameterType="string">
 		DELETE MEMBER
-		WHERE LOGIN_ID = #{loginId}
+		WHERE MEMBER_ID = #{memberId}
 	</delete>
 
   	
