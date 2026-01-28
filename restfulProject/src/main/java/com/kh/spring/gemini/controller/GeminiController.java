@@ -1,6 +1,8 @@
-package com.kh.spring.gemini;
+package com.kh.spring.gemini.controller;
 
 import org.springframework.web.bind.annotation.RestController;
+
+import com.kh.spring.gemini.service.GeminiService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -55,14 +57,14 @@ import java.util.HashMap;
 
 // 재미나이에게 질문하고 답변 받는 클래스
 @RestController
-@Tag(name = "재미나이 사용Controller", description = "데이터를 기반으로 재미나이에게 답변하는 API")
+@Tag(name = "재미나이 기능")
 @RequestMapping("/gemini")
 public class GeminiController {
 
     @Autowired
     private GeminiService geminiService;
 
-    @Operation(summary = "날씨 정보를 기반으로 환경에 대한 조언을 제공하는 API", description = "날씨 정보를 기반으로 환경에 대한 조언을 제공하는 API")
+    @Operation(summary = "날씨 정보를 기반으로 gemini에게 질문하고 답변 받기")
     // 날씨 정보를 받으면 날씨에 대한 짧은 문구 반환
     @PostMapping("/weather")
     public Map<String, String> weather(@RequestBody Map<String, Object> payload) {
