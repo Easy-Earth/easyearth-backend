@@ -1,7 +1,6 @@
 package com.kh.spring.map.controller;
 
 import com.kh.spring.map.service.SeoulMapService;
-import io.swagger.v3.oas.annotations.OpenAPI31;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -11,18 +10,22 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/seoul")
 @RequiredArgsConstructor
-@Tag(name = "서울맵 API", description = "서울맵 API 테스트")
-public class SeoulApiTestController {
+@Tag(name = "서울맵 API", description = "서울맵 API")
+public class SeoulApiController {
     private final SeoulMapService seoulMapService;
 
-    @Operation(summary = "API 테스트 ", description = "API 테스트")
-    @GetMapping("/test")
-    public String test(
+    //126.974695
+    //37.564150
+    //11103395
+    @Operation(summary = "테마 필터링", description = "테마 / 거리 / 키워드를 지정하는 API")
+    @GetMapping("/themes/contents")
+    public String theme(
             @RequestParam List<String> themeIds,
             @RequestParam(required = false) Double x,
             @RequestParam(required = false) Double y,
-            @RequestParam(required = false) Integer distance
+            @RequestParam(required = false) Integer distance,
+            @RequestParam(required = false) String keyword
     ) {
-        return seoulMapService.getFilteredMapData(themeIds, x, y, distance);
+        return seoulMapService.getFilteredMapData(themeIds, x, y, distance, keyword);
     }
 }
