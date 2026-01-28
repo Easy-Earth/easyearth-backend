@@ -161,8 +161,14 @@ https://maven.apache.org/xsd/maven-4.0.0.xsd">
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webflux</artifactId>
 		</dependency>
+	
+		<!--Google genai -->
+		<dependency>
+			<groupId>com.google.genai</groupId>
+			<artifactId>google-genai</artifactId>
+			<version>1.0.0</version>
+		</dependency>	
 
-	</dependencies>
 	<build>
 		<plugins>
 			<!-- ✅ 컴파일러: Java 17 고정 + Lombok annotation processor 확정 -->
