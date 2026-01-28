@@ -1,4 +1,4 @@
-package com.kh.spring.chat;
+package com.kh.spring.chat.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

@@ -1,6 +1,8 @@
-package com.kh.spring.gemini;
+package com.kh.spring.gemini.controller;
 
 import org.springframework.web.bind.annotation.RestController;
+
+import com.kh.spring.gemini.service.GeminiService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
