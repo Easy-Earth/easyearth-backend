@@ -167,7 +167,8 @@ https://maven.apache.org/xsd/maven-4.0.0.xsd">
 			<groupId>com.google.genai</groupId>
 			<artifactId>google-genai</artifactId>
 			<version>1.0.0</version>
-		</dependency>	
+		</dependency>
+		</dependencies>
 
 	<build>
 		<plugins>
