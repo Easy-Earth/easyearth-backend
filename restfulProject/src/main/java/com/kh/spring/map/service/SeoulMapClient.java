@@ -17,10 +17,11 @@ public class SeoulMapClient {
     @Value("${seoulmap.theme-key}")
     private String themeKey;
     @Value("${seoulmap.contents-path}")
+    ///openapi/v5/{themeKey}/public/themes/contents
     private String contentsPath;
 
     public String fetchMapData(String combinedIds, Double x, Double y, Integer distance, String keyword) {
-        String url = baseUrl + contentsPath.replace("{themeKey}", themeKey);
+        String url = baseUrl + contentsPath.replace("{themeKey}", themeKey) + "/ko";
 
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url)
                 .queryParam("page_size", 100)
@@ -35,6 +36,17 @@ public class SeoulMapClient {
                 .queryParam("subcate_id", 1);
 
         String finalUrl = builder.build().toUriString();
+        System.out.println("전송되는 최종 URL: " + finalUrl);
+
+        return restTemplate.getForObject(finalUrl, String.class);
+    }
+
+    public String fetchDetail(String themeId, String contsId) {
+        String url = baseUrl + contentsPath.replace("{themeKey}", themeKey) + "/detail";
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url)
+                .queryParam("theme_id",themeId)
+                .queryParam("conts_id",contsId);
+        String finalUrl = builder.build().toString();
         System.out.println("전송되는 최종 URL: " + finalUrl);
 
         return restTemplate.getForObject(finalUrl, String.class);

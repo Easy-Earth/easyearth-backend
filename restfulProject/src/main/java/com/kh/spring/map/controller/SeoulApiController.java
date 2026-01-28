@@ -17,7 +17,7 @@ public class SeoulApiController {
     //126.974695
     //37.564150
     //11103395
-    @Operation(summary = "테마 필터링", description = "테마 / 거리 / 키워드를 지정하는 API")
+    @Operation(summary = "테마 필터링", description = "테마 / 거리 / 키워드를 지정하는 API 126.974695  37.564150" )
     @GetMapping("/themes/contents")
     public String theme(
             @RequestParam List<String> themeIds,
@@ -27,5 +27,14 @@ public class SeoulApiController {
             @RequestParam(required = false) String keyword
     ) {
         return seoulMapService.getFilteredMapData(themeIds, x, y, distance, keyword);
+    }
+
+    @Operation(summary = "상세정보 조회", description = "가게 상세정보 조회하는 API zerowaste_0054")
+    @GetMapping("/detail")
+    public String detail(
+            @RequestParam String themeId,
+            @RequestParam String contsId
+    ) {
+        return seoulMapService.getDetail(themeId,contsId);
     }
 }
