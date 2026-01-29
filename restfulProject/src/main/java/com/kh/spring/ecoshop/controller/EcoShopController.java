@@ -47,4 +47,16 @@ public class EcoShopController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("삭제 실패");
         }
     }
+
+    @PutMapping("/review/update")
+    @Operation(summary = "리뷰 수정 Controller" , description = ".")
+    public ResponseEntity<?> reviewUpdate(@RequestBody Review review) {
+        int result = ecoShopService.reviewUpdate(review);
+        if(result>0) {
+            return ResponseEntity.status(HttpStatus.CREATED).body("수정 성공");
+        }
+        else {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("수정 실패");
+        }
+    }
 }
