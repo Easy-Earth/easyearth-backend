@@ -2,18 +2,19 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="ecoShopMapper">
+<!-- 테마 아이디(ex. 11103395)로 ESC_ID(테마 식별자 ex.4) 찾기       -->
     <select id="getEscIdByThemeId" parameterType="string" resultType="long">
         SELECT ESC_ID
         FROM ECO_SHOP_CATEGORY
         WHERE CONTS_ID = #{themeId}
     </select>
-
+<!-- Shop을 이미 저장했는지 확인-->
     <select id="checkDuplicate" parameterType="string" resultType="int">
         SELECT COUNT(*)
         FROM ECO_SHOP
         WHERE CONTS_ID = #{contsId}
     </select>
-
+<!--Shop 삽입-->
     <insert id="insertEcoShop" parameterType="com.kh.spring.ecoshop.vo.EcoShop">
         INSERT INTO ECO_SHOP (
         NAME, ADDRESS, PHONE, LAT, LNG, ESC_ID, CONTS_ID
@@ -21,7 +22,7 @@
         #{name}, #{address}, #{phone}, #{lat}, #{lng}, #{escId}, #{contsId}
         )
     </insert>
-
+<!--리뷰 작성-->
     <insert id="reviewInsert" parameterType="com.kh.spring.ecoshop.vo.EcoShop">
         INSERT INTO ECO_SHOP_REVIEW (
         SHOP_ID, RATING, CONTENT, MEMBER_ID, CREATED_AT, UPDATED_AT
@@ -29,4 +30,16 @@
         #{shopId}, #{rating}, #{content}, #{memberId}, SYSDATE, SYSDATE
         )
     </insert>
+<!-- 리뷰 Detail 불러오기-->
+    <select id="reviewDetail" resultType="com.kh.spring.ecoshop.vo.Review" parameterType="_int">
+        SELECT
+            ESR_ID, SHOP_ID, RATING, CONTENT, CREATED_AT, UPDATED_AT, MEMBER_ID
+        FROM ECO_SHOP_REVIEW WHERE ESR_ID = #{esrId}
+    </select>
+<!--리뷰 삭제-->
+    <delete id="reviewDelete" parameterType="_int">
+        DELETE FROM ECO_SHOP_REVIEW
+        WHERE
+        ESR_ID = #{esr_id}
+    </delete>
 </mapper>
