@@ -54,5 +54,12 @@ public class WeatherController {
         return ResponseEntity.ok(weatherService.getUvList());
 
     }
+    
+    //날씨 데이터 확인용
+    @Operation(summary = "데이터 테스트용")
+    @GetMapping("/allData")
+    public ResponseEntity<?> getData() {
+    	return ResponseEntity.ok(weatherService.getCheckWeather());
+    }
 
 }

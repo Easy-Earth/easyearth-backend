@@ -160,7 +160,6 @@ public class WeatherService {
             e.printStackTrace();
             return new ArrayList<>(); // 에러 시 빈 리스트 반환
         }
-        System.out.println(response.toString());
         // 3. 파싱 로직 호출
         return parseTextToDustList(response.toString());
     }
@@ -213,7 +212,6 @@ public class WeatherService {
             e.printStackTrace();
             return new ArrayList<>(); // 에러 시 빈 리스트 반환
         }
-        System.out.println(response.toString());
         // 3. 파싱 로직 호출
         return parseTextToUvList(response.toString());
     }
@@ -249,7 +247,7 @@ public class WeatherService {
         Map<String, Object> weatherData = new HashMap<>();
         
         // 1. 단기 예보 (Forecast)
-        weatherData.put("forecast", getForecastList());
+        //weatherData.put("forecast", getForecastList());
         
         // 2. 종관 관측 (Observation) - 현재 날씨
         List<ObsDto> obsList = getObsList();
