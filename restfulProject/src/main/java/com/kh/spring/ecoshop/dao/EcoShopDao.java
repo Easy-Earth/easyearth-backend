@@ -30,4 +30,8 @@ public class EcoShopDao {
     public int reviewDelete(SqlSessionTemplate sqlSession, int esrId) {
         return sqlSession.delete("ecoShopMapper.reviewDelete", esrId);
     }
+
+    public int reviewUpdate(SqlSessionTemplate sqlSession, Review review) {
+        return sqlSession.update("ecoShopMapper.reviewUpdate", review);
+    }
 }

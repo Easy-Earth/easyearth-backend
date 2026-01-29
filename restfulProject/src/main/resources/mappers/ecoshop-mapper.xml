@@ -40,6 +40,14 @@
     <delete id="reviewDelete" parameterType="_int">
         DELETE FROM ECO_SHOP_REVIEW
         WHERE
-        ESR_ID = #{esr_id}
+        ESR_ID = #{esrId}
     </delete>
+
+    <update id="reviewUpdate" parameterType="Review">
+        UPDATE ECO_SHOP_REVIEW
+        SET RATING = #{rating}
+        , CONTENT = #{content}
+        WHERE ESR_ID = #{esrId}
+    </update>
+
 </mapper>

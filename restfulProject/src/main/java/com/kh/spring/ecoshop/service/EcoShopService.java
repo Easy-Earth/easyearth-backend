@@ -41,4 +41,8 @@ public class EcoShopService {
     public int reviewDelete(int esrId) {
         return ecoShopDao.reviewDelete(sqlSession,esrId);
     }
+
+    public int reviewUpdate(Review review) {
+        return ecoShopDao.reviewUpdate(sqlSession, review);
+    }
 }
