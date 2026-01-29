@@ -45,7 +45,7 @@ public class GeminiController {
     	return response;
     }
 
-    @Operation(summary = "환경 비서에게 데이터 입력 후 오늘의 조언 듣기")
+    @Operation(summary = "환경 비서에게 데이터 입력하여 날씨+환경 관련 멘트 받기")
     @PostMapping("/secretary")
     public Map<String, String> getSecretaryAdvice() {
         // 1. 모든 날씨 데이터 수집
