@@ -36,7 +36,16 @@
 	      SYSDATE
 	  )
 	</insert>
-		
+	
+	<!-- 아이디 중복체크 매퍼 -->
+	<select id="checkId" parameterType="string">
+		SELECT COUNT(*)
+		FROM MEMBER
+		WHERE LOGIN_ID = #{loginId}
+	</select>
+	
+	
+	<!-- 회원 로그인 매퍼 -->
 	<select id="loginMember" parameterType="MemberVO" resultType="MemberVO">
 		SELECT MEMBER_ID,
 		      LOGIN_ID,
@@ -53,6 +62,24 @@
 		FROM MEMBER
 		WHERE LOGIN_ID = #{loginId}
 	</select>
+	
+	<!-- 회원 정보 수정 매퍼 -->
+	<update id="updateMember" parameterType="MemberVO">
+		UPDATE MEMBER
+		SET PASSWORD = #{password},
+		      NAME = #{userName},
+		      BIRTHDAY = #{birthday},
+		      GENDER = #{gender},
+		      ADDRESS = #{address},
+		      UPDATE_AT = SYSDATE
+		WHERE LOGIN_ID = #{loginId}
+	</update>
+	
+	<!-- 회원 탈퇴 매퍼 -->
+	<delete id="deleteMember" parameterType="string">
+		DELETE MEMBER
+		WHERE MEMBER_ID = #{memberId}
+	</delete>
 
   	
   

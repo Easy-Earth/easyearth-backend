@@ -7,7 +7,17 @@ public interface MemberService {
 	//회원가입
 	int insertMember(MemberVO m);
 	
+	//아이디 중복체크
+	int checkId(String loginId);
+	
 	//로그인
 	MemberVO loginMember(MemberVO m);
+	
+	//회원 정보 수정
+	int updateMember(MemberVO m);
+	
+	//회원 탈퇴
+	int deleteMember(String loginId);
+	
 
 }
