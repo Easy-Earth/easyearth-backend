@@ -4,20 +4,24 @@ import com.kh.spring.map.service.SeoulMapService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/seoul")
 @RequiredArgsConstructor
 @Tag(name = "서울맵 API", description = "서울맵 API")
 public class SeoulApiController {
+
     private final SeoulMapService seoulMapService;
 
-    //126.974695
-    //37.564150
-    //11103395
-    @Operation(summary = "테마 필터링", description = "테마 / 거리 / 키워드를 지정하는 API 126.974695  37.564150" )
+
+    @Operation(summary = "테마 필터링", description = "테마 / 거리 / 키워드를 지정하는 API 126.974695  37.564150")
     @GetMapping("/themes/contents")
     public String theme(
             @RequestParam List<String> themeIds,
@@ -35,6 +39,6 @@ public class SeoulApiController {
             @RequestParam String themeId,
             @RequestParam String contsId
     ) {
-        return seoulMapService.getDetail(themeId,contsId);
+        return seoulMapService.getDetail(themeId, contsId);
     }
 }
