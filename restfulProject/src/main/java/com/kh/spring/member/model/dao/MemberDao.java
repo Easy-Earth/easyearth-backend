@@ -38,6 +38,12 @@ public class MemberDao {
 		return sqlSession.delete("memberMapper.deleteMember",loginId);
 	}
 
+	//회원 정보 조회
+	public MemberVO selectMemberById(SqlSession sqlSession, int memberId) {
+		
+		return sqlSession.selectOne("memberMapper.selectMemberById",memberId);
+	}
+
 	
 
 }

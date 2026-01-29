@@ -51,6 +51,13 @@ public class MemberServiceImpl implements MemberService {
 		return dao.deleteMember(sqlSession,loginId);
 	}
 	
+	//회원 정보 조회
+	@Override
+	public MemberVO selectMemberById(int memberId) {
+		
+		return dao.selectMemberById(sqlSession,memberId);
+	}
+	
 	
 
 }
