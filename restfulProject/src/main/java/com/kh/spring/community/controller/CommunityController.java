@@ -1,10 +1,14 @@
 package com.kh.spring.community.controller;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,7 +19,10 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.kh.spring.common.model.vo.PageInfo;
+import com.kh.spring.common.template.Pagination;
 import com.kh.spring.community.model.service.CommunityService;
+import com.kh.spring.community.model.vo.CommunityListDTO;
 import com.kh.spring.community.model.vo.CommunityPostVO;
 import com.kh.spring.util.FileUtil;
 
@@ -26,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequestMapping("/community")
 @Slf4j
-@Tag(name = "커뮤니티 게시글", description = "게시글 등록,수정,삭제")
+@Tag(name = "커뮤니티", description = "커뮤니티")
 public class CommunityController {
 	
 	@Autowired
@@ -35,8 +42,55 @@ public class CommunityController {
 	@Autowired
 	private FileUtil fileUtil;
 	
+	//게시글 목록 || 검색 목록 || 필터링 목록
+    @Operation(summary = "게시글 목록 조회", description = "전체 목록 || 검색 목록 || 필터링 목록")
+	@GetMapping("/list")
+	public ResponseEntity<CommunityListDTO> communityList(
+			@RequestParam(value="page", defaultValue = "1") int currentPage,
+	        @RequestParam(defaultValue = "10") int size,
+	        @RequestParam(required = false) String condition,
+	        @RequestParam(required = false) String keyword,
+	        @RequestParam(required = false) String category) {
+		
+		int listCount = 0;
+		int boardLimit = 5;
+		int pageLimit = size;
+		
+		HashMap<String, String> map = new HashMap<>();
+		
+		if (keyword != null && !keyword.isEmpty()) {
+			map.put("keyword", keyword);
+			map.put("condition", condition);
+			listCount = service.searchListCount(map); // 검색된 개수
+			
+		}else if (category != null && !category.isEmpty()) {
+			map.put("category", category);
+			listCount = service.filterListCount(map); // 필터링된 개수
+			
+		}else {
+			listCount = service.listCount();  //전체 개수
+		}
+		
+		PageInfo pi = Pagination.getPageInfo(listCount, currentPage, boardLimit, pageLimit);
+		
+		ArrayList<CommunityPostVO> list;
+		
+		
+		if (keyword != null && !keyword.isEmpty()) {
+			list = service.searchList(map, pi);
+		}else if (category != null && !category.isEmpty()) {
+			list= service.filterList(map, pi);
+		}else {
+			list = service.communityList(pi);
+		}
+		
+		return ResponseEntity.ok(CommunityListDTO.of(list, pi));		
+	}
+	
+	
+	
 	//게시글 등록
-    @Operation(summary = "게시글 등록")
+    @Operation(summary = "게시글 등록", description = "게시글 등록")
     @PostMapping(value = "/insert", consumes = MediaType.MULTIPART_FORM_DATA_VALUE) // 1. 미디어 타입 명시
     public ResponseEntity<?> communityInsert(
             @ModelAttribute CommunityPostVO cp, // 2. @ModelAttribute 사용
@@ -78,7 +132,7 @@ public class CommunityController {
 	}
 	
 	//게시글 수정
-    @Operation(summary = "게시글 수정")
+    @Operation(summary = "게시글 수정", description = "게시글 수정")
 	@PutMapping("/update")
 	public ResponseEntity<?> communityUpdate(CommunityPostVO cp
 											, MultipartFile uploadFile) {
@@ -118,7 +172,7 @@ public class CommunityController {
 	}
 	
 	//게시글 삭제
-    @Operation(summary = "게시글 삭제")
+    @Operation(summary = "게시글 삭제", description = "게시글 삭제")
 	@DeleteMapping("/delete/{postId}")
 	public ResponseEntity<?> communityDelete(@PathVariable int postId) {
 		
