@@ -5,24 +5,69 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 
 import com.kh.spring.weather.model.vo.DustDto;
+import com.kh.spring.weather.model.vo.ForecastDto;
+import com.kh.spring.weather.model.vo.ForecastResult;
 import com.kh.spring.weather.model.vo.ObsDto;
 import com.kh.spring.weather.model.vo.UvDto;
 
+import org.springframework.web.reactive.function.client.WebClient;
+
 @Service
 public class WeatherService {
+
+    private LocalDate today = LocalDate.now();
+
+    public List<ForecastDto> getForecastList() {
+        String serviceKey = "0520e76efb72e41ae374ba77a910d0264246d16b23c171e4e817e576b2a1f52d";
+
+        WebClient webClient = WebClient.builder()
+                .baseUrl("https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0")
+                .build();
+
+        ForecastResult result = webClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/getVilageFcst")
+                        .queryParam("serviceKey", serviceKey)
+                        .queryParam("pageNo", "1")
+                        .queryParam("numOfRows", "1000")
+                        .queryParam("dataType", "JSON")
+                        .queryParam("base_date", today.format(DateTimeFormatter.ofPattern("yyyyMMdd")))
+                        .queryParam("base_time", "0500")
+                        .queryParam("nx", "55")
+                        .queryParam("ny", "127")
+                        .build())
+                .retrieve()
+                .bodyToMono(ForecastResult.class)
+                .block();
+
+        return result != null && result.getForecastList() != null ? result.getForecastList() : new ArrayList<>();
+    }
+	
 
     public List<ObsDto> getObsList() {
         StringBuilder response = new StringBuilder();
 
         try {
+            // 어제, 오늘, 내일 날짜 계산
+            LocalDate yesterday = today.minusDays(1);
+            LocalDate dayAfterTomorrow = today.plusDays(2); 
+
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+            String tm1 = yesterday.format(formatter) + "0000";
+            String tm2 = dayAfterTomorrow.format(formatter) + "2359"; 
+
             // 1. API 호출 설정
-            URL url = new URL(
-                    "https://apihub.kma.go.kr/api/typ01/url/kma_sfctm3.php?tm1=202601280000&tm2=202601290000&stn=108&help=0&authKey=KaG2mDn1S7ihtpg59Su46A");
+            String urlStr = "https://apihub.kma.go.kr/api/typ01/url/kma_sfctm3.php?tm1=" + tm1 + "&tm2=" + tm2 + "&stn=108&help=0&authKey=KaG2mDn1S7ihtpg59Su46A";
+            URL url = new URL(urlStr);
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
             con.setRequestMethod("GET");
             con.setRequestProperty("Content-Type", "application/json");
@@ -85,13 +130,21 @@ public class WeatherService {
     }
     
     public List<DustDto> getDustList() {
-        //https://apihub.kma.go.kr/api/typ01/url/kma_pm10.php?tm1=202601280000&tm2=202601290000&stn=108&authKey=KaG2mDn1S7ihtpg59Su46A
         StringBuilder response = new StringBuilder();
         
         try {
+            // 어제, 오늘, 내일 날짜 계산
+            LocalDate today = LocalDate.now();
+            LocalDate yesterday = today.minusDays(1);
+            LocalDate dayAfterTomorrow = today.plusDays(2); 
+
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+            String tm1 = yesterday.format(formatter) + "0000";
+            String tm2 = dayAfterTomorrow.format(formatter) + "0000";
+
             // 1. API 호출 설정
-            URL url = new URL(
-                "https://apihub.kma.go.kr/api/typ01/url/kma_pm10.php?tm1=202601280000&tm2=202601290000&stn=108&authKey=KaG2mDn1S7ihtpg59Su46A");
+            String urlStr = "https://apihub.kma.go.kr/api/typ01/url/kma_pm10.php?tm1=" + tm1 + "&tm2=" + tm2 + "&stn=108&authKey=KaG2mDn1S7ihtpg59Su46A";
+            URL url = new URL(urlStr);
                 HttpURLConnection con = (HttpURLConnection) url.openConnection();
             con.setRequestMethod("GET");
             con.setRequestProperty("Content-Type", "application/json");
@@ -134,13 +187,17 @@ public class WeatherService {
     }
 
     public List<UvDto> getUvList() {
-        //https://apihub.kma.go.kr/api/typ01/url/kma_sfctm_uv.php?tm=20260128&stn=108&help=1&authKey=KaG2mDn1S7ihtpg59Su46A
         StringBuilder response = new StringBuilder();
         
         try {
+            // 오늘 날짜 계산
+            LocalDate today = LocalDate.now();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+            String tm = today.format(formatter); 
+
             // 1. API 호출 설정
-            URL url = new URL(
-                "https://apihub.kma.go.kr/api/typ01/url/kma_sfctm_uv.php?tm=20260128&stn=108&help=1&authKey=KaG2mDn1S7ihtpg59Su46A");
+            String urlStr = "https://apihub.kma.go.kr/api/typ01/url/kma_sfctm_uv.php?tm=" + tm + "&stn=108&help=1&authKey=KaG2mDn1S7ihtpg59Su46A";
+            URL url = new URL(urlStr);
                 HttpURLConnection con = (HttpURLConnection) url.openConnection();
             con.setRequestMethod("GET");
             con.setRequestProperty("Content-Type", "application/json");
@@ -185,6 +242,35 @@ public class WeatherService {
                             .build();
                 })
                 .collect(Collectors.toList());
+    }
+
+    // --- 환경 비서용 데이터 종합 메소드 ---
+    public Map<String, Object> getCheckWeather() {
+        Map<String, Object> weatherData = new HashMap<>();
+        
+        // 1. 단기 예보 (Forecast)
+        weatherData.put("forecast", getForecastList());
+        
+        // 2. 종관 관측 (Observation) - 현재 날씨
+        List<ObsDto> obsList = getObsList();
+        if (!obsList.isEmpty()) {
+            weatherData.put("current", obsList.get(obsList.size() - 1)); // 가장 최근 데이터
+        }
+        
+        // 3. 미세먼지 (Dust)
+        List<DustDto> dustList = getDustList();
+        if (!dustList.isEmpty()) { 
+             // 보통 최근 데이터가 가장 뒤에 있거나 함. API 특성 확인 필요하지만 일단 0번째나 마지막 사용
+             weatherData.put("dust", dustList.get(0)); 
+        }
+
+        // 4. 자외선 (UV)
+        List<UvDto> uvList = getUvList();
+        if (!uvList.isEmpty()) {
+            weatherData.put("uv", uvList.get(0));
+        }
+
+        return weatherData;
     }
 
 }

@@ -19,6 +19,15 @@ public class WeatherController {
     @Autowired
     private WeatherService weatherService;
 
+    //일기예보 조회
+    @Operation(summary = "일기예보 조회")
+    @GetMapping("/forecast")
+    public ResponseEntity<?> getForecast(){
+
+        return ResponseEntity.ok(weatherService.getForecastList());
+
+    }
+
     // 기본 기상 관측 자료 조회
     @Operation(summary = "기본 기상 관측 자료 조회")
     @GetMapping("/obs")
@@ -28,7 +37,7 @@ public class WeatherController {
 
     }
 
-    // 황사 자료
+    // 황사+ 미세먼지
     @Operation(summary = "황사 자료 조회")
     @GetMapping("/dust")
     public ResponseEntity<?> getDust() {
