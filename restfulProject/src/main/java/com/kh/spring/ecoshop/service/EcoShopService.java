@@ -33,4 +33,12 @@ public class EcoShopService {
     public int reviewInsert(Review review) {
         return ecoShopDao.reviewInsert(sqlSession, review);
     }
+
+    public Review reviewDetail(int esrId) {
+        return ecoShopDao.boardDetail(sqlSession,esrId);
+    }
+
+    public int reviewDelete(int esrId) {
+        return ecoShopDao.reviewDelete(sqlSession,esrId);
+    }
 }
