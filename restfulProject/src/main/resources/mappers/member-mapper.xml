@@ -38,7 +38,7 @@
 	</insert>
 	
 	<!-- 아이디 중복체크 매퍼 -->
-	<select id="checkId" parameterType="string">
+	<select id="checkId" parameterType="string" resultType="int">
 		SELECT COUNT(*)
 		FROM MEMBER
 		WHERE LOGIN_ID = #{loginId}
@@ -72,7 +72,7 @@
 		      GENDER = #{gender},
 		      ADDRESS = #{address},
 		      UPDATE_AT = SYSDATE
-		WHERE LOGIN_ID = #{loginId}
+		WHERE MEMBER_ID = #{memberId}
 	</update>
 	
 	<!-- 회원 탈퇴 매퍼 -->
@@ -80,6 +80,14 @@
 		DELETE MEMBER
 		WHERE MEMBER_ID = #{memberId}
 	</delete>
+	
+	<!-- 회원 정보 조회 매퍼 -->
+	<select id="selectMemberById" parameterType="int" resultType="MemberVO">
+	    SELECT *
+	    FROM MEMBER
+	    WHERE MEMBER_ID = #{memberId}
+	</select>
+	
 
   	
   

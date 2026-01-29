@@ -18,6 +18,9 @@ public interface MemberService {
 	
 	//회원 탈퇴
 	int deleteMember(String loginId);
+
+	//회원 정보 조회
+	MemberVO selectMemberById(int memberId);
 	
 
 }
