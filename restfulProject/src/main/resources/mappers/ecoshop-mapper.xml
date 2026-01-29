@@ -21,4 +21,12 @@
         #{name}, #{address}, #{phone}, #{lat}, #{lng}, #{escId}, #{contsId}
         )
     </insert>
+
+    <insert id="reviewInsert" parameterType="com.kh.spring.ecoshop.vo.EcoShop">
+        INSERT INTO ECO_SHOP_REVIEW (
+        SHOP_ID, RATING, CONTENT, MEMBER_ID, CREATED_AT, UPDATED_AT
+        ) VALUES (
+        #{shopId}, #{rating}, #{content}, #{memberId}, SYSDATE, SYSDATE
+        )
+    </insert>
 </mapper>
