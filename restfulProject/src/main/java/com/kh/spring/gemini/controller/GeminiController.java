@@ -1,59 +1,19 @@
 package com.kh.spring.gemini.controller;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.kh.spring.gemini.service.GeminiService;
+import com.kh.spring.weather.service.WeatherService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import java.util.Map;
-import java.util.HashMap;
-
-/*
-    기상청 단기 예보 샘플
-    {
-    "apiKey": "AIzaSyAN6T6db86pCX6ZOln1-sqeQ2sbxPLQS8U",
-        "item": [
-          {
-            "baseDate": "20260127",
-            "baseTime": "0500",
-            "category": "TMP",
-            "fcstDate": "20260127",
-            "fcstTime": "0600",
-            "fcstValue": "-2",
-            "nx": 60,
-            "ny": 127
-          },
-          {
-            "baseDate": "20260127",
-            "baseTime": "0500",
-            "category": "SKY",
-            "fcstDate": "20260127",
-            "fcstTime": "0600",
-            "fcstValue": "1",
-            "nx": 60,
-            "ny": 127
-          },
-          {
-            "baseDate": "20260127",
-            "baseTime": "0500",
-            "category": "POP",
-            "fcstDate": "20260127",
-            "fcstTime": "0600",
-            "fcstValue": "0",
-            "nx": 60,
-            "ny": 127
-          }
-        ]
-    }
-
-*/
 
 // 재미나이에게 질문하고 답변 받는 클래스(하드코딩)
 @RestController
@@ -63,34 +23,29 @@ public class GeminiController {
 
     @Autowired
     private GeminiService geminiService;
-
-    @Operation(summary = "날씨 정보를 기반으로 gemini에게 질문하고 답변 받기")
-    // 날씨 정보를 받으면 날씨에 대한 짧은 문구 반환
-    @PostMapping("/weather")
-    public Map<String, String> weather(@RequestBody Map<String, Object> payload) {
-      
-      // 키 하드코딩 해둠 - 나중에 유저에게 입력 받을 수도 있기에
-      String apiKey = payload.get("apiKey").toString();
-      apiKey = "AIzaSyAN6T6db86pCX6ZOln1-sqeQ2sbxPLQS8U";
-
-      // 날씨 정보를 받으면 날씨에 대한 짧은 문구 반환
-      String message = payload.get("item").toString();
-
-      //하드코딩
-      message = "오늘은 황사가 매우 심해요";
-
-      String geminiResponse = geminiService.weather(message, apiKey);
-
-      Map<String, String> response = new HashMap<>();
-      response.put("message", geminiResponse);
-
-      return response;
+    
+    @Autowired
+    private WeatherService weatherService;
+    
+    @Operation(summary = "재미나이 성능 테스트")
+    @PostMapping("/onlyTest")
+    public String onlyTest(String question) {
+    	String prompt = ""; 
+    	String response = geminiService.custom(question,prompt);
+    	
+    	return response;
+    }
+    
+    @Operation(summary="분리수거 도우미",description = "분리수거 할 제품 입력")
+    @PostMapping("/Recycling")
+    public String recycling(String question) {
+    	String prompt = "을 분리수거 하는 법 서울시 2025년 6월 분리배출 표준안(최신) 기준으로 알려줘";
+    	String response = geminiService.custom(question, prompt);
+    	
+    	return response;
     }
 
-    @Autowired
-    private com.kh.spring.weather.service.WeatherService weatherService;
-
-    @Operation(summary = "환경 비서에게 오늘의 조언 듣기")
+    @Operation(summary = "환경 비서에게 데이터 입력하여 날씨+환경 관련 멘트 받기")
     @PostMapping("/secretary")
     public Map<String, String> getSecretaryAdvice() {
         // 1. 모든 날씨 데이터 수집
