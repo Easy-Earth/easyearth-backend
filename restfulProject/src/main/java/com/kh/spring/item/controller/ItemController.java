@@ -1,6 +1,7 @@
 package com.kh.spring.item.controller;
 
 
+import java.util.HashMap;
 import java.util.List;
 
 import com.kh.spring.item.model.vo.RandomPullHistory;
@@ -8,9 +9,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.kh.spring.item.model.service.ItemService;
 import com.kh.spring.item.model.vo.ItemVO;
+import com.kh.spring.item.model.vo.UserItemList;
 import com.kh.spring.item.model.vo.UserItemsVO;
 import com.kh.spring.util.JWTUtil;
 
@@ -47,13 +56,48 @@ public class ItemController {
 		return ResponseEntity.ok(list);
 	}
 	
+	//전체 아이템 중 특정 하나 조회
+	@Operation(summary = "전체 아이템 중 특정 하나 조회", description = "전체 아이템 중 특정 하나 조회")
+	@GetMapping("/itemsDetail/{itemId}")
+	public ResponseEntity<?> itemsDetail(@PathVariable int itemId){
+
+		ItemVO list = service.itemsDetail(itemId);
+
+		return ResponseEntity.ok(list);
+	}
+
+	//보유 아이템 중 특정 하나 조회
+	@Operation(summary = "보유중인 아이템 상세조회", description = "보유중인 아이템 상세조회")
+	@GetMapping("/myItemsDetail/{itemId}")
+	public ResponseEntity<?> myItemsDetail(@PathVariable int itemId, @RequestParam int userId){
+
+		HashMap<String, Object> map = new HashMap<>();
+		map.put("itemId", itemId);
+		map.put("userId", userId);
+
+		UserItemList list = service.myItemsDetail(map);
+
+		return ResponseEntity.ok(list);
+	}
+
+	//보유 아이템 수 조회
+	@Operation(summary = "보유 아이템 수 조회", description = "보유 아이템 수 조회")
+	@GetMapping("/itemCount/{memberId}")
+	public ResponseEntity<?> itemCount(@PathVariable int memberId){
+
+		int count = service.itemCount(memberId);
+
+		return ResponseEntity.ok(count);
+
+	}
+
 	//포인트상점 아이템 카테고리 조회
 	@Operation(summary = "상점 카테고리 조회", description = "상점 카테고리 조회")
 	@GetMapping("/categories/{category}")
 	public ResponseEntity<?> categories(@PathVariable String category) {
 		
 		List<ItemVO> list = service.itemCategories(category);
-
+		
 		return ResponseEntity.ok(list);
 	}
 	
@@ -88,8 +132,8 @@ public class ItemController {
 	@GetMapping("/random/{memberId}")
 	@ResponseBody
 	@Operation(summary = "랜덤뽑기 API", description = "랜덤뽑기 API")
-	public ResponseEntity<?> randomPull(@RequestBody RandomPullHistory randomPullHistory) {
-
+	public ResponseEntity<?> randomPull(@RequestParam int memberId) {
+		RandomPullHistory randomPullHistory = new RandomPullHistory();
 		int randomNum = (int) (Math.random() * 100) + 1;
 		//1~69 : COMMON 69%
 		//70~94 : RARE  25%
@@ -99,8 +143,15 @@ public class ItemController {
 		else if (randomNum <= 94) randomPullHistory.setRarity("RARE");
 		else if (randomNum <= 99) randomPullHistory.setRarity("EPIC");
 		else randomPullHistory.setRarity("LEGENDARY");
+		randomPullHistory.setMemberId(memberId);
 
-		return null;
+		int result = service.randomPull(randomPullHistory);
+		if(result>0) {
+			return ResponseEntity.ok(randomPullHistory);
+		}
+		else {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("랜덤뽑기 오류 발생");
+		}
 
 	}
 

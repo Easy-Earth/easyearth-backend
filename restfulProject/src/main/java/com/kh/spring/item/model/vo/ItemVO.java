@@ -26,7 +26,7 @@ public class ItemVO {
 //	UPDATED_AT	DATE	Yes		10	수정일시
 	
 	private int itemId;
-	private String itemName;
+	private String name;
 	private String description;
 	private int price;
 	private String rarity;

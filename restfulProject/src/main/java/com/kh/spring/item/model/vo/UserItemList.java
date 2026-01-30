@@ -15,11 +15,10 @@ public class UserItemList {
 	
 	
 	private int itemId;
-	private String itemName;
+	private String name;
 	private String description;
 	private int price;
 	private String rarity;
-	private String imageUrl;
 	private String isOnSale;
 	private String category;
 	private Date createdAt;
