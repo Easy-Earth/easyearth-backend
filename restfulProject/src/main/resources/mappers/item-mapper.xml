@@ -126,13 +126,13 @@
 	<select id="randomPull" parameterType="string" resultType="ItemVO">
 		SELECT * FROM (
 			SELECT
-				ITEM_ID as itemId,
-				NAME as itemName,
-				DESCRIPTION as description,
-				PRICE as price,
-				RARITY as rarity,
-				IS_ON_SALE as isOnSale,
-				CATEGORY as category
+				ITEM_ID,
+				NAME,
+				DESCRIPTION,
+				PRICE,
+				RARITY,
+				IS_ON_SALE,
+				CATEGORY
 			FROM ITEM
 			WHERE RARITY = #{rarity}
 			ORDER BY DBMS_RANDOM.VALUE
