@@ -138,7 +138,50 @@
 	        #{category}
 	    )
 	</insert>
-<!-- 랜덤으로 아이템 뽑기-->
+	
+	<!-- 1️ 장착하려는 아이템의 카테고리 조회 -->
+    <select id="selectCategoryByUiId"
+            parameterType="map"
+            resultType="string">
+        SELECT CATEGORY
+        FROM USER_ITEMS
+        WHERE UI_ID = #{uiId}
+          AND USER_ID = #{userId}
+    </select>
+
+
+    <!-- 2️ 같은 카테고리 기존 장착 아이템 전부 해제 -->
+    <update id="unequipByCategory"
+            parameterType="map">
+        UPDATE USER_ITEMS
+        SET IS_EQUIPPED = 'N',
+            EQUIPPED_AT = NULL
+        WHERE USER_ID = #{userId}
+          AND CATEGORY = #{category}
+          AND IS_EQUIPPED = 'Y'
+    </update>
+
+    <!-- 3️ 선택한 아이템 장착 -->
+    <update id="equipItem"
+            parameterType="map">
+        UPDATE USER_ITEMS
+        SET IS_EQUIPPED = 'Y',
+            EQUIPPED_AT = SYSDATE
+        WHERE UI_ID = #{uiId}
+        AND USER_ID = #{userId}
+    </update>
+
+	<!-- 아이템 상태값 -->
+	<select id="selectStatus" parameterType="int" resultType="string">
+		SELECT IS_EQUIPPED FROM USER_ITEMS WHERE UI_ID = #{uiId}
+	</select>
+	
+	<!-- 아이템 장착 해제 -->
+	<update id="updateStatus" parameterType="int">
+		UPDATE USER_ITEMS SET IS_EQUIPPED = 'N' WHERE UI_ID = #{uiId}
+	</update>
+	
+	<!-- 랜덤뽑기 -->
 	<select id="randomPull" parameterType="string" resultType="ItemVO">
 		SELECT * FROM (
 			SELECT
