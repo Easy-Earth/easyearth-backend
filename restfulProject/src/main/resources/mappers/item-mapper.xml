@@ -29,7 +29,6 @@
 	        I.NAME,
 	        I.DESCRIPTION,
 	        I.RARITY,
-	        I.IMAGE_URL,
 	        I.CATEGORY AS ITEM_CATEGORY
 	
 	    FROM USER_ITEMS UI
@@ -37,6 +36,52 @@
 	        ON UI.ITEM_ID = I.ITEM_ID
 	    WHERE UI.USER_ID = #{memberId}
 	
+	</select>
+	
+	<!-- 전체 아이템 중 특정 하나 조회 -->
+	<select id="itemsDetail" parameterType="int" resultType="ItemVO">
+		SELECT ITEM_ID,
+				NAME,
+				DESCRIPTION,
+				PRICE,
+				RARITY,
+				IS_ON_SALE,
+				CATEGORY,
+				CREATED_AT,
+				UPDATED_AT
+		FROM ITEM
+		WHERE ITEM_ID = #{itemId}
+	</select>
+	
+	<!-- 보유 아이템 중 특정 하나 조회 -->
+	<select id="myItemsDetail" parameterType="map" resultType="UserItemList">
+		SELECT 
+	        I.ITEM_ID,
+	        I.NAME,
+	        I.DESCRIPTION,
+	        I.PRICE AS ITEM_PRICE,
+	        I.RARITY,
+	        I.IS_ON_SALE,
+	        I.CATEGORY AS ITEM_CATEGORY,
+	        UI.UI_ID,
+	        UI.ACQUIRED_AT,
+	        UI.IS_EQUIPPED,
+	        UI.EQUIPPED_AT,
+	        UI.PRICE AS USER_ITEM_PRICE,
+	        UI.CATEGORY AS USER_ITEM_CATEGORY
+	    FROM ITEM I
+	    LEFT JOIN USER_ITEMS UI
+	        ON I.ITEM_ID = UI.ITEM_ID
+	       AND UI.USER_ID = #{userId}
+	    WHERE I.ITEM_ID = #{itemId}
+	</select>
+	
+	
+	<!-- 보유중인 아이템 수 조회 -->
+	<select id="itemCount" parameterType="int" resultType="int">
+		SELECT COUNT(*)
+		FROM USER_ITEMS
+		WHERE USER_ID = #{memberId}
 	</select>
 	
 	<!-- 카테고리별 아이템 조회 -->

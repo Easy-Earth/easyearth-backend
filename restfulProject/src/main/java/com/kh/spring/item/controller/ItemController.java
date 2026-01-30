@@ -1,6 +1,7 @@
 package com.kh.spring.item.controller;
 
 
+import java.util.HashMap;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,14 +11,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.kh.spring.item.model.service.ItemService;
 import com.kh.spring.item.model.vo.ItemVO;
+import com.kh.spring.item.model.vo.UserItemList;
 import com.kh.spring.item.model.vo.UserItemsVO;
-import com.kh.spring.util.JWTUtil;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -52,6 +53,41 @@ public class ItemController {
 		return ResponseEntity.ok(list);
 	}
 	
+	//전체 아이템 중 특정 하나 조회
+	@Operation(summary = "전체 아이템 중 특정 하나 조회", description = "전체 아이템 중 특정 하나 조회")
+	@GetMapping("/itemsDetail/{itemId}")
+	public ResponseEntity<?> itemsDetail(@PathVariable int itemId){
+		
+		ItemVO list = service.itemsDetail(itemId);
+		
+		return ResponseEntity.ok(list);
+	}
+	
+	//보유 아이템 중 특정 하나 조회
+	@Operation(summary = "보유중인 아이템 상세조회", description = "보유중인 아이템 상세조회")
+	@GetMapping("/myItemsDetail/{itemId}")
+	public ResponseEntity<?> myItemsDetail(@PathVariable int itemId, @RequestParam int userId){
+		
+		HashMap<String, Object> map = new HashMap<>();
+		map.put("itemId", itemId);
+		map.put("userId", userId);
+		
+		UserItemList list = service.myItemsDetail(map);
+		
+		return ResponseEntity.ok(list);
+	}
+	
+	//보유 아이템 수 조회
+	@Operation(summary = "보유 아이템 수 조회", description = "보유 아이템 수 조회")
+	@GetMapping("/itemCount/{memberId}")
+	public ResponseEntity<?> itemCount(@PathVariable int memberId){
+		
+		int count = service.itemCount(memberId);
+		
+		return ResponseEntity.ok(count);
+		
+	}
+	
 	//포인트상점 아이템 카테고리 조회
 	@Operation(summary = "상점 카테고리 조회", description = "상점 카테고리 조회")
 	@GetMapping("/categories/{category}")
@@ -81,9 +117,8 @@ public class ItemController {
 		
 	}
 	
-
 	
-	//아이템 구매시 보유수량 증가 구문 OR 트리거
+	
 	
 	
 	
