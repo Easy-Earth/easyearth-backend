@@ -30,7 +30,6 @@ public class ItemVO {
 	private String description;
 	private int price;
 	private String rarity;
-	private String imageUrl;
 	private String isOnSale;
 	private String category;
 	private Date createdAt;

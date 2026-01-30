@@ -26,7 +26,7 @@ public class ItemDao {
 
 	//카테고별 아이템 조회
 	public List<ItemVO> itemCategories(SqlSessionTemplate sqlSession, String category) {
-		
+		System.out.println(category);
 		return sqlSession.selectList("itemMapper.itemCategories",category);
 	}
 	
@@ -36,6 +36,12 @@ public class ItemDao {
 		return sqlSession.insert("itemMapper.buyItem",userItemsVO);
 	}
 
-	
+	public ItemVO randomPull(SqlSessionTemplate sqlSession, String rarity){
+		return sqlSession.selectOne("itemMapper.randomPull", rarity);
+	}
 
+	//아이템을 MEMBER 테이블에 INSERT
+	public int insertItemToMember(SqlSessionTemplate sqlSession, ItemVO itemVo) {
+		return sqlSession.insert("itemMapper.insertItemToMember", itemVo);
+	}
 }

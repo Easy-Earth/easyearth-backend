@@ -3,16 +3,11 @@ package com.kh.spring.item.controller;
 
 import java.util.List;
 
+import com.kh.spring.item.model.vo.RandomPullHistory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.kh.spring.item.model.service.ItemService;
 import com.kh.spring.item.model.vo.ItemVO;
@@ -58,7 +53,7 @@ public class ItemController {
 	public ResponseEntity<?> categories(@PathVariable String category) {
 		
 		List<ItemVO> list = service.itemCategories(category);
-		
+
 		return ResponseEntity.ok(list);
 	}
 	
@@ -89,13 +84,24 @@ public class ItemController {
 	
 	
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+
+	@GetMapping("/random/{memberId}")
+	@ResponseBody
+	@Operation(summary = "랜덤뽑기 API", description = "랜덤뽑기 API")
+	public ResponseEntity<?> randomPull(@RequestBody RandomPullHistory randomPullHistory) {
+
+		int randomNum = (int) (Math.random() * 100) + 1;
+		//1~69 : COMMON 69%
+		//70~94 : RARE  25%
+		//95~99 : EPIC 5%
+		//100 : LEGENDARY 1%
+		if (randomNum <= 69) randomPullHistory.setRarity("COMMON");
+		else if (randomNum <= 94) randomPullHistory.setRarity("RARE");
+		else if (randomNum <= 99) randomPullHistory.setRarity("EPIC");
+		else randomPullHistory.setRarity("LEGENDARY");
+
+		return null;
+
+	}
+
 }

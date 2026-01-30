@@ -36,7 +36,7 @@ public class ItemServiceImpl implements ItemService {
 	//카테고별 아이템 조회
 	@Override
 	public List<ItemVO> itemCategories(String category) {
-		
+		System.out.println(category);
 		return dao.itemCategories(sqlSession,category);
 	}
 	
@@ -46,11 +46,12 @@ public class ItemServiceImpl implements ItemService {
 		
 		return dao.buyItem(sqlSession,userItemsVO);
 	}
-	
-	
-	 
-	
 
-	
-	
+	@Override
+	public int randomPull(String rarity) {
+		ItemVO item = dao.randomPull(sqlSession, rarity);
+		int result = dao.insertItemToMember(sqlSession,item);
+		return result;
+	}
+
 }

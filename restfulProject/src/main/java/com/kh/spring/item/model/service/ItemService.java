@@ -19,5 +19,6 @@ public interface ItemService {
 	//포인트상점 아이템 구매
 	int buyItem(UserItemsVO vo);
 
-
+	//랜덤 뽑기
+	int randomPull(String rarity);
 }
