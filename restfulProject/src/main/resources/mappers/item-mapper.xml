@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="itemMapper">
+  	
+  	<!-- 포인트상점 아이템 조회 매퍼 -->
+  	<select id="storeItem" resultType="ItemVO">
+  		SELECT *
+  		FROM ITEM
+  	</select>
+  	
+  	<!-- 포인트상점 보유중인 아이템 조회 매퍼 -->
+  	<select id="storeMyItem"
+	        parameterType="int"
+	        resultType="UserItemList">
+	
+	    SELECT
+	        UI.UI_ID,
+	        UI.ITEM_ID,
+	        UI.USER_ID,
+	        UI.PRICE AS BUY_PRICE,
+	        UI.CATEGORY AS USER_CATEGORY,
+	        UI.IS_EQUIPPED,
+	        UI.ACQUIRED_AT,
+	        UI.EQUIPPED_AT,
+	
+	        I.NAME,
+	        I.DESCRIPTION,
+	        I.RARITY,
+	        I.IMAGE_URL,
+	        I.CATEGORY AS ITEM_CATEGORY
+	
+	    FROM USER_ITEMS UI
+	    JOIN ITEM I
+	        ON UI.ITEM_ID = I.ITEM_ID
+	    WHERE UI.USER_ID = #{memberId}
+	
+	</select>
+	
+	<!-- 카테고리별 아이템 조회 -->
+	<select id="itemCategories" parameterType="string" resultType="ItemVO">
+		SELECT *
+		FROM ITEM
+		WHERE CATEGORY = #{category}
+	</select>
+
+  	
+  	<!-- 포인트상점 아이템 구매 -->
+  	<insert id="buyItem" parameterType="UserItemsVO">
+	    INSERT INTO USER_ITEMS (
+	        UI_ID,
+	        ITEM_ID,
+	        USER_ID,
+	        ACQUIRED_AT,
+	        IS_EQUIPPED,
+	        PRICE,
+	        CATEGORY
+	    ) VALUES (
+	        #{uiId},
+	        #{itemId},
+	        #{userId},
+	        SYSDATE,
+	        'N',
+	        #{price},
+	        #{category}
+	    )
+	</insert>
+	
+		
+
+
+  	
+  
+</mapper>
