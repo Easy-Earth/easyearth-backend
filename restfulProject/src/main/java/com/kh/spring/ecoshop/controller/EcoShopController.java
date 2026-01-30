@@ -3,6 +3,7 @@ package com.kh.spring.ecoshop.controller;
 
 import com.kh.spring.ecoshop.service.EcoShopService;
 import com.kh.spring.ecoshop.vo.Review;
+import com.kh.spring.ecoshop.vo.ReviewerName;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Tag(name="EcoShop 관련 Controller", description = "EcoShop 관련 Controller")
 @RequestMapping("/eco")
 @Controller
@@ -18,6 +21,14 @@ public class EcoShopController {
 
     @Autowired
     private EcoShopService ecoShopService;
+
+
+    @GetMapping("/review/list/{shopId}")
+    @Operation(summary = "리뷰 List Controller", description = ".")
+    public ResponseEntity<?> reviewList(@RequestParam int shopId) {
+        List<ReviewerName> list = ecoShopService.reviewList(shopId);
+        return new ResponseEntity<>(list, HttpStatus.OK);
+    }
 
     @PostMapping("/review/write")
     @Operation(summary = "리뷰 등록 Controller" , description = ".")

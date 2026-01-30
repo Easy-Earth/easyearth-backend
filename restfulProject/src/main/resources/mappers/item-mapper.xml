@@ -87,7 +87,16 @@
 	
 	<!-- 카테고리별 아이템 조회 -->
 	<select id="itemCategories" parameterType="string" resultType="ItemVO">
-		SELECT *
+		SELECT
+		ITEM_ID AS itemId,
+		NAME AS itemName,
+		DESCRIPTION,
+		PRICE,
+		RARITY,
+		IS_ON_SALE AS isOnSale,
+		CATEGORY,
+		CREATED_AT AS createdAt,
+		UPDATED_AT AS updatedAt
 		FROM ITEM
 		WHERE CATEGORY = #{category}
 	</select>
@@ -113,9 +122,41 @@
 	        #{category}
 	    )
 	</insert>
-	
-		
 
+	<select id="randomPull" parameterType="string" resultType="ItemVO">
+		SELECT * FROM (
+			SELECT
+				ITEM_ID as itemId,
+				NAME as itemName,
+				DESCRIPTION as description,
+				PRICE as price,
+				RARITY as rarity,
+				IS_ON_SALE as isOnSale,
+				CATEGORY as category
+			FROM ITEM
+			WHERE RARITY = #{rarity}
+			ORDER BY DBMS_RANDOM.VALUE
+		)
+		WHERE ROWNUM = 1
+	</select>
+		
+	<insert id="itemMapper.insertItemToMember" parameterType="com.kh.spring.item.model.vo.RandomPullHistory">
+		INSERT INTO USER_ITEMS (
+			UI_ID,
+			ITEM_ID,
+			USER_ID,
+			PRICE,
+			ACQUIRED_AT,
+			IS_EQUIPPED
+			) VALUES (
+				SEQ_UI_ID.NEXTVAL,
+				#{itemId},
+				#{memberId},
+				#{price},
+				SYSDATE,
+				'N'
+				)
+	</insert>
 
   	
   

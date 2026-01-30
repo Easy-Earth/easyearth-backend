@@ -4,9 +4,11 @@ package com.kh.spring.item.controller;
 import java.util.HashMap;
 import java.util.List;
 
+import com.kh.spring.item.model.vo.RandomPullHistory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -124,13 +126,31 @@ public class ItemController {
 	
 	
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+
+	@GetMapping("/random/{memberId}")
+	@ResponseBody
+	@Operation(summary = "랜덤뽑기 API", description = "랜덤뽑기 API")
+	public ResponseEntity<?> randomPull(@RequestParam int memberId) {
+		RandomPullHistory randomPullHistory = new RandomPullHistory();
+		int randomNum = (int) (Math.random() * 100) + 1;
+		//1~69 : COMMON 69%
+		//70~94 : RARE  25%
+		//95~99 : EPIC 5%
+		//100 : LEGENDARY 1%
+		if (randomNum <= 69) randomPullHistory.setRarity("COMMON");
+		else if (randomNum <= 94) randomPullHistory.setRarity("RARE");
+		else if (randomNum <= 99) randomPullHistory.setRarity("EPIC");
+		else randomPullHistory.setRarity("LEGENDARY");
+		randomPullHistory.setMemberId(memberId);
+
+		int result = service.randomPull(randomPullHistory);
+		if(result>0) {
+			return ResponseEntity.ok(randomPullHistory);
+		}
+		else {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("랜덤뽑기 오류 발생");
+		}
+
+	}
+
 }

@@ -2,12 +2,19 @@ package com.kh.spring.ecoshop.dao;
 
 import com.kh.spring.ecoshop.vo.EcoShop;
 import com.kh.spring.ecoshop.vo.Review;
+import com.kh.spring.ecoshop.vo.ReviewerName;
 import org.mybatis.spring.SqlSessionTemplate;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 @Repository
 public class EcoShopDao {
 
+
+    public List<ReviewerName> reviewList(SqlSessionTemplate sqlSession, int shopId) {
+        return sqlSession.selectList("ecoShopMapper.reviewList", shopId);
+    }
     public Long getEscIdByThemeId(SqlSessionTemplate sqlSession, String themeId) {
         return sqlSession.selectOne("ecoShopMapper.getEscIdByThemeId", themeId);
     }

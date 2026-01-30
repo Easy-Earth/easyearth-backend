@@ -3,6 +3,7 @@ package com.kh.spring.item.model.service;
 import java.util.HashMap;
 import java.util.List;
 
+import com.kh.spring.item.model.vo.RandomPullHistory;
 import org.mybatis.spring.SqlSessionTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -59,7 +60,7 @@ public class ItemServiceImpl implements ItemService {
 	//카테고별 아이템 조회
 	@Override
 	public List<ItemVO> itemCategories(String category) {
-		
+		System.out.println(category);
 		return dao.itemCategories(sqlSession,category);
 	}
 	
@@ -69,11 +70,23 @@ public class ItemServiceImpl implements ItemService {
 		
 		return dao.buyItem(sqlSession,userItemsVO);
 	}
-	
-	
-	 
-	
 
-	
-	
+	@Override
+	public int randomPull(RandomPullHistory randomPullHistory) {
+		ItemVO item = dao.randomPull(sqlSession, randomPullHistory.getRarity());
+		if (item != null) {
+			// 2. 뽑힌 아이템의 정보를 history 객체에 세팅
+			// (memberId는 이미 컨트롤러에서 세팅되어 넘어온 상태입니다)
+			randomPullHistory.setItemId(item.getItemId());
+			randomPullHistory.setPrice(item.getPrice());
+			randomPullHistory.setItemName(item.getName()); // 필요시 추가
+
+			// 3. 중요!! dao에 'item'이 아닌 'randomPullHistory'를 전달
+			int result = dao.insertItemToMember(sqlSession, randomPullHistory);
+			return result;
+		}
+
+		return 0;
+	}
+
 }
