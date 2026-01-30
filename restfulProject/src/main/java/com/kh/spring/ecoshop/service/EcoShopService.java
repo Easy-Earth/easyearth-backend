@@ -3,10 +3,13 @@ package com.kh.spring.ecoshop.service;
 import com.kh.spring.ecoshop.dao.EcoShopDao;
 import com.kh.spring.ecoshop.vo.EcoShop;
 import com.kh.spring.ecoshop.vo.Review;
+import com.kh.spring.ecoshop.vo.ReviewerName;
 import org.mybatis.spring.SqlSessionTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 public class EcoShopService {
@@ -17,6 +20,9 @@ public class EcoShopService {
     @Autowired
     private SqlSessionTemplate sqlSession;
 
+    public List<ReviewerName> reviewList(int shopId) {
+        return ecoShopDao.reviewList(sqlSession, shopId);
+    }
     public Long findEscId(String themeId) {
         return ecoShopDao.getEscIdByThemeId(sqlSession, themeId);
     }

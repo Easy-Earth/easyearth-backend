@@ -2,6 +2,13 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="ecoShopMapper">
+
+    <select id = "reviewList" resultType="ReviewerName">
+        SELECT SHOP_ID, RATING, CONTENT, NAME
+        FROM ECO_SHOP_REVIEW
+        JOIN MEMBER ON ECO_SHOP_REVIEW.MEMBER_ID = MEMBER.MEMBER_ID
+        WHERE SHOP_ID = #{shopId}
+    </select>
 <!-- 테마 아이디(ex. 11103395)로 ESC_ID(테마 식별자 ex.4) 찾기       -->
     <select id="getEscIdByThemeId" parameterType="string" resultType="long">
         SELECT ESC_ID
