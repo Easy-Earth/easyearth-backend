@@ -60,10 +60,17 @@ public class ItemServiceImpl implements ItemService {
 	//카테고별 아이템 조회
 	@Override
 	public List<ItemVO> itemCategories(String category) {
-		System.out.println(category);
+
 		return dao.itemCategories(sqlSession,category);
 	}
 	
+	//등급별 아이템 조회
+	@Override
+	public List<ItemVO> itemRarity(String rarity) {
+
+		return dao.itemRarity(sqlSession,rarity);
+	}
+
 	//포인트상점 아이템 구매
 	@Override
 	public int buyItem(UserItemsVO userItemsVO) {

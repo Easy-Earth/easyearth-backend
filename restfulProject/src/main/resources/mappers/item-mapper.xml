@@ -100,6 +100,22 @@
 		FROM ITEM
 		WHERE CATEGORY = #{category}
 	</select>
+	
+	<!-- 등급별 아이템 조회 -->
+	<select id="itemRarity" parameterType="string" resultType="ItemVO">
+		SELECT
+		ITEM_ID AS itemId,
+		NAME AS itemName,
+		DESCRIPTION,
+		PRICE,
+		RARITY,
+		IS_ON_SALE AS isOnSale,
+		CATEGORY,
+		CREATED_AT AS createdAt,
+		UPDATED_AT AS updatedAt
+		FROM ITEM
+		WHERE RARITY = #{rarity}
+	</select>
 
   	
   	<!-- 포인트상점 아이템 구매 -->
