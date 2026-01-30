@@ -115,7 +115,7 @@ public class ItemController {
 	@Operation(summary = "상점 아이템 구매", description = "상점 아이템 구매")
 	@PostMapping("/buy")
 	public ResponseEntity<?> buyItem(@RequestBody UserItemsVO userItemsVO){
-		
+		System.out.println(userItemsVO.getPrice());
 		int result = service.buyItem(userItemsVO);
 		
 		if(result>0) {
@@ -128,7 +128,7 @@ public class ItemController {
 		}
 		
 	}
-	
+
 	@GetMapping("/random/{memberId}")
 	@ResponseBody
 	@Operation(summary = "랜덤뽑기 API", description = "랜덤뽑기 API")

@@ -129,7 +129,7 @@
 	        PRICE,
 	        CATEGORY
 	    ) VALUES (
-	        #{uiId},
+			SEQ_UI_ID.NEXTVAL,
 	        #{itemId},
 	        #{userId},
 	        SYSDATE,
@@ -164,6 +164,7 @@
 			PRICE,
 			ACQUIRED_AT,
 			IS_EQUIPPED
+			CATEGORY
 			) VALUES (
 				SEQ_UI_ID.NEXTVAL,
 				#{itemId},
@@ -171,6 +172,7 @@
 				#{price},
 				SYSDATE,
 				'N'
+				#{category}
 				)
 	</insert>
 <!--아이템 중복 체크-->
