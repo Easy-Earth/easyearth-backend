@@ -138,7 +138,7 @@
 	        #{category}
 	    )
 	</insert>
-
+<!-- 랜덤으로 아이템 뽑기-->
 	<select id="randomPull" parameterType="string" resultType="ItemVO">
 		SELECT * FROM (
 			SELECT
@@ -155,7 +155,7 @@
 		)
 		WHERE ROWNUM = 1
 	</select>
-		
+<!-- 랜덤으로 뽑은 아이템 userItem에 넣기-->
 	<insert id="itemMapper.insertItemToMember" parameterType="com.kh.spring.item.model.vo.RandomPullHistory">
 		INSERT INTO USER_ITEMS (
 			UI_ID,
@@ -173,7 +173,27 @@
 				'N'
 				)
 	</insert>
-
-  	
+<!--아이템 중복 체크-->
+	<select id="checkDuplicateItem" parameterType="RandomPullHistory" resultType="_int">
+		SELECT COUNT(*)
+		FROM USER_ITEMS
+		WHERE USER_ID = #{memberId}
+		AND ITEM_ID = #{itemId}
+	</select>
+<!--포인트 지급-->
+	<update id="addPoint" parameterType="_int">
+		UPDATE POINT_WALLET
+		SET NOW_POINT = NOW_POINT + 500,
+		UPDATED_AT = SYSDATE
+		WHERE MEMBER_ID = #{memberId}
+	</update>
+<!--포인트 차감-->
+	<update id="deductPoint" parameterType="_int">
+		UPDATE POINT_WALLET
+		SET NOW_POINT = NOW_POINT - 1000,
+		UPDATED_AT = SYSDATE
+		WHERE MEMBER_ID = #{memberId}
+		AND NOW_POINT >= 1000
+	</update>
   
 </mapper>

@@ -29,8 +29,6 @@ public class ItemDao {
 	
 	//전체 아이템 중 특정 하나 조회
 	public ItemVO itemsDetail(SqlSessionTemplate sqlSession, int itemId) {
-//		ItemVO item = sqlSession.selectOne("itemMapper.itemsDetail",itemId);
-//		System.out.print(item.getCategory());
 		return sqlSession.selectOne("itemMapper.itemsDetail",itemId);
 	}
 
@@ -46,24 +44,6 @@ public class ItemDao {
 		return sqlSession.selectOne("itemMapper.itemCount",memberId);
 	}
 
-	//전체 아이템 중 특정 하나 조회
-	public ItemVO itemsDetail(SqlSessionTemplate sqlSession, int itemId) {
-//		ItemVO item = sqlSession.selectOne("itemMapper.itemsDetail",itemId);
-//		System.out.print(item.getCategory());
-		return sqlSession.selectOne("itemMapper.itemsDetail",itemId);
-	}
-
-	//보유 아이템 중 특정 하나 조회
-	public UserItemList myItemsDetail(SqlSessionTemplate sqlSession, HashMap map) {
-
-		return sqlSession.selectOne("itemMapper.myItemsDetail",map);
-	}
-
-	//보유중인 아이템 수 조회
-	public int itemCount(SqlSessionTemplate sqlSession, int memberId) {
-
-		return sqlSession.selectOne("itemMapper.itemCount",memberId);
-	}
 
 	//카테고별 아이템 조회
 	public List<ItemVO> itemCategories(SqlSessionTemplate sqlSession, String category) {
@@ -91,6 +71,18 @@ public class ItemDao {
 	public int insertItemToMember(SqlSessionTemplate sqlSession, RandomPullHistory randomPullHistory) {
 		return sqlSession.insert("itemMapper.insertItemToMember", randomPullHistory);
 	}
+	// 중복 확인
+	public int checkDuplicateItem(SqlSessionTemplate sqlSession, RandomPullHistory history) {
+		return sqlSession.selectOne("itemMapper.checkDuplicateItem", history);
+	}
 
+	// 포인트 지급
+	public int addPoint(SqlSessionTemplate sqlSession, int memberId) {
+		return sqlSession.update("itemMapper.addPoint", memberId);
+	}
+	// 보유 포인트에서 1000 차감
+	public int deductPoint(SqlSessionTemplate sqlSession, int memberId) {
+		return sqlSession.update("itemMapper.deductPoint",memberId);
+	}
 	
 }
