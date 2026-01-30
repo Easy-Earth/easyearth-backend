@@ -60,8 +60,15 @@ public class ItemServiceImpl implements ItemService {
 	//카테고별 아이템 조회
 	@Override
 	public List<ItemVO> itemCategories(String category) {
-		System.out.println(category);
+		
 		return dao.itemCategories(sqlSession,category);
+	}
+	
+	//등급별 아이템 조회
+	@Override
+	public List<ItemVO> itemRarity(String rarity) {
+		
+		return dao.itemRarity(sqlSession,rarity);
 	}
 	
 	//포인트상점 아이템 구매
@@ -80,6 +87,9 @@ public class ItemServiceImpl implements ItemService {
 			randomPullHistory.setItemId(item.getItemId());
 			randomPullHistory.setPrice(item.getPrice());
 			randomPullHistory.setItemName(item.getName()); // 필요시 추가
+			randomPullHistory.setDescription(item.getDescription());
+			randomPullHistory.setIsOnSale(item.getIsOnSale());
+			randomPullHistory.setCategory(item.getCategory());
 
 			// 3. 중요!! dao에 'item'이 아닌 'randomPullHistory'를 전달
 			int result = dao.insertItemToMember(sqlSession, randomPullHistory);

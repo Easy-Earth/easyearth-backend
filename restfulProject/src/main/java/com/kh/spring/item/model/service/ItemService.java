@@ -27,10 +27,15 @@ public interface ItemService {
 
 	//카테고별 아이템 조회
 	List<ItemVO> itemCategories(String category);
+	
+	//등급별 아이템 조회
+	List<ItemVO> itemRarity(String rarity);
 
 	//포인트상점 아이템 구매
 	int buyItem(UserItemsVO vo);
 
 	//랜덤 뽑기
 	int randomPull(RandomPullHistory randomPullHistory);
+
+	
 }
