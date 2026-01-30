@@ -61,17 +61,17 @@ public class ItemServiceImpl implements ItemService {
 	//카테고별 아이템 조회
 	@Override
 	public List<ItemVO> itemCategories(String category) {
-		
+
 		return dao.itemCategories(sqlSession,category);
 	}
 	
 	//등급별 아이템 조회
 	@Override
 	public List<ItemVO> itemRarity(String rarity) {
-		
+
 		return dao.itemRarity(sqlSession,rarity);
 	}
-	
+
 	//포인트상점 아이템 구매
 	@Override
 	public int buyItem(UserItemsVO userItemsVO) {
@@ -113,22 +113,36 @@ public class ItemServiceImpl implements ItemService {
 	
 	@Override
 	public int randomPull(RandomPullHistory randomPullHistory) {
+		int payResult = dao.deductPoint(sqlSession, randomPullHistory.getMemberId());
+
+		if (payResult <= 0) {
+			return -1; // 포인트 부족 등을 의미하는 코드
+		}
+		// 1. 등급에 맞는 랜덤 아이템 조회
 		ItemVO item = dao.randomPull(sqlSession, randomPullHistory.getRarity());
+
 		if (item != null) {
-			// 2. 뽑힌 아이템의 정보를 history 객체에 세팅
-			// (memberId는 이미 컨트롤러에서 세팅되어 넘어온 상태입니다)
+			// 뽑힌 아이템 정보 세팅
 			randomPullHistory.setItemId(item.getItemId());
 			randomPullHistory.setPrice(item.getPrice());
-			randomPullHistory.setItemName(item.getName()); // 필요시 추가
+			randomPullHistory.setItemName(item.getName());
 			randomPullHistory.setDescription(item.getDescription());
 			randomPullHistory.setIsOnSale(item.getIsOnSale());
 			randomPullHistory.setCategory(item.getCategory());
+			// 2. 중복 체크: 이미 해당 유저가 이 아이템을 가지고 있는지 확인
+			// (Dao에 checkDuplicateItem 메서드 추가 필요)
+			int count = dao.checkDuplicateItem(sqlSession, randomPullHistory);
 
-			// 3. 중요!! dao에 'item'이 아닌 'randomPullHistory'를 전달
-			int result = dao.insertItemToMember(sqlSession, randomPullHistory);
-			return result;
+			if (count > 0) {
+				// [중복 발생] 아이템 대신 500포인트 지급
+				// (Dao에 addPoint 메서드 추가 필요)
+				int pointResult = dao.addPoint(sqlSession, randomPullHistory.getMemberId());
+				return pointResult > 0 ? 2 : 0; // 2는 중복 보상 성공을 의미하는 임의 코드
+			} else {
+				// [신규 획득] USER_ITEMS에 인서트
+				return dao.insertItemToMember(sqlSession, randomPullHistory);
+			}
 		}
-
 		return 0;
 	}
 

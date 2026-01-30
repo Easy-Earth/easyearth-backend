@@ -171,13 +171,18 @@ public class ItemController {
 		randomPullHistory.setMemberId(memberId);
 
 		int result = service.randomPull(randomPullHistory);
-		if(result>0) {
+		if(result == 2) {
+			return ResponseEntity.ok("중복 아이템 당첨.. 500포인트가 환급되었습니다.");
+		}
+		else if(result==-1) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("포인트가 부족합니다. (최소 1000P 필요)");
+		}
+		else if(result > 0) {
 			return ResponseEntity.ok(randomPullHistory);
 		}
 		else {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("랜덤뽑기 오류 발생");
 		}
-
 	}
 
 }

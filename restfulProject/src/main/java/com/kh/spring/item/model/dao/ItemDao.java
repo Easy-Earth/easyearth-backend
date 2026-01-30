@@ -99,7 +99,19 @@ public class ItemDao {
 	public int insertItemToMember(SqlSessionTemplate sqlSession, RandomPullHistory randomPullHistory) {
 		return sqlSession.insert("itemMapper.insertItemToMember", randomPullHistory);
 	}
+	// 중복 확인
+	public int checkDuplicateItem(SqlSessionTemplate sqlSession, RandomPullHistory history) {
+		return sqlSession.selectOne("itemMapper.checkDuplicateItem", history);
+	}
 
+	// 포인트 지급
+	public int addPoint(SqlSessionTemplate sqlSession, int memberId) {
+		return sqlSession.update("itemMapper.addPoint", memberId);
+	}
+	// 보유 포인트에서 1000 차감
+	public int deductPoint(SqlSessionTemplate sqlSession, int memberId) {
+		return sqlSession.update("itemMapper.deductPoint",memberId);
+	}
 	public int updateStatus(SqlSessionTemplate sqlSession, int uiId) {
 		
 		return sqlSession.update("itemMapper.updateStatus",uiId);
