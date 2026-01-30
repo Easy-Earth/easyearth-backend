@@ -28,7 +28,8 @@ public class ItemDao {
 	
 	//전체 아이템 중 특정 하나 조회
 	public ItemVO itemsDetail(SqlSessionTemplate sqlSession, int itemId) {
-		
+//		ItemVO item = sqlSession.selectOne("itemMapper.itemsDetail",itemId);
+//		System.out.print(item.getCategory());
 		return sqlSession.selectOne("itemMapper.itemsDetail",itemId);
 	}
 
