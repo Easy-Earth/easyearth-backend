@@ -100,6 +100,16 @@ public class ItemController {
 		return ResponseEntity.ok(list);
 	}
 	
+	//포인트상점 아이템 등급별 조회
+	@Operation(summary = "상점 등급별 조회", description = "상점 등급별 조회")
+	@GetMapping("/rarity/{rarity}")
+	public ResponseEntity<?> itemRarity(@PathVariable String rarity) {
+		
+		List<ItemVO> list = service.itemRarity(rarity);
+		
+		return ResponseEntity.ok(list);
+	}
+	
 	
 	//포인트상점 아이템 구매
 	@Operation(summary = "상점 아이템 구매", description = "상점 아이템 구매")

@@ -71,6 +71,12 @@ public class ItemDao {
 		return sqlSession.selectList("itemMapper.itemCategories",category);
 	}
 	
+	//등급별 아이템 조회
+	public List<ItemVO> itemRarity(SqlSessionTemplate sqlSession, String rarity) {
+		
+		return sqlSession.selectList("itemMapper.itemRarity",rarity);
+	}
+	
 	//포인트상점 아이템 구매
 	public int buyItem(SqlSessionTemplate sqlSession, UserItemsVO userItemsVO) {
 		
@@ -85,4 +91,6 @@ public class ItemDao {
 	public int insertItemToMember(SqlSessionTemplate sqlSession, RandomPullHistory randomPullHistory) {
 		return sqlSession.insert("itemMapper.insertItemToMember", randomPullHistory);
 	}
+
+	
 }
