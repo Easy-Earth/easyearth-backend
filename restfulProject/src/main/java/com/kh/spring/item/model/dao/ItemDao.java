@@ -26,6 +26,25 @@ public class ItemDao {
 		
 		return sqlSession.selectList("itemMapper.storeMyItem",memberId);
 	}
+	
+	//전체 아이템 중 특정 하나 조회
+	public ItemVO itemsDetail(SqlSessionTemplate sqlSession, int itemId) {
+//		ItemVO item = sqlSession.selectOne("itemMapper.itemsDetail",itemId);
+//		System.out.print(item.getCategory());
+		return sqlSession.selectOne("itemMapper.itemsDetail",itemId);
+	}
+
+	//보유 아이템 중 특정 하나 조회
+	public UserItemList myItemsDetail(SqlSessionTemplate sqlSession, HashMap map) {
+		
+		return sqlSession.selectOne("itemMapper.myItemsDetail",map);
+	}
+	
+	//보유중인 아이템 수 조회
+	public int itemCount(SqlSessionTemplate sqlSession, int memberId) {
+		
+		return sqlSession.selectOne("itemMapper.itemCount",memberId);
+	}
 
 	//전체 아이템 중 특정 하나 조회
 	public ItemVO itemsDetail(SqlSessionTemplate sqlSession, int itemId) {
