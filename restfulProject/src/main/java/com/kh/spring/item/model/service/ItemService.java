@@ -33,9 +33,13 @@ public interface ItemService {
 
 	//포인트상점 아이템 구매
 	int buyItem(UserItemsVO vo);
+	
+	//아이템 장착
+	int equipItem(int userId, int uiId);
 
 	//랜덤 뽑기
 	int randomPull(RandomPullHistory randomPullHistory);
+
 
 	
 }

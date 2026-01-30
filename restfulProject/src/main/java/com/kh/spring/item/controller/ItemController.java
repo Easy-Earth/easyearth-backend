@@ -128,6 +128,34 @@ public class ItemController {
 		}
 		
 	}
+<<<<<<< HEAD
+=======
+	
+	// 아이템 장착
+	@Operation(summary = "아이템 장착/해제", description = "아이템 장착/해제")
+    @PatchMapping("/{uiId}/equip")
+    public ResponseEntity<?> equipItem(
+            @PathVariable int uiId,
+            @RequestParam int userId) {
+
+        int result = service.equipItem(userId, uiId);
+        
+        if(result>0) {
+        	
+        	return ResponseEntity.ok("아이템 장착 완료");
+        	
+        }else if(result==-1){
+        	return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("아이템 장착 해제 완료");
+        }
+        else if(result==-2){
+        	return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("아이템이 존재하지 않습니다.");
+        }else {
+        	return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("아이템 장착 실패");
+        }
+        
+    }
+
+>>>>>>> origin/develop
 
 	@GetMapping("/random/{memberId}")
 	@ResponseBody

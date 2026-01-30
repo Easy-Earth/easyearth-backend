@@ -29,21 +29,21 @@ public class ItemDao {
 	
 	//전체 아이템 중 특정 하나 조회
 	public ItemVO itemsDetail(SqlSessionTemplate sqlSession, int itemId) {
+
 		return sqlSession.selectOne("itemMapper.itemsDetail",itemId);
 	}
 
 	//보유 아이템 중 특정 하나 조회
 	public UserItemList myItemsDetail(SqlSessionTemplate sqlSession, HashMap map) {
-		
+
 		return sqlSession.selectOne("itemMapper.myItemsDetail",map);
 	}
-	
+
 	//보유중인 아이템 수 조회
 	public int itemCount(SqlSessionTemplate sqlSession, int memberId) {
-		
+
 		return sqlSession.selectOne("itemMapper.itemCount",memberId);
 	}
-
 
 	//카테고별 아이템 조회
 	public List<ItemVO> itemCategories(SqlSessionTemplate sqlSession, String category) {
@@ -62,7 +62,35 @@ public class ItemDao {
 		
 		return sqlSession.insert("itemMapper.buyItem",userItemsVO);
 	}
+	
+	//아이템 장착/해제
+	public String selectCategoryByUiId(SqlSessionTemplate sqlSession,int userId, int uiId) {
+        HashMap<String, Object> map = new HashMap<>();
+        map.put("userId", userId);
+        map.put("uiId", uiId);
+        return sqlSession.selectOne("itemMapper.selectCategoryByUiId", map);
+    }
 
+    public int unequipByCategory(SqlSessionTemplate sqlSession,int userId, String category) {
+    	HashMap<String, Object> map = new HashMap<>();
+        map.put("userId", userId);
+        map.put("category", category);
+        return sqlSession.update("itemMapper.unequipByCategory", map);
+    }
+
+    public int equipItem(SqlSessionTemplate sqlSession,int userId, int uiId) {
+    	HashMap<String, Object> map = new HashMap<>();
+        map.put("userId", userId);
+        map.put("uiId", uiId);
+        return sqlSession.update("itemMapper.equipItem", map);
+    }
+    
+    public String selectStatus(SqlSessionTemplate sqlSession , int uiId) {
+    	return sqlSession.selectOne("itemMapper.selectStatus", uiId);
+    }
+    
+    
+    //랜덤뽑기
 	public ItemVO randomPull(SqlSessionTemplate sqlSession, String rarity){
 		return sqlSession.selectOne("itemMapper.randomPull", rarity);
 	}
@@ -84,5 +112,10 @@ public class ItemDao {
 	public int deductPoint(SqlSessionTemplate sqlSession, int memberId) {
 		return sqlSession.update("itemMapper.deductPoint",memberId);
 	}
+	public int updateStatus(SqlSessionTemplate sqlSession, int uiId) {
+		
+		return sqlSession.update("itemMapper.updateStatus",uiId);
+	}
+
 	
 }
