@@ -76,6 +76,17 @@ public class ItemServiceImpl implements ItemService {
 	@Override
 	public int buyItem(UserItemsVO userItemsVO) {
 		
+		int memberId = userItemsVO.getUserId();
+		int price = userItemsVO.getPrice();
+		
+		HashMap<String,Object> map = new HashMap();
+		
+		map.put("memberId", memberId);
+		map.put("price", price);
+		
+		
+		int result = dao.deductItemPoint(sqlSession,map);
+		
 		return dao.buyItem(sqlSession,userItemsVO);
 	}
 	

@@ -57,11 +57,18 @@ public class ItemDao {
 		return sqlSession.selectList("itemMapper.itemRarity",rarity);
 	}
 	
+	//상품 구매시 포인트 차감
+	public int deductItemPoint(SqlSessionTemplate sqlSession, HashMap map) {
+		
+		return sqlSession.insert("itemMapper.deductItemPoint",map);
+	}
+	
 	//포인트상점 아이템 구매
 	public int buyItem(SqlSessionTemplate sqlSession, UserItemsVO userItemsVO) {
 		
 		return sqlSession.insert("itemMapper.buyItem",userItemsVO);
 	}
+	
 	
 	//아이템 장착/해제
 	public String selectCategoryByUiId(SqlSessionTemplate sqlSession,int userId, int uiId) {

@@ -15,22 +15,21 @@
   	<select id="storeMyItem"
 	        parameterType="int"
 	        resultType="UserItemList">
-	
 	    SELECT
 	        UI.UI_ID,
 	        UI.ITEM_ID,
 	        UI.USER_ID,
-	        UI.PRICE AS BUY_PRICE,
-	        UI.CATEGORY AS USER_CATEGORY,
+	        UI.PRICE,
+	        UI.CATEGORY,
 	        UI.IS_EQUIPPED,
 	        UI.ACQUIRED_AT,
-	        UI.EQUIPPED_AT,
-	
+	        I.CREATED_AT,
+	        I.UPDATED_AT,
+			I.IS_ON_SALE,
 	        I.NAME,
 	        I.DESCRIPTION,
 	        I.RARITY,
-	        I.CATEGORY AS ITEM_CATEGORY
-	
+	        I.CATEGORY
 	    FROM USER_ITEMS UI
 	    JOIN ITEM I
 	        ON UI.ITEM_ID = I.ITEM_ID
@@ -63,6 +62,8 @@
 	        I.RARITY,
 	        I.IS_ON_SALE,
 	        I.CATEGORY,
+	        I.CREATED_AT,
+	        I.UPDATED_AT,
 	        UI.UI_ID,
 	        UI.USER_ID,
 	        UI.ACQUIRED_AT,
@@ -88,15 +89,15 @@
 	<!-- 카테고리별 아이템 조회 -->
 	<select id="itemCategories" parameterType="string" resultType="ItemVO">
 		SELECT
-		ITEM_ID AS itemId,
-		NAME AS itemName,
+		ITEM_ID,
+		NAME,
 		DESCRIPTION,
 		PRICE,
 		RARITY,
-		IS_ON_SALE AS isOnSale,
+		IS_ON_SALE,
 		CATEGORY,
-		CREATED_AT AS createdAt,
-		UPDATED_AT AS updatedAt
+		CREATED_AT,
+		UPDATED_AT
 		FROM ITEM
 		WHERE CATEGORY = #{category}
 	</select>
@@ -104,15 +105,15 @@
 	<!-- 등급별 아이템 조회 -->
 	<select id="itemRarity" parameterType="string" resultType="ItemVO">
 		SELECT
-		ITEM_ID AS itemId,
-		NAME AS itemName,
+		ITEM_ID,
+		NAME,
 		DESCRIPTION,
 		PRICE,
 		RARITY,
-		IS_ON_SALE AS isOnSale,
+		IS_ON_SALE,
 		CATEGORY,
-		CREATED_AT AS createdAt,
-		UPDATED_AT AS updatedAt
+		CREATED_AT,
+		UPDATED_AT
 		FROM ITEM
 		WHERE RARITY = #{rarity}
 	</select>
@@ -138,6 +139,13 @@
 	        #{category}
 	    )
 	</insert>
+	
+	<!-- 아이템 구매시 포인트 차감 -->
+	<update id="deductItemPoint" parameterType="hashmap">
+		UPDATE POINT_WALLET 
+		SET NOW_POINT = NOW_POINT - #{price}
+		WHERE MEMBER_ID = #{memberId}
+	</update>
 	
 	<!-- 1️ 장착하려는 아이템의 카테고리 조회 -->
     <select id="selectCategoryByUiId"
@@ -198,45 +206,47 @@
 		)
 		WHERE ROWNUM = 1
 	</select>
-<!-- 랜덤으로 뽑은 아이템 userItem에 넣기-->
-	<insert id="itemMapper.insertItemToMember" parameterType="com.kh.spring.item.model.vo.RandomPullHistory">
-		INSERT INTO USER_ITEMS (
-			UI_ID,
-			ITEM_ID,
-			USER_ID,
-			PRICE,
-			ACQUIRED_AT,
-			IS_EQUIPPED
-			) VALUES (
-				SEQ_UI_ID.NEXTVAL,
-				#{itemId},
-				#{memberId},
-				#{price},
-				SYSDATE,
-				'N'
-				)
-	</insert>
-<!--아이템 중복 체크-->
-	<select id="checkDuplicateItem" parameterType="RandomPullHistory" resultType="_int">
-		SELECT COUNT(*)
-		FROM USER_ITEMS
-		WHERE USER_ID = #{memberId}
-		AND ITEM_ID = #{itemId}
-	</select>
-<!--포인트 지급-->
-	<update id="addPoint" parameterType="_int">
-		UPDATE POINT_WALLET
-		SET NOW_POINT = NOW_POINT + 500,
-		UPDATED_AT = SYSDATE
-		WHERE MEMBER_ID = #{memberId}
-	</update>
-<!--포인트 차감-->
-	<update id="deductPoint" parameterType="_int">
-		UPDATE POINT_WALLET
-		SET NOW_POINT = NOW_POINT - 1000,
-		UPDATED_AT = SYSDATE
-		WHERE MEMBER_ID = #{memberId}
-		AND NOW_POINT >= 1000
-	</update>
+	<!-- 랜덤으로 뽑은 아이템 userItem에 넣기-->
+		<insert id="itemMapper.insertItemToMember" parameterType="com.kh.spring.item.model.vo.RandomPullHistory">
+			INSERT INTO USER_ITEMS (
+				UI_ID,
+				ITEM_ID,
+				USER_ID,
+				PRICE,
+				ACQUIRED_AT,
+				IS_EQUIPPED,
+				CATEGORY
+				) VALUES (
+					SEQ_UI_ID.NEXTVAL,
+					#{itemId},
+					#{memberId},
+					#{price},
+					SYSDATE,
+					'N',
+					#{category}
+					)
+		</insert>
+	<!--아이템 중복 체크-->
+		<select id="checkDuplicateItem" parameterType="RandomPullHistory" resultType="_int">
+			SELECT COUNT(*)
+			FROM USER_ITEMS
+			WHERE USER_ID = #{memberId}
+			AND ITEM_ID = #{itemId}
+		</select>
+	<!--포인트 지급-->
+		<update id="addPoint" parameterType="_int">
+			UPDATE POINT_WALLET
+			SET NOW_POINT = NOW_POINT + 500,
+			UPDATED_AT = SYSDATE
+			WHERE MEMBER_ID = #{memberId}
+		</update>
+	<!--포인트 차감-->
+		<update id="deductPoint" parameterType="_int">
+			UPDATE POINT_WALLET
+			SET NOW_POINT = NOW_POINT - 1000,
+			UPDATED_AT = SYSDATE
+			WHERE MEMBER_ID = #{memberId}
+			AND NOW_POINT >= 1000
+		</update>
   
 </mapper>
