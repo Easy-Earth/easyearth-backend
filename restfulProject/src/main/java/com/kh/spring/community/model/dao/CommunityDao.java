@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import com.kh.spring.common.model.vo.PageInfo;
 import com.kh.spring.community.model.vo.CommunityPostVO;
+import com.kh.spring.community.model.vo.PostFilesVO;
 
 @Repository
 public class CommunityDao {
@@ -68,20 +69,82 @@ public class CommunityDao {
 		return sqlSession.insert("communityMapper.communityInsert",cp);
 	}
 
-	//게시글 수정
-	public int communityUpdate(SqlSessionTemplate sqlSession, CommunityPostVO cp) {
-		return sqlSession.update("communityMapper.communityUpdate",cp);
+	//첨부파일 추가
+	public int insertPostFile(SqlSessionTemplate sqlSession, ArrayList<PostFilesVO> pfList) {
+		return sqlSession.insert("communityMapper.insertPostFile", pfList);
 	}
+	
+	//게시글 수정 - 삭제 대상 파일 조회
+    public ArrayList<PostFilesVO> selectFilesByIds(SqlSessionTemplate sqlSession,
+            int postId,
+            ArrayList<Integer> delFileIds) {
+	
+    	HashMap<String, Object> param = new HashMap<>();
+        param.put("postId", postId);
+        param.put("delFileIds", delFileIds);
 
-	//게시글 상세보기
-	public CommunityPostVO communityDetail(SqlSessionTemplate sqlSession, int postId) {
-		return sqlSession.selectOne("communityMapper.communityDetail", postId);
+        return (ArrayList) sqlSession.selectList(
+                "communityMapper.selectFilesByIds", param);
+    }
+	
+	//게시글 수정 - 텍스트 정보 수정
+	public int updatePost(SqlSessionTemplate sqlSession, CommunityPostVO cp) {
+        return sqlSession.update("communityMapper.updatePost", cp);
+    }
+
+
+	//게시글 수정 - 실제 파일 데이터 삭제
+    public int deleteFilesByIds(SqlSessionTemplate sqlSession,
+                               int postId,
+                               ArrayList<Integer> delFileIds) {
+
+        HashMap<String, Object> param = new HashMap<>();
+        param.put("postId", postId);
+        param.put("delFileIds", delFileIds);
+
+        return sqlSession.delete("communityMapper.deleteFilesByIds", param);
+    }
+
+	
+	//해당 게시글 파일 개수
+	public int countFilesByPostId(SqlSessionTemplate sqlSession, int postId) {
+        return sqlSession.selectOne("communityMapper.countFilesByPostId", postId);
+    }
+
+	//게시글 수정 - 파일 첨부 여부 갱신
+    public int updateHasFiles(SqlSessionTemplate sqlSession,
+                              int postId,
+                              int hasFiles) {
+
+        HashMap<String, Object> param = new HashMap<>();
+        param.put("postId", postId);
+        param.put("hasFiles", hasFiles);
+
+        return sqlSession.update("communityMapper.updateHasFiles", param);
+    }
+
+    //게시글 상세보기
+    public CommunityPostVO communityDetail(SqlSessionTemplate sqlSession, int postId) {
+    	return sqlSession.selectOne("communityMapper.communityDetail", postId);
+    }
+	
+	//게시글 첨부파일 목록 조회
+	public ArrayList<PostFilesVO> selectFilesByPostIds(SqlSessionTemplate sqlSession, int postId) {
+		return (ArrayList)sqlSession.selectList("communityMapper.selectFilesByPostIds", postId);
 	}
 
 	//게시글 삭제
 	public int communityDelete(SqlSessionTemplate sqlSession, int postId) {
 		return sqlSession.delete("communityMapper.communityDelete", postId);
 	}
+
+
+
+	
+	
+	
+
+
 
 
 
