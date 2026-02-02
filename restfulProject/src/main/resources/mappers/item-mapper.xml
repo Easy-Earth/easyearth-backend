@@ -20,17 +20,17 @@
 	        UI.UI_ID,
 	        UI.ITEM_ID,
 	        UI.USER_ID,
-	        UI.PRICE AS BUY_PRICE,
-	        UI.CATEGORY AS USER_CATEGORY,
+	        UI.PRICE,
+	        UI.CATEGORY,
 	        UI.IS_EQUIPPED,
 	        UI.ACQUIRED_AT,
-	        UI.EQUIPPED_AT,
-	
+	        I.CREATED_AT,
+	        I.UPDATED_AT,
+			I.IS_ON_SALE,
 	        I.NAME,
 	        I.DESCRIPTION,
 	        I.RARITY,
-	        I.CATEGORY AS ITEM_CATEGORY
-	
+	        I.CATEGORY
 	    FROM USER_ITEMS UI
 	    JOIN ITEM I
 	        ON UI.ITEM_ID = I.ITEM_ID
@@ -88,15 +88,15 @@
 	<!-- 카테고리별 아이템 조회 -->
 	<select id="itemCategories" parameterType="string" resultType="ItemVO">
 		SELECT
-		ITEM_ID AS itemId,
-		NAME AS itemName,
+		ITEM_ID,
+		NAME,
 		DESCRIPTION,
 		PRICE,
 		RARITY,
-		IS_ON_SALE AS isOnSale,
+		IS_ON_SALE,
 		CATEGORY,
-		CREATED_AT AS createdAt,
-		UPDATED_AT AS updatedAt
+		CREATED_AT,
+		UPDATED_AT
 		FROM ITEM
 		WHERE CATEGORY = #{category}
 	</select>
@@ -104,15 +104,15 @@
 	<!-- 등급별 아이템 조회 -->
 	<select id="itemRarity" parameterType="string" resultType="ItemVO">
 		SELECT
-		ITEM_ID AS itemId,
-		NAME AS itemName,
+		ITEM_ID,
+		NAME,
 		DESCRIPTION,
 		PRICE,
 		RARITY,
-		IS_ON_SALE AS isOnSale,
+		IS_ON_SALE,
 		CATEGORY,
-		CREATED_AT AS createdAt,
-		UPDATED_AT AS updatedAt
+		CREATED_AT,
+		UPDATED_AT
 		FROM ITEM
 		WHERE RARITY = #{rarity}
 	</select>
@@ -139,6 +139,13 @@
 	    )
 	</insert>
 	
+	<!-- 아이템 구매시 포인트 차감 -->
+	<update id="deductItemPoint" parameterType="hashmap">
+		UPDATE POINT_WALLET
+		SET NOW_POINT = NOW_POINT - #{price}
+		WHERE MEMBER_ID = #{memberId}
+	</update>
+
 	<!-- 1️ 장착하려는 아이템의 카테고리 조회 -->
     <select id="selectCategoryByUiId"
             parameterType="map"
@@ -207,7 +214,6 @@
 			PRICE,
 			ACQUIRED_AT,
 			IS_EQUIPPED
-			CATEGORY
 			) VALUES (
 				SEQ_UI_ID.NEXTVAL,
 				#{itemId},
@@ -215,7 +221,6 @@
 				#{price},
 				SYSDATE,
 				'N'
-				#{category}
 				)
 	</insert>
 <!--아이템 중복 체크-->
