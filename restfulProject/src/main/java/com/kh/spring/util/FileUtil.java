@@ -2,6 +2,7 @@ package com.kh.spring.util;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -51,6 +52,24 @@ public class FileUtil {
 		}
 		
 		return false;
+	}
+	
+	//다중 파일 저장 및 변경된 이름 리스트로 반환
+	public ArrayList<String> saveFiles(ArrayList<MultipartFile> uploadFiles) throws Exception {
+		ArrayList<String> changeNames = new ArrayList<>();
+		for(MultipartFile file : uploadFiles) {
+			if(!file.isEmpty()) {
+				changeNames.add(saveFile(file));
+			}
+		}
+		return changeNames;
+	}
+	
+	//다중 파일 삭제
+	public void deleteFiles(ArrayList<String> fileNames) {
+		for (String name : fileNames) {
+			deleteFile(name);
+		}
 	}
 
 }
