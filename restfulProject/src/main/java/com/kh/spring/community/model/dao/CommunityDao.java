@@ -28,17 +28,6 @@ public class CommunityDao {
 	public int filterListCount(SqlSessionTemplate sqlSession, HashMap<String, String> map) {
 		return sqlSession.selectOne("communityMapper.filterListCount");
 	}
-	
-	//게시글 목록 조회
-	public ArrayList<CommunityPostVO> communityList(SqlSessionTemplate sqlSession, PageInfo pi) {
-		
-		int limit = pi.getBoardLimit();
-		int offset = (pi.getCurrentPage() - 1) * limit;
-		
-		RowBounds rowBounds = new RowBounds(offset, limit);
-		
-		return (ArrayList)sqlSession.selectList("communityMapper.communityList", null, rowBounds);
-	}
 
 	//게시글 검색 조회
 	public ArrayList<CommunityPostVO> searchList(SqlSessionTemplate sqlSession, HashMap<String, String> map,
@@ -63,7 +52,18 @@ public class CommunityDao {
 		
 		return (ArrayList)sqlSession.selectList("communityMapper.filterList", map, rowBounds);
 	}
-
+	
+	//게시글 목록 조회
+	public ArrayList<CommunityPostVO> communityList(SqlSessionTemplate sqlSession, PageInfo pi) {
+		
+		int limit = pi.getBoardLimit();
+		int offset = (pi.getCurrentPage() - 1) * limit;
+		
+		RowBounds rowBounds = new RowBounds(offset, limit);
+		
+		return (ArrayList)sqlSession.selectList("communityMapper.communityList", null, rowBounds);
+	}
+	
 	//게시글 등록
 	public int communityInsert(SqlSessionTemplate sqlSession, CommunityPostVO cp) {
 		return sqlSession.insert("communityMapper.communityInsert",cp);
@@ -138,7 +138,10 @@ public class CommunityDao {
 		return sqlSession.delete("communityMapper.communityDelete", postId);
 	}
 
-
+	//게시글 조회수 증가
+	public int increaseViewCount(SqlSessionTemplate sqlSession, int postId) {
+		return sqlSession.update("communityMapper.increaseViewCount", postId);
+	}
 
 	
 	

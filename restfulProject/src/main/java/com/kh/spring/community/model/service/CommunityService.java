@@ -29,6 +29,9 @@ public interface CommunityService {
 	//게시글 필터링 조회
 	ArrayList<CommunityPostVO> filterList(HashMap<String, String> map, PageInfo pi);
 	
+	//게시글 상세보기
+	CommunityPostVO communityDetail(int postId);
+	
 	//게시글 등록
 	int communityInsert(CommunityPostVO cp, ArrayList<PostFilesVO> pfList);
 
@@ -38,16 +41,14 @@ public interface CommunityService {
 	//게시글 수정
 	int communityUpdate(CommunityPostVO cp, ArrayList<PostFilesVO> newPfList, ArrayList<Integer> delFileIds);
 
-	//게시글 상세보기
-	CommunityPostVO communityDetail(int postId);
-
 	//게시글 첨부파일 목록 조회
 	ArrayList<PostFilesVO> selectFilesByPostIds(int postId);
 
 	//게시글 삭제
 	int communityDelete(int postId);
 
-
+	//게시글 조회수 증가
+	int increaseViewCount(int postId);
 
 
 
