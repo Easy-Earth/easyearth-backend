@@ -66,6 +66,12 @@ public class CommunityServiceImpl implements CommunityService {
 		return dao.filterList(sqlSession, map, pi);
 	}
 
+	//게시글 상세보기
+	@Override
+	public CommunityPostVO communityDetail(int postId) {
+		return dao.communityDetail(sqlSession, postId);
+	}
+
 	//게시글 등록
 	@Transactional
 	@Override
@@ -73,8 +79,6 @@ public class CommunityServiceImpl implements CommunityService {
 		
 		// 게시글 정보 등록
         int result = dao.communityInsert(sqlSession, cp);
-        
-        log.info("게시글 등록 결과: {}, 생성된 ID: {}", result, cp.getPostId());
         
         // 게시글 등록 성공 시 파일 처리
         if (result > 0) {
@@ -138,12 +142,6 @@ public class CommunityServiceImpl implements CommunityService {
         return result;
     }
 
-	//게시글 상세보기
-	@Override
-	public CommunityPostVO communityDetail(int postId) {
-		return dao.communityDetail(sqlSession, postId);
-	}
-
 	//게시글 첨부파일 목록 조회
 	@Override
 	public ArrayList<PostFilesVO> selectFilesByPostIds(int postId) {
@@ -156,7 +154,11 @@ public class CommunityServiceImpl implements CommunityService {
 		return dao.communityDelete(sqlSession, postId);
 	}
 
-
+	//게시글 조회수 증가
+	@Override
+	public int increaseViewCount(int postId) {
+		return dao.increaseViewCount(sqlSession, postId);
+	}
 	
 
 

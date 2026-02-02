@@ -2,6 +2,7 @@ package com.kh.spring.community.controller;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -27,8 +28,6 @@ import com.kh.spring.community.model.vo.PostFilesVO;
 import com.kh.spring.util.FileUtil;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
@@ -90,6 +89,41 @@ public class CommunityController {
 		return ResponseEntity.ok(CommunityListDTO.of(list, pi));		
 	}
     
+    //게시글 상세보기
+    @Operation(summary = "게시글 상세보기", description = "게시글 상세보기")
+    @GetMapping("/detail/{postId}")
+    public ResponseEntity<?> communityDetail(@PathVariable int postId) {
+    	
+    	try {
+    		
+    		int result = service.increaseViewCount(postId);
+        	
+        	if(result > 0) {
+        		
+        		//게시글 텍스트 정보
+        		CommunityPostVO cp = service.communityDetail(postId);
+        		
+        		//게시글 첨부파일 정보
+        		ArrayList<PostFilesVO> fileList = service.selectFilesByPostIds(postId);
+        		
+        		//텍스트와 첨부파일 데이터 하나로 묶기
+        		Map<String, Object> map = new HashMap<>();
+        		map.put("cp", cp);
+        		map.put("fileList", fileList);
+        		
+        		return ResponseEntity.ok(map);
+        		
+        	}else {
+        		return ResponseEntity.status(404)
+        							 .body("게시글을 찾을 수 없습니다.");
+        	}
+    	}catch (Exception e) {
+    		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+    							 .body("조회 중 오류 발생");
+    	}
+    	
+    }
+    
     //게시글 등록
     @Operation(summary = "게시글 등록", description = "게시글 등록")
     @PostMapping(value = "/insert", consumes = MediaType.MULTIPART_FORM_DATA_VALUE) // 1. 미디어 타입 명시
@@ -115,10 +149,10 @@ public class CommunityController {
             // 2. 파일들 가공 (강사님처럼 리스트에 먼저 담기)
             ArrayList<PostFilesVO> pfList = new ArrayList<>();
             if (uploadFiles != null && !uploadFiles.isEmpty()) {
-            	log.info("업로드된 파일 개수: {}", uploadFiles.size());
-                for (MultipartFile file : uploadFiles) {
-                	log.info("파일명: {}, 비었나: {}", file.getOriginalFilename(), file.isEmpty());
-                    if (!file.isEmpty()) {
+
+            	for (MultipartFile file : uploadFiles) {
+
+            		if (!file.isEmpty()) {
                     	String originName = file.getOriginalFilename();
                     	String changeName = fileUtil.saveFile(file); // 서버에 저장
                         
@@ -143,7 +177,6 @@ public class CommunityController {
             }
         } catch (Exception e) {
         	e.printStackTrace(); // 상세 에러 스택을 콘솔에 강제로 찍음
-            log.error("에러 원인: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 에러 발생");
         }
 	}
@@ -228,40 +261,6 @@ public class CommunityController {
 	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 에러 발생");
 	    }
     }
-	
-//	//게시글 삭제
-//    @Operation(summary = "게시글 삭제", description = "게시글 삭제")
-//	@DeleteMapping("/delete/{postId}")
-//	public ResponseEntity<?> communityDelete(@PathVariable int postId) {
-//		
-//		//postId로 게시글 조회
-//		CommunityPostVO cp = service.communityDetail(postId);
-//		
-//		if(cp == null) {
-//			return ResponseEntity.status(HttpStatus.NOT_FOUND)
-//								 .body("게시글을 찾을 수 없습니다.");
-//		}
-//		
-//		//게시글 삭제
-//		int result = service.communityDelete(postId);
-//		
-//		if(result > 0) {
-//			
-//			if(cp.getOriginName()!=null) {
-//							
-//				boolean flag = fileUtil.deleteFile(cp.getChangeName());
-//				
-//				if(!flag) {
-//					log.warn("정보 삭제는 되었지만 파일 삭제 오류 발생");
-//				}
-//			}
-//			return ResponseEntity.ok("게시글이 삭제되었습니다.");
-//		
-//		}else {
-//			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//								 .body("게시글 삭제 처리 중 오류가 발생했습니다.");
-//		}
-//	}
     
     //게시글 삭제 list 사용으로 수정
     @Operation(summary = "게시글 삭제", description = "게시글 삭제")
