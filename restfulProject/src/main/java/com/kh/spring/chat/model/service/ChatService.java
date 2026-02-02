@@ -1,0 +1,26 @@
+package com.kh.spring.chat.model.service;
+
+import java.util.List;
+
+import com.kh.spring.chat.model.dto.ChatMessageDto;
+import com.kh.spring.chat.model.dto.ChatRoomDto;
+
+public interface ChatService {
+
+    //채팅방 목록 조회
+    List<ChatRoomDto> selectChatRoomList();
+
+    //채팅방 생성
+    ChatRoomDto createChatRoom(ChatRoomDto roomDto);
+
+    //채팅방 입장 (상세 조회 check)
+    ChatRoomDto selectChatRoom(Long roomId);
+
+    //메시지 저장
+    ChatMessageDto saveMessage(ChatMessageDto messageDto);
+
+    //채팅방 메시지 내역 조회 (무한 스크롤)
+    //roomId 채팅방 ID
+    //cursorId 마지막으로 로드된 메시지 ID (첫 조회 시 null 가능)
+    List<ChatMessageDto> selectMessageList(Long roomId, Long cursorId);
+}

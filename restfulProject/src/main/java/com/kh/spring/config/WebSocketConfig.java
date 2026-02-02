@@ -12,20 +12,23 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @EnableWebSocketMessageBroker //STOMP 사용 활성화
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
+    //접속 주소 설정
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        //클라이언트(리액트)가 처음 연결할 주소 : ws://localhost:8080/ws-chat
         registry.addEndpoint("/ws-chat")
                 .setAllowedOrigins("*")
                 .withSockJS();
     }
     
+    //메시지 라우팅
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        //메시지 구독 요청(구독 주소)
+        //메시지 구독 요청(구독 주소) 기능과
+        //topic이나 queue로 시작하는 메시지는 구독중인 모든 사람에게 즉시 전달 기능
         registry.enableSimpleBroker("/topic","/queue");
+
         //메시지 발신 요청(발신 주소)
-        //app으로 시작하면 컨트롤러(@MessageMapping으로 라우팅)
+        //app으로 시작하면 컨트롤러로 보냄(@MessageMapping으로 라우팅)
         registry.setApplicationDestinationPrefixes("/app");
     }
     
