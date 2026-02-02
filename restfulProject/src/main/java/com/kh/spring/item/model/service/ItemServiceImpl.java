@@ -95,7 +95,6 @@ public class ItemServiceImpl implements ItemService {
 		}
 		// 1️ 장착하려는 아이템의 카테고리 조회
 		String category = dao.selectCategoryByUiId(sqlSession,userId, uiId);
-		
 		if (category == null) {
 		    return -2;
 		}

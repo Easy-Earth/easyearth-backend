@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 import com.kh.spring.member.model.dao.MemberDao;
 import com.kh.spring.member.model.vo.MemberVO;
 
+import java.util.List;
+
 @Service
 public class MemberServiceImpl implements MemberService {
 	
@@ -57,7 +59,11 @@ public class MemberServiceImpl implements MemberService {
 		
 		return dao.selectMemberById(sqlSession,memberId);
 	}
-	
-	
+
+	@Override
+	public List<Integer> equippedItem(String memberId) {
+		return dao.equippedItem(sqlSession, memberId);
+	}
+
 
 }

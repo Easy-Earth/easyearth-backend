@@ -128,8 +128,6 @@ public class ItemController {
 		}
 		
 	}
-<<<<<<< HEAD
-=======
 	
 	// 아이템 장착
 	@Operation(summary = "아이템 장착/해제", description = "아이템 장착/해제")
@@ -155,7 +153,6 @@ public class ItemController {
         
     }
 
->>>>>>> origin/develop
 
 	@GetMapping("/random/{memberId}")
 	@ResponseBody

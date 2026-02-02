@@ -41,4 +41,10 @@ public class EcoShopDao {
     public int reviewUpdate(SqlSessionTemplate sqlSession, Review review) {
         return sqlSession.update("ecoShopMapper.reviewUpdate", review);
     }
+    public double getAverageRating(SqlSessionTemplate sqlSession, String contsId) {
+        return sqlSession.selectOne("ecoShopMapper.getAverageRating", contsId);
+    }
+    public int getReviewCount(SqlSessionTemplate sqlSession, String contsId) {
+        return sqlSession.selectOne("ecoShopMapper.getReviewCount", contsId);
+    }
 }
