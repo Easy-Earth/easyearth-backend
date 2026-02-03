@@ -29,4 +29,7 @@ public interface ChatService {
     //roomId 채팅방 ID
     //cursorId 마지막으로 로드된 메시지 ID (첫 조회 시 null 가능)
     List<ChatMessageDto> selectMessageList(Long roomId, Long cursorId);
+    
+    // 메시지 읽음 처리 (마지막 읽은 메시지 ID 업데이트)
+    void updateReadStatus(Long roomId, Long memberId, Long lastMessageId);
 }

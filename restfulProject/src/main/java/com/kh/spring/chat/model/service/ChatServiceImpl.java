@@ -48,47 +48,80 @@ public class ChatServiceImpl implements ChatService {
             throw new IllegalArgumentException("Member not found");
         }
 
+        //채팅방들을 리스트로 반환
         return chatRooms.stream()
                 .map(entity -> {
                     int unreadCount = 0;
                     if (memberId != null) {
-                        // 안 읽은 메시지 수 계산
-                        unreadCount = countUnreadMessages(entity.getId(), memberId);
+                        // 안 읽은 메시지 수 계산 (최적화: 전체 수 - 내가 읽은 시점 수)
+                        unreadCount = countUnreadMessagesOptimized(entity, memberId);
                     }
                     
-                    return ChatRoomDto.builder()
+                    //채팅방 정보를 dto로 변환 (아래 조건문에서 완성 후 build)
+                    ChatRoomDto.ChatRoomDtoBuilder builder = ChatRoomDto.builder()
                             .chatRoomId(entity.getId())
                             .title(entity.getTitle())
                             .roomType(entity.getRoomType())
                             .lastMessageContent(entity.getLastMessageContent())
                             .lastMessageAt(entity.getLastMessageAt())
-                            .unreadCount(unreadCount)
-                            .build();
+                            .unreadCount(unreadCount);
+
+                    // 1:1 채팅방(SINGLE)이고 상대방 정보를 채워야 하는 경우
+                    if ("SINGLE".equals(entity.getRoomType()) && memberId != null) {
+                        chatRoomUserRepository.findFirstByChatRoomIdAndMemberIdNot(entity.getId(), memberId)
+                            .ifPresent(otherUser -> {
+                                builder.otherMemberName(otherUser.getMember().getName());
+                                builder.otherMemberProfile(otherUser.getMember().getProfileImageUrl());
+                                // 1:1 방의 제목이 비어있으면 상대방 이름으로 설정
+                                if (entity.getTitle() == null || entity.getTitle().isEmpty()) {
+                                    builder.title(otherUser.getMember().getName());
+                                }
+                            });
+                    }
+                    
+                    //채팅방 정보를 dto로 변환
+                    return builder.build();
                 })
                 .collect(Collectors.toList());
     }
 
-    //안 읽은 메시지 갯수
-    private int countUnreadMessages(Long chatRoomId, Long memberId) {
-        // 1. 사용자의 마지막 읽은 메시지 ID 조회
-        ChatRoomUserEntity roomUser = chatRoomUserRepository.findByChatRoomIdAndMemberId(chatRoomId, memberId)
+    // 안 읽은 메시지 갯수 (최적화 로직)
+    private int countUnreadMessagesOptimized(ChatRoomEntity chatRoom, Long memberId) {
+        // 1. 참여자 정보 조회
+        ChatRoomUserEntity roomUser = chatRoomUserRepository.findByChatRoomIdAndMemberId(chatRoom.getId(), memberId)
                 .orElse(null);
 
         if (roomUser == null) {
             return 0;
         }
 
-        Long lastReadMessageId = roomUser.getLastReadMessageId();
-        if (lastReadMessageId == null) {
-            lastReadMessageId = 0L;
-        }
-
-        // 2. 그 이후의 메시지 개수 카운트
-        return (int) chatMessageRepository.countByChatRoomIdAndIdGreaterThan(chatRoomId, lastReadMessageId);
+        // 2. 안 읽은 수 = 방 전체 메시지 수 - 내가 마지막으로 읽었을 때의 수
+        // (음수가 나오지 않도록 처리, 혹시 모를 동기화 이슈 방지)
+        long total = chatRoom.getTotalMessageCount() != null ? chatRoom.getTotalMessageCount() : 0L;
+        long read = roomUser.getLastReadMessageCount() != null ? roomUser.getLastReadMessageCount() : 0L;
+        
+        return (int) Math.max(0, total - read);
     }
-
+    
+    //채팅방 생성 로직
     @Override
     public ChatRoomDto createChatRoom(ChatRoomDto roomDto) {
+        // 1:1 채팅방이고, 생성자와 맴버가 같으면
+        if ("SINGLE".equals(roomDto.getRoomType()) && roomDto.getCreatorId() != null && roomDto.getTargetMemberId() != null) {
+             // 두 사용자 간의 1:1 방이 존재하는지 확인
+             ChatRoomEntity existingRoom = chatRoomRepository.findExistingSingleRoom(roomDto.getCreatorId(), roomDto.getTargetMemberId())
+                     .orElse(null);
+             
+             if (existingRoom != null) {
+                 return ChatRoomDto.builder()
+                         .chatRoomId(existingRoom.getId())
+                         .title(existingRoom.getTitle())
+                         .roomType(existingRoom.getRoomType())
+                         .build();
+             }
+        }
+        
+        // 없다면 기존 로직대로 새로 생성
         // 1. 채팅방 생성(db 저장)
         ChatRoomEntity entity = ChatRoomEntity.builder()
                 .title(roomDto.getTitle())
@@ -112,6 +145,21 @@ public class ChatServiceImpl implements ChatService {
             
             chatRoomUserRepository.save(roomUser);
         }
+
+        // 3. 1:1 채팅인 경우 타겟 유저도 바로 참여 처리 (KakaoTalk Style)
+        if ("SINGLE".equals(roomDto.getRoomType()) && roomDto.getTargetMemberId() != null) {
+             MemberEntity target = memberRepository.findById(roomDto.getTargetMemberId())
+                     .orElseThrow(() -> new IllegalArgumentException("Target Member not found"));
+
+             ChatRoomUserEntity targetUser = ChatRoomUserEntity.builder()
+                     .chatRoom(saved)
+                     .member(target)
+                     .joinedAt(LocalDateTime.now())
+                     .build();
+             
+             chatRoomUserRepository.save(targetUser);
+        }
+        
         //채팅방 Dto를 반환
         return ChatRoomDto.builder()
                 .chatRoomId(saved.getId())
@@ -121,7 +169,7 @@ public class ChatServiceImpl implements ChatService {
                 .build();
     }
 
-    //채팅방 입작 로직
+    //채팅방 입장 로직
     @Override
     public void joinChatRoom(Long roomId, Long memberId) {
         // 이미 참여 중인지 확인(db 조회)
@@ -145,18 +193,30 @@ public class ChatServiceImpl implements ChatService {
 
         //저장
         chatRoomUserRepository.save(roomUser);
+        
+        // [System Message] 입장 메시지 생성
+        saveSystemMessage(chatRoom, member.getName() + "님이 들어왔습니다.");
     }
 
+    //채팅방 나가기
     @Override
     public void leaveChatRoom(Long roomId, Long memberId) {
         //참여중이라면 채팅방과 멤버 정보를 매핑 엔티티에 저장
         ChatRoomUserEntity roomUser = chatRoomUserRepository.findByChatRoomIdAndMemberId(roomId, memberId)
                 .orElseThrow(() -> new IllegalArgumentException("Not participating in this room"));
         
+        //퇴장 메시지 전송을 위해 멤버 이름 조회
+        String memberName = roomUser.getMember().getName();
+        ChatRoomEntity chatRoom = roomUser.getChatRoom();
+
         //삭제
         chatRoomUserRepository.delete(roomUser);
+        
+        // [System Message] 퇴장 메시지 생성
+        saveSystemMessage(chatRoom, memberName + "님이 나갔습니다.");
     }
-
+    
+    //채팅방 상세 조회
     @Override
     @Transactional(readOnly = true)
     public ChatRoomDto selectChatRoom(Long roomId) {
@@ -168,7 +228,7 @@ public class ChatServiceImpl implements ChatService {
                         .build())
                 .orElse(null);
     }
-
+    
     //채팅방에 메시지 저장
     @Override
     public ChatMessageDto saveMessage(ChatMessageDto messageDto) {
@@ -191,7 +251,11 @@ public class ChatServiceImpl implements ChatService {
         
         ChatMessageEntity savedMessage = chatMessageRepository.save(messageEntity);
         
-        // 4. 저장된 메시지를 DTO로 변환하여 반환(갱신된 정보만 세팅)
+        // 4. 채팅방의 마지막 메시지 정보 업데이트
+        chatRoom.updateLastMessage(messageDto.getContent(), savedMessage.getCreatedAt());
+        // (Dirty checking으로 인해 transaction 종료 시 update query 실행됨)
+        
+        // 5. 저장된 메시지를 DTO로 변환하여 반환
         messageDto.setMessageId(savedMessage.getId());
         messageDto.setCreatedAt(savedMessage.getCreatedAt());
         messageDto.setSenderName(sender.getName());
@@ -199,26 +263,26 @@ public class ChatServiceImpl implements ChatService {
         
         return messageDto;
     }
+    
+    private static final int PAGE_SIZE = 30;
 
     //채팅방 메시지 조회
     @Override
     public List<ChatMessageDto> selectMessageList(Long roomId, Long cursorId) {
-        // 한 번에 불러올 메시지 개수
-        int pageSize = 30;
-        Pageable pageable = PageRequest.of(0, pageSize);
+        Pageable pageable = PageRequest.of(0, PAGE_SIZE);
         
-        Page<ChatMessageEntity> messagePage;
+        Slice<ChatMessageEntity> messageSlice;
 
         if (cursorId == null || cursorId == 0) {
             // 커서가 없으면 가장 최신 메시지부터 조회
-            messagePage = chatMessageRepository.findByChatRoomIdOrderByCreatedAtDesc(roomId, pageable);
+            messageSlice = chatMessageRepository.findByChatRoomIdOrderByCreatedAtDesc(roomId, pageable);
         } else {
             // 커서(마지막 메시지 ID)보다 작은(이전) 메시지 조회
-            messagePage = chatMessageRepository.findByChatRoomIdAndIdLessThan(roomId, cursorId, pageable);
+            messageSlice = chatMessageRepository.findByChatRoomIdAndIdLessThan(roomId, cursorId, pageable);
         }
 
         //Dto 객체로 변환
-        return messagePage.getContent().stream()
+        return messageSlice.getContent().stream()
                 .map(entity -> ChatMessageDto.builder()
                         .messageId(entity.getId())
                         .chatRoomId(entity.getChatRoom().getId())
@@ -232,5 +296,49 @@ public class ChatServiceImpl implements ChatService {
                 // DB에서 최신순(DESC)으로 가져왔으므로, 화면에 뿌릴 때는 다시 과거순(ASC)으로 뒤집어서 출력
                 .sorted(Comparator.comparing(ChatMessageDto::getCreatedAt)) 
                 .collect(Collectors.toList());
+    }
+
+    //메시지 읽음 처리 (Optimized)
+    @Override
+    public void updateReadStatus(Long roomId, Long memberId, Long lastMessageId) {
+        ChatRoomUserEntity roomUser = chatRoomUserRepository.findByChatRoomIdAndMemberId(roomId, memberId)
+                .orElseThrow(() -> new IllegalArgumentException("User is not in the room"));
+        
+        // 현재 방의 총 메시지 수를 가져와서 업데이트
+        // (채팅방에 들어오면 "현재까지 온 모든 메시지"를 읽은 것으로 간주)
+        ChatRoomEntity chatRoom = roomUser.getChatRoom();
+        Long currentTotalCount = chatRoom.getTotalMessageCount();
+        if (currentTotalCount == null) {
+            currentTotalCount = 0L;
+        }
+
+        // ID 기반 읽음 처리 업데이트
+        roomUser.updateLastReadMessageId(lastMessageId);
+        // 카운트 기반 읽음 처리 업데이트
+        roomUser.updateLastReadMessageCount(currentTotalCount);
+    }
+
+    // 시스템 메시지 저장
+    private void saveSystemMessage(ChatRoomEntity chatRoom, String content) {
+        // 시스템 메시지는 발신자가 없으므로(null) '시스템' 더미 계정을 만들어서 사용
+        // Admin 계정을 찾아서 넣는 로직으로 구현.(id가 1인 멤버가 admin)
+        MemberEntity systemSender = memberRepository.findById(1L)
+                 .orElse(null); 
+        
+        if (systemSender == null) {
+            // Admin 계정이 없으면 시스템 메시지 실패 로그만 남기고 리턴 (전체 로직 에러 방지)
+            log.warn("System Account (ID=1) not found. System message skipped: {}", content);
+            return;
+        }
+
+        ChatMessageEntity systemMessage = ChatMessageEntity.builder()
+                .chatRoom(chatRoom)
+                .sender(systemSender)
+                .content(content)
+                .messageType("SYSTEM") // ENTER, LEAVE 등 구체적으로도 가능
+                .createdAt(LocalDateTime.now())
+                .build();
+        
+        chatMessageRepository.save(systemMessage);
     }
 }

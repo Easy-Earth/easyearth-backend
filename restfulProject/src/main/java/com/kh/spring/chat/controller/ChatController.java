@@ -88,11 +88,18 @@ public class ChatController {
         return ResponseEntity.ok(chatService.selectChatRoom(roomId));
     }
     
-    @Operation(summary = "이전 채팅 내역 조회 (무한 스크롤)", description = "특정 채팅방의 이전 대화 내역을 불러옵니다. cursorId를 보내면 그 이전 메시지를 50개 가져옵니다.")
+    @Operation(summary = "채팅방 메시지 조회", description = "특정 채팅방의 메시지를 조회합니다.")
     @GetMapping("/room/{roomId}/messages")
     public ResponseEntity<List<ChatMessageDto>> getMessageList(
             @PathVariable Long roomId, 
-            @org.springframework.web.bind.annotation.RequestParam(required = false) Long cursorId) {
+            @RequestParam(required = false) Long cursorId) {
         return ResponseEntity.ok(chatService.selectMessageList(roomId, cursorId));
+    }
+    
+    @Operation(summary = "메시지 읽음 처리", description = "특정 채팅방의 모든 메시지를 읽음 처리합니다 (마지막 읽은 메시지 ID 갱신).")
+    @PostMapping("/room/{roomId}/read")
+    public ResponseEntity<Void> markAsRead(@PathVariable Long roomId, @RequestParam Long memberId, @RequestParam Long lastMessageId) {
+        chatService.updateReadStatus(roomId, memberId, lastMessageId);
+        return ResponseEntity.ok().build();
     }
 }
