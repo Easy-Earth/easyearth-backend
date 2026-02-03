@@ -7,6 +7,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.kh.spring.common.model.vo.PageInfo;
 import com.kh.spring.community.model.vo.CommunityPostVO;
+import com.kh.spring.community.model.vo.CommunityReplyVO;
 import com.kh.spring.community.model.vo.PostFilesVO;
 
 public interface CommunityService {
@@ -49,6 +50,19 @@ public interface CommunityService {
 
 	//게시글 조회수 증가
 	int increaseViewCount(int postId);
+
+    //댓글 목록 조회
+	ArrayList<CommunityReplyVO> replyList(int postId);
+	
+	//댓글 등록
+	int replyInsert(CommunityReplyVO reply);
+
+	//댓글 수정
+	int replyUpdate(CommunityReplyVO reply);
+
+	//댓글 삭제
+	int replyDelete(CommunityReplyVO reply);
+
 
 
 

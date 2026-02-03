@@ -11,12 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.kh.spring.common.model.vo.PageInfo;
 import com.kh.spring.community.model.dao.CommunityDao;
 import com.kh.spring.community.model.vo.CommunityPostVO;
+import com.kh.spring.community.model.vo.CommunityReplyVO;
 import com.kh.spring.community.model.vo.PostFilesVO;
 import com.kh.spring.util.FileUtil;
-
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 
 @Service
 public class CommunityServiceImpl implements CommunityService {
@@ -160,6 +157,46 @@ public class CommunityServiceImpl implements CommunityService {
 		return dao.increaseViewCount(sqlSession, postId);
 	}
 	
+	//댓글 목록 조회
+	@Override
+	public ArrayList<CommunityReplyVO> replyList(int postId) {
+		return dao.replyList(sqlSession, postId);
+	}
+
+	//댓글 등록
+	@Transactional
+	@Override
+	public int replyInsert(CommunityReplyVO reply) {
+		
+		//새로운 일반 댓글인 경우
+		if (reply.getParentReplyId() == 0) {
+			reply.setDepth(0);
+		}else {
+			CommunityReplyVO parent = dao.selectParentReply(sqlSession, reply.getParentReplyId());
+			
+			if(parent == null) return 0;  //부모 아이디 없으면 에러
+			
+			reply.setGroupId(parent.getGroupId());  //부모 댓글과 같은 그룹
+			reply.setDepth(parent.getDepth() + 1);  //부모 댓글보다 한 단계 깊은 계층
+		}
+		
+		
+		return dao.replyInsert(sqlSession, reply);
+	}
+
+	//댓글 수정
+	@Override
+	public int replyUpdate(CommunityReplyVO reply) {
+		return dao.replyUpdate(sqlSession, reply);
+	}
+
+	//댓글 삭제
+	@Override
+	public int replyDelete(CommunityReplyVO reply) {
+		return dao.replyDelete(sqlSession, reply);
+	}
+
+
 
 
 	

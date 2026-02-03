@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import com.kh.spring.common.model.vo.PageInfo;
 import com.kh.spring.community.model.vo.CommunityPostVO;
+import com.kh.spring.community.model.vo.CommunityReplyVO;
 import com.kh.spring.community.model.vo.PostFilesVO;
 
 @Repository
@@ -142,6 +143,34 @@ public class CommunityDao {
 	public int increaseViewCount(SqlSessionTemplate sqlSession, int postId) {
 		return sqlSession.update("communityMapper.increaseViewCount", postId);
 	}
+
+	//부모 댓글 정보 조회
+	public CommunityReplyVO selectParentReply(SqlSessionTemplate sqlSession, int parentReplyId) {
+		return sqlSession.selectOne("communityMapper.selectParentReply", parentReplyId);
+	}
+	
+	//댓글 목록 조회
+	public ArrayList<CommunityReplyVO> replyList(SqlSessionTemplate sqlSession, int postId) {
+		return (ArrayList)sqlSession.selectList("communityMapper.replyList", postId);
+	}
+
+	//댓글 등록
+	public int replyInsert(SqlSessionTemplate sqlSession, CommunityReplyVO reply) {
+		return sqlSession.insert("communityMapper.replyInsert", reply);
+	}
+
+	//댓글 수정
+	public int replyUpdate(SqlSessionTemplate sqlSession, CommunityReplyVO reply) {
+		return sqlSession.update("communityMapper.replyUpdate", reply);
+	}
+
+	//댓글 삭제
+	public int replyDelete(SqlSessionTemplate sqlSession, CommunityReplyVO reply) {
+		return sqlSession.delete("communityMapper.replyDelete", reply);
+	}
+
+
+	
 
 	
 	

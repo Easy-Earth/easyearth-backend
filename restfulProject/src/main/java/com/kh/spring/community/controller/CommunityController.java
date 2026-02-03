@@ -24,7 +24,9 @@ import com.kh.spring.common.template.Pagination;
 import com.kh.spring.community.model.service.CommunityService;
 import com.kh.spring.community.model.vo.CommunityListDTO;
 import com.kh.spring.community.model.vo.CommunityPostVO;
+import com.kh.spring.community.model.vo.CommunityReplyVO;
 import com.kh.spring.community.model.vo.PostFilesVO;
+import com.kh.spring.member.model.vo.MemberVO;
 import com.kh.spring.util.FileUtil;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -46,7 +48,7 @@ public class CommunityController {
 	
 	//게시글 목록 || 검색 목록 || 필터링 목록
     @Operation(summary = "게시글 목록 조회", description = "전체 목록 || 검색 목록 || 필터링 목록")
-	@GetMapping("/list")
+	@GetMapping("/post/list")
 	public ResponseEntity<CommunityListDTO> communityList(
 			@RequestParam(value="page", defaultValue = "1") int currentPage,
 	        @RequestParam(defaultValue = "10") int size,
@@ -91,7 +93,7 @@ public class CommunityController {
     
     //게시글 상세보기
     @Operation(summary = "게시글 상세보기", description = "게시글 상세보기")
-    @GetMapping("/detail/{postId}")
+    @GetMapping("/post/detail/{postId}")
     public ResponseEntity<?> communityDetail(@PathVariable int postId) {
     	
     	try {
@@ -126,7 +128,7 @@ public class CommunityController {
     
     //게시글 등록
     @Operation(summary = "게시글 등록", description = "게시글 등록")
-    @PostMapping(value = "/insert", consumes = MediaType.MULTIPART_FORM_DATA_VALUE) // 1. 미디어 타입 명시
+    @PostMapping(value = "/post/insert", consumes = MediaType.MULTIPART_FORM_DATA_VALUE) // 1. 미디어 타입 명시
     public ResponseEntity<?> communityInsert(
     		HttpSession session,
  		    @RequestParam("memberId") int memberId,
@@ -146,7 +148,7 @@ public class CommunityController {
 	        cp.setCategory(category);
 	        cp.setHasFiles(uploadFiles != null && !uploadFiles.isEmpty() ? 1 : 0);
             
-            // 2. 파일들 가공 (강사님처럼 리스트에 먼저 담기)
+            // 2. 파일들 가공
             ArrayList<PostFilesVO> pfList = new ArrayList<>();
             if (uploadFiles != null && !uploadFiles.isEmpty()) {
 
@@ -176,14 +178,13 @@ public class CommunityController {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("게시글 등록 실패");
             }
         } catch (Exception e) {
-        	e.printStackTrace(); // 상세 에러 스택을 콘솔에 강제로 찍음
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 에러 발생");
         }
 	}
 	
     //게시글 수정
     @Operation(summary = "게시글 수정", description = "게시글 수정")
-	@PutMapping(value = "/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@PutMapping(value = "/post/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<?> communityUpdate(
 	    @RequestParam("postId") int postId,
 	    @RequestParam("memberId") int memberId,
@@ -264,7 +265,7 @@ public class CommunityController {
     
     //게시글 삭제 list 사용으로 수정
     @Operation(summary = "게시글 삭제", description = "게시글 삭제")
-	@DeleteMapping("/delete/{postId}")
+	@DeleteMapping("/post/delete/{postId}")
 	public ResponseEntity<?> communityDelete(@PathVariable int postId) {
 		
 		//postId로 게시글 조회
@@ -301,13 +302,87 @@ public class CommunityController {
 				.body("게시글 삭제 처리 중 오류가 발생했습니다.");
     }
     
+    //댓글 목록 조회
+    @Operation(summary = "댓글 목록 조회", description = "댓글 목록 조회")
+    @GetMapping("/reply/list/{postId}")
+    public ResponseEntity<?> replyList(@PathVariable int postId) {
+    	
+    	ArrayList<CommunityReplyVO> rList = service.replyList(postId);
+    	
+    	return ResponseEntity.ok(rList);
+    }
     
+    //댓글 등록
+    @Operation(summary = "댓글 등록", description = "댓글 등록")
+	@PostMapping("/reply/insert/{postId}")
+    public ResponseEntity<?> replyInsert(@PathVariable int postId,
+    							 		 @RequestParam("memberId") int memberId,
+    							 		 @RequestParam("content") String content,
+    							 		 @RequestParam(value = "parentReplyId", defaultValue = "0") int parentReplyId
+    							
+    ) {
+    	
+    	CommunityReplyVO reply = new CommunityReplyVO();
+    	reply.setPostId(postId);
+    	reply.setMemberId(memberId);
+    	reply.setContent(content);
+    	reply.setParentReplyId(parentReplyId);
+    	
+    	int result = service.replyInsert(reply);
+    	
+    	if (result > 0) {
+    		return ResponseEntity.ok("댓글 등록 성공");
+    	}else {
+    		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+    							 .body("댓글 등록 실패");
+    	}
+    }
+
+    //댓글 수정
+    @Operation(summary = "댓글 수정", description = "댓글 수정")
+	@PostMapping("/reply/update/{postId}")
+    public ResponseEntity<?> replyUpdate(@PathVariable int postId,
+    									 @RequestParam int replyId,
+    									 @RequestParam int memberId,
+    									 @RequestParam String content
+    ) {
+    	CommunityReplyVO reply = new CommunityReplyVO();
+    	reply.setPostId(postId);
+    	reply.setReplyId(replyId);
+    	reply.setMemberId(memberId);
+    	reply.setContent(content);
+    	
+    	int result = service.replyUpdate(reply);
+    	
+    	if (result > 0) {
+    		return ResponseEntity.ok("댓글 수정 성공");
+    	}else {
+    		return ResponseEntity.status(HttpStatus.FORBIDDEN)
+    							 .body("댓글 작성자가 아닙니다.");
+    	}
+    }
     
-    
-    
-    
-    
-    
+    //댓글 수정
+    @Operation(summary = "댓글 삭제", description = "댓글 삭제")
+	@PostMapping("/reply/delete/{postId}")
+    public ResponseEntity<?> replyDelete(@PathVariable int postId,
+    									 @RequestParam int replyId,
+    									 @RequestParam int memberId
+    ) {
+    	CommunityReplyVO reply = new CommunityReplyVO();
+    	reply.setPostId(postId);
+    	reply.setReplyId(replyId);
+    	reply.setMemberId(memberId);
+    	
+    	int result = service.replyDelete(reply);
+    	
+    	if (result > 0) {
+    		return ResponseEntity.ok("댓글 삭제 성공");
+    	}else {
+    		return ResponseEntity.status(HttpStatus.FORBIDDEN)
+    							 .body("댓글 작성자가 아닙니다.");
+    	}
+    }
     
     
 }

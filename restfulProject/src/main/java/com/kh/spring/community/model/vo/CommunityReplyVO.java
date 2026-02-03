@@ -22,6 +22,9 @@ public class CommunityReplyVO {
 //	REPORT_COUNT	NUMBER	No	0 	7	댓글 신고 누적 수
 //	CREATED_AT	DATE	No	SYSDATE 	8	작성 일시
 //	UPDATED_AT	DATE	No	SYSDATE 	9	수정 일시
+//	GROUP_ID	NUMBER	No		10	댓글 그룹 번호
+//	DEPTH	NUMBER	No	0 	11	계층 깊이 (0: 댓글, 1 이상: 대댓글)
+//	STATUS	VARCHAR2(1 BYTE)	No	'N' 	12	삭제 상태 (N: 정상, Y: 삭제됨)
 	
 	private int replyId;
 	private int postId;
@@ -32,5 +35,8 @@ public class CommunityReplyVO {
 	private int reportCount;
 	private Date createdAt;
 	private Date updatedAt;
+	private int groupId;
+	private int depth;
+	private String status;
 	
 }
