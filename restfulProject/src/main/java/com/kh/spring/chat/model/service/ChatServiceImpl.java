@@ -16,6 +16,7 @@ import com.kh.spring.chat.model.repository.ChatMessageRepository;
 import com.kh.spring.chat.model.repository.ChatRoomRepository;
 import com.kh.spring.chat.model.repository.ChatRoomUserRepository;
 import com.kh.spring.chat.model.repository.MemberRepository;
+import com.kh.spring.chat.model.repository.MessageReactionRepository;
 import com.kh.spring.chat.model.vo.ChatMessageEntity;
 import com.kh.spring.chat.model.vo.ChatRoomEntity;
 import com.kh.spring.chat.model.vo.ChatRoomUserEntity;
@@ -368,7 +369,7 @@ public class ChatServiceImpl implements ChatService {
         chatMessageRepository.save(systemMessage);
     }
 
-    private final com.kh.spring.chat.model.repository.MessageReactionRepository messageReactionRepository;
+    private final MessageReactionRepository messageReactionRepository;
 
     // 리액션 토글 로직
     @Override
