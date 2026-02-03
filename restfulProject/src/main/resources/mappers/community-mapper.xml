@@ -174,45 +174,6 @@
  			</foreach>
  		) A
  	</insert>
- 	
- 	<!-- 첨부파일 목록 -->
- 	<select id="postFileList" resultType="PostFilesVO">
- 		SELECT POST_ID
- 			  ,ORIGIN_NAME
- 			  ,CHANGE_NAME
- 		FROM POST_FILES
- 		WHERE POST_ID_SEQ = #{postId}
- 		ORDER BY FILES_ID
- 	</select>
- 	
- 	<!-- 게시글 수정 -->
- 	<update id="communityUpdate" parameterType="CommunityPostVO">
- 		UPDATE COMMUNITY_POST
- 		SET
-		POST_ID = #{postId}
-		,MEMBER_ID = #{memberId}
- 		,TITLE = #{title}
- 		,CONTENT = #{content}
- 		,HAS_FILES = #{hasFiles}
- 		,UPDATED_AT = SYSDATE
- 		,CATEGORY = #{category}
-
- 	</update>
- 	
- 	<!-- 게시글 수정 - 삭제할 첨부파일 -->
- 	<select id="selectOldFile" resultType="PostFilesVO">
- 		SELECT FILES_ID
- 				,CHANGE_NAME 
- 		FROM POST_FILES
- 		WHERE FILES_ID = #{filesId}
- 	</select>
- 	
- 	<!-- 게시글 수정 - 선택한 첨부파일 삭제 -->
- 	<delete id="deleteOldFile">
- 		DELETE FROM POST_FILES
- 		WHERE 
- 		FILES_ID = #{filesId}
- 	</delete>
  
  	<!-- 게시글 수정 - 텍스트 정보 수정 -->
     <update id="updatePost" parameterType="CommunityPostVO">
@@ -298,5 +259,84 @@
 		SET VIEW_COUNT = VIEW_COUNT + 1
 		WHERE POST_ID = #{postId}
 	</update> 
+	
+	<!-- 댓글 목록 조회 -->
+	<select id="replyList" parameterType="_int" resultType="CommunityReplyVO">
+		SELECT R.REPLY_ID
+			  ,R.POST_ID
+			  ,R.MEMBER_ID
+			  ,CASE
+			  	WHEN R.STATUS = 'N' THEN TO_CLOB('삭제된 댓글입니다.')
+			  	ELSE R.CONTENT
+			  END AS CONTENT
+			  ,R.PARENT_REPLY_ID
+			  ,R.GROUP_ID
+			  ,R.DEPTH
+			  ,R.UPDATED_AT
+			  ,R.STATUS
+		FROM COMMUNITY_REPLY R
+		JOIN MEMBER M ON R.MEMBER_ID = M.MEMBER_ID
+		WHERE R.POST_ID = #{postId}
+		ORDER BY R.GROUP_ID DESC,
+				 R.REPLY_ID ASC
+			  
+	</select>
+	
+	<!-- 부모 댓글 정보 조회  -->
+	<select id="selectParentReply" parameterType="_int" resultType="CommunityReplyVO">
+		SELECT * 
+		FROM COMMUNITY_REPLY 
+		WHERE REPLY_ID = #{replyId}
+	</select>
+	
+	<!-- 댓글 등록 -->
+	<insert id="replyInsert" parameterType="CommunityReplyVO">
+		<selectKey keyProperty="replyId" resultType="_int" order="BEFORE">
+			SELECT REPLY_ID_SEQ.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO 
+		COMMUNITY_REPLY (REPLY_ID
+						,POST_ID
+						,MEMBER_ID
+						,PARENT_REPLY_ID
+						,CONTENT
+						,GROUP_ID
+						,DEPTH
+						,STATUS
+		) VALUES ( #{replyId}
+				  ,#{postId}
+				  ,#{memberId}
+				  ,
+				  <choose>
+				  	<when test="parentReplyId == 0">NULL</when>
+				  	<otherwise>#{parentReplyId}</otherwise>
+				  </choose>
+				  ,#{content}
+				  ,
+				  <choose>
+				  	<when test="parentReplyId != 0">#{groupId}</when>
+				  	<otherwise>#{replyId}</otherwise>
+				  </choose>
+				  ,#{depth}
+				  ,'Y'
+		)
+	</insert>
+	
+	<!-- 댓글 수정 -->
+	<update id="replyUpdate" parameterType="CommunityReplyVO">
+		UPDATE COMMUNITY_REPLY
+		SET CONTENT = #{content}
+		WHERE REPLY_ID = #{replyId}
+		AND MEMBER_ID = #{memberId}
+	</update>
+	
+	<!-- 댓글 삭제 -->
+ 	<update id="replyDelete" parameterType="CommunityReplyVO">
+ 		UPDATE COMMUNITY_REPLY
+ 		SET STATUS = 'N'
+ 		WHERE REPLY_ID = #{replyId}
+ 		AND MEMBER_ID = #{memberId}
+ 	</update>
+ 	
  	
 </mapper>
