@@ -56,5 +56,18 @@
         , CONTENT = #{content}
         WHERE ESR_ID = #{esrId}
     </update>
-
+<!--    평균평점 가져오기-->
+    <select id="getAverageRating" parameterType="string" resultType="double">
+        SELECT NVL(AVG(RATING), 0)
+        FROM ECO_SHOP_REVIEW R
+        JOIN ECO_SHOP S ON R.SHOP_ID = S.SHOP_ID
+        WHERE S.CONTS_ID = #{contsId}
+    </select>
+<!--리뷰 개수-->
+    <select id="getReviewCount" parameterType="string" resultType="_int">
+        SELECT COUNT(*)
+        FROM ECO_SHOP_REVIEW R
+        JOIN ECO_SHOP S ON R.SHOP_ID = S.SHOP_ID
+        WHERE S.CONTS_ID = #{contsId}
+    </select>
 </mapper>

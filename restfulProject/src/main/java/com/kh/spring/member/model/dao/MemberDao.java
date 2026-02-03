@@ -5,6 +5,8 @@ import org.springframework.stereotype.Repository;
 
 import com.kh.spring.member.model.vo.MemberVO;
 
+import java.util.List;
+
 @Repository
 public class MemberDao {
 	
@@ -44,6 +46,8 @@ public class MemberDao {
 		return sqlSession.selectOne("memberMapper.selectMemberById",memberId);
 	}
 
-	
 
+    public List<Integer> equippedItem(SqlSession sqlSession, String memberId) {
+		return sqlSession.selectList("memberMapper.equippedItem", memberId);
+    }
 }

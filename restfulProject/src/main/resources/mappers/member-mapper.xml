@@ -87,8 +87,13 @@
 	    FROM MEMBER
 	    WHERE MEMBER_ID = #{memberId}
 	</select>
-	
 
+	<!--장착 아이템 조회-->
+	<select id ="equippedItem" parameterType="string" resultType="int">
+		SELECT ITEM_ID
+		FROM USER_ITEMS
+		WHERE USER_ID = #{memberId} AND IS_EQUIPPED = 'Y'
+	</select>
   	
   
 </mapper>

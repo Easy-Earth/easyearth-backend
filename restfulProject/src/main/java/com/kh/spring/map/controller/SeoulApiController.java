@@ -11,7 +11,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/seoul")
 @RequiredArgsConstructor
-@Tag(name = "서울맵 API", description = "서울맵 API")
+@Tag(name = "서울맵 API", description = "서울맵 API(필터링 / 상세조회)")
 public class SeoulApiController {
 
     private final SeoulMapService seoulMapService;
@@ -32,7 +32,7 @@ public class SeoulApiController {
         return seoulMapService.getFilteredMapData(themeIds, x, y, distance, keyword);
     }
 
-    @Operation(summary = "상세정보 조회 (데이터베이스 저장)", description = "가게 상세정보 조회하는 API zerowaste_0054")
+    @Operation(summary = "상세정보 조회 (데이터베이스 저장)", description = "가게 상세정보 조회하는 API ex). zerowaste_0054")
     @GetMapping("/detail")
     public String detail(
             @RequestParam(defaultValue = "11103395") String themeId,

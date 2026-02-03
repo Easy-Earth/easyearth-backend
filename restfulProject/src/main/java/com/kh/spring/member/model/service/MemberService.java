@@ -2,6 +2,8 @@ package com.kh.spring.member.model.service;
 
 import com.kh.spring.member.model.vo.MemberVO;
 
+import java.util.List;
+
 public interface MemberService {
 	
 	//회원가입
@@ -21,6 +23,7 @@ public interface MemberService {
 
 	//회원 정보 조회
 	MemberVO selectMemberById(int memberId);
-	
 
+
+    List<Integer> equippedItem(String memberId);
 }

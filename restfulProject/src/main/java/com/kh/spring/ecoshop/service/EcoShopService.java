@@ -51,4 +51,11 @@ public class EcoShopService {
     public int reviewUpdate(Review review) {
         return ecoShopDao.reviewUpdate(sqlSession, review);
     }
+
+    public double getAverageRating(String contsId) {
+        return ecoShopDao.getAverageRating(sqlSession, contsId);
+    }
+    public int getReviewCount(String contsId) {
+        return ecoShopDao.getReviewCount(sqlSession, contsId);
+    }
 }

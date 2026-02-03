@@ -1,6 +1,7 @@
 package com.kh.spring.member.controller;
 
 import java.util.HashMap;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -249,7 +250,19 @@ public class MemberController {
         }
     }
 	
-		
+
+    //장착중인 아이템
+    @Operation(summary = "장착중인 아이템" , description = "장착중인 아이템 확인")
+    @GetMapping("/equipped/{memberId}")
+    public ResponseEntity<?> equippedItem(@PathVariable String memberId) {
+        List<Integer> itemList = service.equippedItem(memberId);
+        if(itemList != null && !itemList.isEmpty()) {
+            return ResponseEntity.ok(itemList);
+        }
+        else {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("존재하지 않습니다.");
+        }
+    }
 	
 	
 	
