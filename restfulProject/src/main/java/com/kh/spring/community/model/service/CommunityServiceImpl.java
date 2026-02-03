@@ -2,6 +2,7 @@ package com.kh.spring.community.model.service;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.mybatis.spring.SqlSessionTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -196,7 +197,41 @@ public class CommunityServiceImpl implements CommunityService {
 		return dao.replyDelete(sqlSession, reply);
 	}
 
+	//게시글 좋아요
+	@Override
+	public String communityLikes(Map<String, Object> map) {
+		
+		//이미 좋아요를 누른 게시글인지 확인
+		int count = dao.checkPostLike(sqlSession, map);
 
+		if (count == 0) {
+			dao.insertPostLike(sqlSession, map);
+			return "LIKE_INSERT";
+			
+		}else {
+			dao.changePostLike(sqlSession, map);
+			return "LIKE_CHANGE";
+		}
+		
+		
+	}
+
+	//댓글 좋아요
+	@Override
+	public String replyLikes(Map<String, Object> map) {
+		
+		//이미 좋아요를 누른 댓글인지 확인
+		int count = dao.checkReplyLike(sqlSession, map);
+		
+		if (count == 0) {
+			dao.insertReplyLike(sqlSession, map);
+			return "LIKE_INSERT";
+		}else {
+			dao.changeReplyLike(sqlSession, map);
+			return "LIKE_CHANGE";
+		}
+
+	}
 
 
 	
