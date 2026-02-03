@@ -2,6 +2,7 @@ package com.kh.spring.community.model.dao;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.ibatis.session.RowBounds;
 import org.mybatis.spring.SqlSessionTemplate;
@@ -167,6 +168,36 @@ public class CommunityDao {
 	//댓글 삭제
 	public int replyDelete(SqlSessionTemplate sqlSession, CommunityReplyVO reply) {
 		return sqlSession.delete("communityMapper.replyDelete", reply);
+	}
+
+	//이미 좋아요를 누른 글인지 확인
+	public int checkPostLike(SqlSessionTemplate sqlSession, Map<String, Object> map) {
+		return sqlSession.selectOne("communityMapper.checkPostLike", map);
+	}
+	
+	//게시글 좋아요 등록
+	public int insertPostLike(SqlSessionTemplate sqlSession, Map<String, Object> map) {
+		return sqlSession.insert("communityMapper.insertPostLike", map);
+	}
+
+	//게시글 좋아요 상태 변경
+	public int changePostLike(SqlSessionTemplate sqlSession, Map<String, Object> map) {
+		return sqlSession.update("communityMapper.changePostLike", map);
+	}
+
+	//이미 좋아요를 누른 댓글인지 확인
+	public int checkReplyLike(SqlSessionTemplate sqlSession, Map<String, Object> map) {
+		return sqlSession.selectOne("communityMapper.checkReplyLike", map);
+	}
+
+	//댓글 좋아요 등록
+	public int insertReplyLike(SqlSessionTemplate sqlSession, Map<String, Object> map) {
+		return sqlSession.insert("communityMapper.insertReplyLike", map);
+	}
+
+	//댓글 좋아요 상태 변경
+	public int changeReplyLike(SqlSessionTemplate sqlSession, Map<String, Object> map) {
+		return sqlSession.update("communityMapper.insertReplyLike", map);
 	}
 
 
