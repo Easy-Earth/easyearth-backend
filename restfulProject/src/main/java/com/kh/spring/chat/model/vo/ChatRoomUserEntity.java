@@ -21,9 +21,12 @@ import lombok.Getter;
 @Table(name = "CHAT_ROOM_USER", indexes = {
         @Index(name = "IDX_ROOM_MEMBER_COMP", columnList = "CHAT_ROOM_ID, MEMBER_ID")
 })
+@lombok.Builder
+@lombok.NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
+@lombok.AllArgsConstructor
 public class ChatRoomUserEntity {
 	
-	protected ChatRoomUserEntity() {}
+
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
