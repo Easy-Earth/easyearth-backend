@@ -2,6 +2,7 @@ package com.kh.spring.map.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.kh.spring.ecoshop.service.EcoShopService;
 import com.kh.spring.ecoshop.vo.EcoShop;
@@ -21,17 +22,52 @@ public class SeoulMapService {
 
     /**
      * 테마 필터링 데이터를 조회합니다.
+     * 수정: 서울시 API의 다중 테마 요청 제약을 우회하기 위해
+     * 각 테마 ID별로 개별 호출 후 결과를 병합합니다.
      */
     public String getFilteredMapData(List<String> themeIds, Double x, Double y, Integer distance, String keyword) {
-        String combinedThemeIds = String.join(",", themeIds);
-        return seoulMapClient.fetchMapData(combinedThemeIds, x, y, distance, keyword);
+        if (themeIds == null || themeIds.isEmpty()) {
+            return "{\"body\": []}";
+        }
+
+        try {
+            // 모든 결과를 담을 통합 배열 생성
+            ArrayNode combinedArray = objectMapper.createArrayNode();
+            ObjectNode rootNode = objectMapper.createObjectNode();
+
+            for (String themeId : themeIds) {
+                try {
+                    // 1. 각 테마 ID별로 독립적인 API 호출 (400 에러 방지)
+                    String jsonResponse = seoulMapClient.fetchMapData(themeId, x, y, distance, keyword);
+
+                    // 2. 응답 데이터 파싱 및 body 추출
+                    JsonNode responseRoot = objectMapper.readTree(jsonResponse);
+                    JsonNode bodyNode = responseRoot.path("body");
+
+                    // 3. body 내의 아이템들을 통합 배열에 추가
+                    if (bodyNode.isArray()) {
+                        for (JsonNode item : bodyNode) {
+                            combinedArray.add(item);
+                        }
+                    }
+                } catch (Exception e) {
+                    log.error("테마 ID [{}] 조회 중 오류 발생: {}", themeId, e.getMessage());
+                    // 특정 테마 호출 실패 시에도 다른 테마 조회를 위해 루프 계속 진행
+                }
+            }
+
+            // 4. 최종 합쳐진 데이터를 {"body": [...]} 구조로 반환
+            rootNode.set("body", combinedArray);
+            return objectMapper.writeValueAsString(rootNode);
+
+        } catch (Exception e) {
+            log.error("데이터 병합 처리 중 치명적 오류 발생: {}", e.getMessage());
+            return "{\"body\": []}";
+        }
     }
 
     /**
-     * 상세정보 조회 시:
-     * 1. 외부 API 데이터 수신
-     * 2. DB에 해당 가게 정보 자동 저장 (중복 체크 포함)
-     * 3. 우리 DB에서 평균 평점(avgRating)과 리뷰 개수(reviewCount)를 조회하여 JSON에 추가
+     * 상세정보 조회 (기존 로직 유지)
      */
     public String getDetail(String themeId, String contsId) {
         // 1. 서울시 외부 API로부터 상세 정보 JSON 수신
@@ -66,24 +102,22 @@ public class SeoulMapService {
                 }
 
                 // --- [신규 기능] 평균 평점 및 리뷰 개수 데이터 결합 ---
-                // 2. 우리 DB에서 통계 데이터 조회
                 double avgRating = ecoShopService.getAverageRating(contsId);
                 int reviewCount = ecoShopService.getReviewCount(contsId);
 
-                // 3. Jackson ObjectNode를 사용하여 응답 JSON에 필드 추가
+                // Jackson ObjectNode를 사용하여 응답 JSON에 필드 추가
                 if (item instanceof ObjectNode) {
                     ObjectNode objectNode = (ObjectNode) item;
                     objectNode.put("avgRating", avgRating);
                     objectNode.put("reviewCount", reviewCount);
                 }
 
-                // 수정된 데이터가 포함된 전체 JSON 구조를 문자열로 반환
                 return root.toString();
             }
         } catch (Exception e) {
             log.error("상세 정보 처리 중 에러 발생: {}", e.getMessage());
         }
 
-        return detailJson; // 에러 발생 시 원본 데이터 반환
+        return detailJson;
     }
 }
