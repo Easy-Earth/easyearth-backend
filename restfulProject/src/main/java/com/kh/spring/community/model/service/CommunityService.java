@@ -2,6 +2,7 @@ package com.kh.spring.community.model.service;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.springframework.web.multipart.MultipartFile;
 
@@ -63,7 +64,12 @@ public interface CommunityService {
 	//댓글 삭제
 	int replyDelete(CommunityReplyVO reply);
 
+	//게시글 좋아요
+	String communityLikes(Map<String, Object> map);
 
+	//댓글 좋아요
+	String replyLikes(Map<String, Object> map);
+	
 
 
 
