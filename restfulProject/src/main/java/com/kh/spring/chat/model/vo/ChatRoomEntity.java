@@ -45,8 +45,17 @@ public class ChatRoomEntity {
     @Column(name = "LAST_MESSAGE_AT")
     private LocalDateTime lastMessageAt;
 
+    @lombok.Builder.Default
+    @Column(name = "TOTAL_MESSAGE_COUNT", columnDefinition = "NUMBER DEFAULT 0")
+    private Long totalMessageCount = 0L;
+
     @CreationTimestamp
     @Column(name = "CREATED_AT")
     private LocalDateTime createdAt;
     
+    public void updateLastMessage(String content, LocalDateTime at) {
+        this.lastMessageContent = content;
+        this.lastMessageAt = at;
+        this.totalMessageCount = (this.totalMessageCount == null ? 0 : this.totalMessageCount) + 1;
+    }
 }

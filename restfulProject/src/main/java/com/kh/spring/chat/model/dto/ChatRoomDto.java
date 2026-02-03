@@ -15,6 +15,7 @@ public class ChatRoomDto {
     
     private Long chatRoomId;
     private Long creatorId; // 방 생성자 ID
+    private Long targetMemberId; // 1:1 채팅 상대방 ID (생성 시 사용)
     private String title;
     private String roomType; // SINGLE, GROUP
     private String lastMessageContent;
