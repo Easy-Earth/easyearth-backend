@@ -384,5 +384,39 @@ public class CommunityController {
     	}
     }
     
+    //게시글 좋아요 기능 (등록 / 취소)
+    @Operation(summary = "게시글 좋아요", description = "게시글 좋아요")
+    @PostMapping("/post/{postId}/likes") 
+    public ResponseEntity<?> communityLikes (@PathVariable int postId,
+    									  	 @RequestParam int memberId
+    ) {
+    	Map<String, Object> map = new HashMap<>();
+    	map.put("postId", postId);
+    	map.put("memberId", memberId);
+    	
+    	String result = service.communityLikes(map);
+    	
+    	return ResponseEntity.ok(result);
+    	
+    }
+    
+    //댓글 좋아요 기능 (등록 / 취소)
+    @Operation(summary = "댓글 좋아요", description = "댓글 좋아요")
+    @PostMapping("/reply/{postId}/likes") 
+    public ResponseEntity<?> replyLikes (@PathVariable int postId,
+    									 @RequestParam int replyId,
+									  	 @RequestParam int memberId
+    ) {
+    	Map<String, Object> map = new HashMap<>();
+    	map.put("postId", postId);
+    	map.put("replyId", replyId);
+    	map.put("memberId", memberId);
+    	
+    	String result = service.replyLikes(map);
+    	
+    	return ResponseEntity.ok(result);
+    	
+    }
+    
     
 }
