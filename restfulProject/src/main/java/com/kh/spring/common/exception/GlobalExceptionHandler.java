@@ -11,7 +11,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@RestControllerAdvice
+@RestControllerAdvice //RestController에서 발생하는 예외를 처리하도록 설정
 public class GlobalExceptionHandler {
 
     // 1. 잘못된 요청 (IllegalArgumentException) -> 400 Bad Request
@@ -35,6 +35,7 @@ public class GlobalExceptionHandler {
         return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", request);
     }
 
+    // 에러 응답 생성 헬퍼 메서드
     private ResponseEntity<ErrorResponse> createErrorResponse(HttpStatus status, String message, HttpServletRequest request) {
         return ResponseEntity.status(status)
                 .body(ErrorResponse.of(
