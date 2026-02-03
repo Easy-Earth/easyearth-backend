@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Optional;
 
 import com.kh.spring.chat.model.dto.ChatMessageDto;
 import com.kh.spring.chat.model.dto.ChatRoomDto;
@@ -19,6 +20,7 @@ import com.kh.spring.chat.model.vo.ChatMessageEntity;
 import com.kh.spring.chat.model.vo.ChatRoomEntity;
 import com.kh.spring.chat.model.vo.ChatRoomUserEntity;
 import com.kh.spring.chat.model.vo.MemberEntity;
+import com.kh.spring.chat.model.vo.MessageReactionEntity;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -268,7 +270,7 @@ public class ChatServiceImpl implements ChatService {
 
     //채팅방 메시지 조회
     @Override
-    public List<ChatMessageDto> selectMessageList(Long roomId, Long cursorId) {
+    public List<ChatMessageDto> selectMessageList(Long roomId, Long cursorId, Long memberId) {
         Pageable pageable = PageRequest.of(0, PAGE_SIZE);
         
         Slice<ChatMessageEntity> messageSlice;
@@ -283,7 +285,29 @@ public class ChatServiceImpl implements ChatService {
 
         //Dto 객체로 변환
         return messageSlice.getContent().stream()
-                .map(entity -> ChatMessageDto.builder()
+                .map(entity -> {
+                    // 리액션 가공
+                    List<ChatMessageDto.ReactionSummary> reactionSummaries = entity.getReactions().stream()
+                        .collect(Collectors.groupingBy(MessageReactionEntity::getEmojiType))
+                        .entrySet().stream()
+                        .map(entry -> {
+                            String emoji = entry.getKey();
+                            List<MessageReactionEntity> list = entry.getValue();
+                            
+                            boolean me = false;
+                            if (memberId != null) {
+                                me = list.stream().anyMatch(r -> r.getMember().getId().equals(memberId));
+                            }
+                            
+                            return ChatMessageDto.ReactionSummary.builder()
+                                    .emojiType(emoji)
+                                    .count(list.size())
+                                    .selectedByMe(me)
+                                    .build();
+                        })
+                        .collect(Collectors.toList());
+
+                    return ChatMessageDto.builder()
                         .messageId(entity.getId())
                         .chatRoomId(entity.getChatRoom().getId())
                         .senderId(entity.getSender().getId())
@@ -292,7 +316,9 @@ public class ChatServiceImpl implements ChatService {
                         .content(entity.getContent())
                         .messageType(entity.getMessageType())
                         .createdAt(entity.getCreatedAt())
-                        .build())
+                        .reactions(reactionSummaries)
+                        .build();
+                })
                 // DB에서 최신순(DESC)으로 가져왔으므로, 화면에 뿌릴 때는 다시 과거순(ASC)으로 뒤집어서 출력
                 .sorted(Comparator.comparing(ChatMessageDto::getCreatedAt)) 
                 .collect(Collectors.toList());
@@ -340,5 +366,44 @@ public class ChatServiceImpl implements ChatService {
                 .build();
         
         chatMessageRepository.save(systemMessage);
+    }
+
+    private final com.kh.spring.chat.model.repository.MessageReactionRepository messageReactionRepository;
+
+    // 리액션 토글 로직
+    @Override
+    public void toggleReaction(Long messageId, Long memberId, String emojiType) {
+        // 1. 메시지 존재 확인
+        ChatMessageEntity message = chatMessageRepository.findById(messageId)
+                .orElseThrow(() -> new IllegalArgumentException("Message not found"));
+
+        // 2. 멤버 존재 확인
+        MemberEntity member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("Member not found"));
+
+        // 3. 기존 리액션 확인
+        Optional<MessageReactionEntity> existingReactionOpt = 
+                messageReactionRepository.findByChatMessageIdAndMemberId(messageId, memberId);
+
+        if (existingReactionOpt.isPresent()) {
+            MessageReactionEntity existingReaction = existingReactionOpt.get();
+            
+            if (existingReaction.getEmojiType().equals(emojiType)) {
+                // 3-1. 같은 이모지면 삭제 (토글 Off)
+                messageReactionRepository.delete(existingReaction);
+            } else {
+                // 3-2. 다른 이모지면 업데이트 (변경)
+                existingReaction.updateEmoji(emojiType);
+            }
+        } else {
+            // 4. 없으면 신규 생성
+            MessageReactionEntity reaction = MessageReactionEntity.builder()
+                    .chatMessage(message)
+                    .member(member)
+                    .emojiType(emojiType)
+                    .build();
+            
+            messageReactionRepository.save(reaction);
+        }
     }
 }
