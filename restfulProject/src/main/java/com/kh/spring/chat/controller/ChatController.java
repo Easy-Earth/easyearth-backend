@@ -5,11 +5,13 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.kh.spring.chat.model.dto.ChatMessageDto;
@@ -35,11 +37,11 @@ public class ChatController {
     // 1. 실시간 채팅 (WebSocket/STOMP)
     // ======================================================================
     
-    /**
-     * 클라이언트가 /app/chat/message 로 메시지를 보내면 이 메소드가 실행됩니다.
-     * 처리 후 /topic/chat/room/{roomId} 로 구독자들에게 메시지를 전송합니다.
+    /*
+     * 클라이언트가 /app/chat/message 로 메시지를 보내면 이 메소드가 실행
+     * 처리 후 /topic/chat/room/{roomId} 로 구독자들에게 메시지를 전송
      */
-    @MessageMapping("/message") // 실제 라우팅: /app/chat/message (WebSocketConfig prefix 영향 받음)
+    @MessageMapping("/message")
     public void sendMessage(ChatMessageDto messageDto) {
         log.info("메시지 수신: {}", messageDto);
         
@@ -47,7 +49,6 @@ public class ChatController {
         ChatMessageDto savedMessage = chatService.saveMessage(messageDto);
         
         // 2. 구독자들에게 메시지 전송
-        // 구독 주소: /topic/chat/room/{roomId}
         messagingTemplate.convertAndSend("/topic/chat/room/" + messageDto.getChatRoomId(), savedMessage);
     }
 
@@ -55,10 +56,24 @@ public class ChatController {
     // 2. REST API (Swagger에 노출됨)
     // ======================================================================
 
-    @Operation(summary = "채팅방 목록 조회", description = "개설된 모든 채팅방 목록을 조회합니다.")
+    @Operation(summary = "채팅방 목록 조회", description = "채팅방 목록을 조회합니다. memberId가 있으면 해당 회원이 참여한 방만 조회하고 안 읽은 메시지 수도 계산합니다.")
     @GetMapping("/rooms")
-    public ResponseEntity<List<ChatRoomDto>> getChatRoomList() {
-        return ResponseEntity.ok(chatService.selectChatRoomList());
+    public ResponseEntity<List<ChatRoomDto>> getChatRoomList(@RequestParam(required = false) Long memberId) {
+        return ResponseEntity.ok(chatService.selectChatRoomList(memberId));
+    }
+
+    @Operation(summary = "채팅방 참여", description = "채팅방에 참여합니다.")
+    @PostMapping("/room/{roomId}/join")
+    public ResponseEntity<Void> joinChatRoom(@PathVariable Long roomId, @RequestParam Long memberId) {
+        chatService.joinChatRoom(roomId, memberId);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "채팅방 나가기", description = "채팅방에서 나갑니다.")
+    @DeleteMapping("/room/{roomId}/leave")
+    public ResponseEntity<Void> leaveChatRoom(@PathVariable Long roomId, @RequestParam Long memberId) {
+        chatService.leaveChatRoom(roomId, memberId);
+        return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "채팅방 생성", description = "새로운 채팅방을 생성합니다.")

@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 public class ChatRoomDto {
     
     private Long chatRoomId;
+    private Long creatorId; // 방 생성자 ID
     private String title;
     private String roomType; // SINGLE, GROUP
     private String lastMessageContent;
@@ -23,4 +24,5 @@ public class ChatRoomDto {
     private int memberCount; // 참여 인원 수
     private String otherMemberName; // 1:1 채팅일 경우 상대방 이름
     private String otherMemberProfile; // 1:1 채팅일 경우 상대방 프로필
+    private int unreadCount; // 안 읽은 메시지 수
 }

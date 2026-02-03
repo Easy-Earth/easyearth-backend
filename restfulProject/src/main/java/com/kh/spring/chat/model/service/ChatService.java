@@ -7,8 +7,14 @@ import com.kh.spring.chat.model.dto.ChatRoomDto;
 
 public interface ChatService {
 
-    //채팅방 목록 조회
-    List<ChatRoomDto> selectChatRoomList();
+    //채팅방 목록 조회 (memberId가 있으면 해당 회원이 참여한 방만 조회 + 안읽은 메시지 수)
+    List<ChatRoomDto> selectChatRoomList(Long memberId);
+    
+    //채팅방 참여
+    void joinChatRoom(Long roomId, Long memberId);
+
+    //채팅방 나가기 (구독 취소 개념이 아닌 참여 목록에서 제거)
+    void leaveChatRoom(Long roomId, Long memberId);
 
     //채팅방 생성
     ChatRoomDto createChatRoom(ChatRoomDto roomDto);
