@@ -1,6 +1,7 @@
 package com.kh.spring.chat.controller;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -17,10 +18,13 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.kh.spring.chat.model.dto.ChatMessageDto;
+import com.kh.spring.chat.model.dto.ChatNotificationDto;
 import com.kh.spring.chat.model.dto.ChatRoomDto;
 import com.kh.spring.chat.model.dto.ChatTypingDto;
 import com.kh.spring.chat.model.service.ChatService;
+import com.kh.spring.chat.model.vo.ChatRoomUserEntity;
 import com.kh.spring.util.ChatFileUtil;
+import java.util.Arrays;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -36,6 +40,7 @@ public class ChatController {
 
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatService chatService;
+    private final com.kh.spring.chat.model.repository.ChatRoomUserRepository chatRoomUserRepository;
 
     // ======================================================================
     // 1. 실시간 채팅 (WebSocket/STOMP)
@@ -49,11 +54,14 @@ public class ChatController {
     public void sendMessage(ChatMessageDto messageDto) {
         log.info("메시지 수신: {}", messageDto);
         
-        // 1. DB에 메시지 저장
+        // 1. DB에 메시지 저장 (트랜잭션 처리)
         ChatMessageDto savedMessage = chatService.saveMessage(messageDto);
         
-        // 2. 구독자들에게 메시지 전송
+        // 2. 구독자들에게 메시지 전송 (채팅방 안)
         messagingTemplate.convertAndSend("/topic/chat/room/" + messageDto.getChatRoomId(), savedMessage);
+        
+        // 3. 글로벌 알림 전송 (Service에서 비동기 처리, 트랜잭션 경계 분리)
+        chatService.sendGlobalNotifications(savedMessage);
     }
 
     // ======================================================================
@@ -128,6 +136,46 @@ public class ChatController {
     @PostMapping(value = "/upload", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) {
         try {
+            // [보안] 파일 크기 검증 (10MB 제한)
+            if (file.getSize() > 10 * 1024 * 1024) {
+                return ResponseEntity.badRequest().body("파일 크기는 10MB를 초과할 수 없습니다");
+            }
+            
+            // [보안] 파일명 검증
+            String originalFilename = file.getOriginalFilename();
+            if (originalFilename == null || originalFilename.isEmpty()) {
+                return ResponseEntity.badRequest().body("파일명이 유효하지 않습니다");
+            }
+            
+            // [보안] 확장자 존재 여부 검증
+            if (!originalFilename.contains(".")) {
+                return ResponseEntity.badRequest().body("파일 확장자가 필요합니다");
+            }
+            
+            // [보안] 파일 확장자 검증
+            String ext = originalFilename.substring(originalFilename.lastIndexOf(".")).toLowerCase();
+            List<String> allowedExts = Arrays.asList(".jpg", ".jpeg", ".png", ".gif", ".pdf", ".txt", ".zip");
+            if (!allowedExts.contains(ext)) {
+                return ResponseEntity.badRequest().body("허용되지 않는 파일 확장자입니다");
+            }
+            
+            // [보안] MIME 타입 검증 (확장자 위장 방지)
+            String contentType = file.getContentType();
+            if (contentType == null) {
+                return ResponseEntity.badRequest().body("파일 타입을 확인할 수 없습니다");
+            }
+            
+            List<String> allowedMimes = Arrays.asList(
+                "image/jpeg", "image/png", "image/gif",  // 이미지
+                "application/pdf",                        // PDF
+                "text/plain",                             // 텍스트
+                "application/zip", "application/x-zip-compressed"  // ZIP
+            );
+            
+            if (!allowedMimes.contains(contentType)) {
+                return ResponseEntity.badRequest().body("허용되지 않는 파일 형식입니다 (MIME: " + contentType + ")");
+            }
+            
         	// "chat/message" 폴더에 저장
             String savedFileName = chatFileUtil.saveFile(file, "chat/message");
             

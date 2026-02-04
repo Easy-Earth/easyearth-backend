@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
+import net.coobird.thumbnailator.Thumbnails;
+
 @Component
 public class ChatFileUtil {
 	
@@ -44,9 +46,33 @@ public class ChatFileUtil {
 		}
 		
 		//서버에 업로드 처리
-		uploadFile.transferTo(new File(folderPath + changeName));
+		File destination = new File(folderPath + changeName);
+		uploadFile.transferTo(destination);
+		
+		// 이미지 파일인 경우 썸네일 생성 (300x300)
+		if (isImageFile(ext)) {
+			try {
+				String thumbnailName = "s_" + changeName;
+				File thumbnailFile = new File(folderPath + thumbnailName);
+				
+				Thumbnails.of(destination)
+					.size(300, 300)
+					.toFile(thumbnailFile);
+			} catch (Exception e) {
+				// 썸네일 실패해도 원본은 유지 (로그만 남김)
+				e.printStackTrace();
+			}
+		}
 		
 		return changeName;
+	}
+	
+	// 이미지 확장자 판별
+	private boolean isImageFile(String ext) {
+		String lowerExt = ext.toLowerCase();
+		return lowerExt.equals(".jpg") || lowerExt.equals(".jpeg") || 
+			   lowerExt.equals(".png") || lowerExt.equals(".gif") || 
+			   lowerExt.equals(".bmp");
 	}
 
 	//첨부파일 삭제

@@ -45,4 +45,7 @@ public interface ChatService {
 
     // [메시지 검색] 키워드 검색
     List<ChatMessageDto> searchMessages(Long chatRoomId, Long memberId, String keyword);
+    
+    // [알림] 글로벌 알림 전송 (비동기)
+    void sendGlobalNotifications(ChatMessageDto savedMessage);
 }
