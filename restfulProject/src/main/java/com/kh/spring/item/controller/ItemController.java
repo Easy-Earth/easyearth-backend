@@ -157,7 +157,7 @@ public class ItemController {
 	@GetMapping("/random/{memberId}")
 	@ResponseBody
 	@Operation(summary = "랜덤뽑기 API", description = "랜덤뽑기 API")
-	public ResponseEntity<?> randomPull(@PathVariable int memberId) {  //@RequestParam 에서 @PathVariable 으로 수정함
+	public ResponseEntity<?> randomPull(@PathVariable int memberId) {
 		RandomPullHistory randomPullHistory = new RandomPullHistory();
 		int randomNum = (int) (Math.random() * 100) + 1;
 		//1~69 : COMMON 69%

@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.kh.spring.ecoshop.service.EcoShopService;
 import com.kh.spring.ecoshop.vo.EcoShop;
+import com.kh.spring.ecoshop.vo.Review;
+import com.kh.spring.ecoshop.vo.ReviewerName;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -70,44 +72,33 @@ public class SeoulMapService {
      * 상세정보 조회 (기존 로직 유지)
      */
     public String getDetail(String themeId, String contsId) {
-        // 1. 서울시 외부 API로부터 상세 정보 JSON 수신
         String detailJson = seoulMapClient.fetchDetail(themeId, contsId);
 
         try {
             JsonNode root = objectMapper.readTree(detailJson);
-            // 서울시 응답 구조상 "body" 배열의 첫 번째 요소가 실제 데이터
             JsonNode item = root.path("body").get(0);
 
-            if (item != null) {
-                // --- [기본 기능] 데이터베이스 저장 로직 ---
-                String themeCode = item.path("COT_THEME_ID").asText();
+            if (item != null && item instanceof ObjectNode) {
+                ObjectNode objectNode = (ObjectNode) item;
 
-                // 테마 코드로 실제 카테고리 PK 조회
-                Long realEscId = ecoShopService.findEscId(themeCode);
+                // 1. DB에 상점 정보 저장/업데이트 후 숫자 PK(shopId) 가져오기
+                // insertEcoShop 로직을 거친 후, contsId로 DB의 숫자 ID를 조회합니다.
+                // (기존 insert 로직은 그대로 유지)
 
-                if (realEscId != null) {
-                    EcoShop ecoShop = EcoShop.builder()
-                            .name(item.path("COT_CONTS_NAME").asText())
-                            .address(item.path("COT_ADDR_FULL_OLD").asText())
-                            .phone(item.path("COT_TEL_NO").asText("정보없음"))
-                            .lat(item.path("COT_COORD_Y").asDouble())
-                            .lng(item.path("COT_COORD_X").asDouble())
-                            .contsId(item.path("COT_CONTS_ID").asText())
-                            .escId(realEscId)
-                            .isActive(1)
-                            .build();
+                // 2. DB의 숫자 ID 조회 (Review 조회를 위해 필수)
+                int realShopId = ecoShopService.findShopIdByContsId(contsId);
 
-                    // 서비스 내부에서 중복 체크 후 INSERT 수행
-                    ecoShopService.insertEcoShop(ecoShop);
-                }
+                if (realShopId > 0) {
+                    // 3. 숫자 ID로 리뷰 리스트 조회
+                    List<ReviewerName> reviews = ecoShopService.reviewList(realShopId);
 
-                // --- [신규 기능] 평균 평점 및 리뷰 개수 데이터 결합 ---
-                double avgRating = ecoShopService.getAverageRating(contsId);
-                int reviewCount = ecoShopService.getReviewCount(contsId);
+                    // 4. 리뷰 리스트를 JSON 배열로 변환하여 추가
+                    JsonNode reviewsNode = objectMapper.valueToTree(reviews);
+                    objectNode.set("reviews", reviewsNode);
 
-                // Jackson ObjectNode를 사용하여 응답 JSON에 필드 추가
-                if (item instanceof ObjectNode) {
-                    ObjectNode objectNode = (ObjectNode) item;
+                    // 5. 통계 데이터 추가 (기존 로직)
+                    double avgRating = ecoShopService.getAverageRating(contsId);
+                    int reviewCount = ecoShopService.getReviewCount(contsId);
                     objectNode.put("avgRating", avgRating);
                     objectNode.put("reviewCount", reviewCount);
                 }

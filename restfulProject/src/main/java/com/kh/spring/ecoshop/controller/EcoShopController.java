@@ -25,7 +25,7 @@ public class EcoShopController {
 
     @GetMapping("/review/list/{shopId}")
     @Operation(summary = "리뷰 List Controller", description = ".")
-    public ResponseEntity<?> reviewList(@RequestParam int shopId) {
+    public ResponseEntity<?> reviewList(@PathVariable int shopId) {
         List<ReviewerName> list = ecoShopService.reviewList(shopId);
         return new ResponseEntity<>(list, HttpStatus.OK);
     }

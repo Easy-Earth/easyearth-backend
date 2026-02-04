@@ -15,4 +15,5 @@ public class ReviewerName {
     String rating;
     String content;
     String name;
+    String memberId;
 }
