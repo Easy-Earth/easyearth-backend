@@ -26,6 +26,11 @@ public class ChatMessageDto {
     private String senderName;
     private String senderProfileImage;
     
+    // 답장 정보
+    private Long parentMessageId;
+    private String parentMessageContent;
+    private String parentMessageSenderName;
+    
     // 리액션 요약 정보
     @Builder.Default
     private List<ReactionSummary> reactions = new ArrayList<>();

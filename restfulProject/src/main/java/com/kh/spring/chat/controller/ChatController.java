@@ -7,6 +7,7 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.kh.spring.chat.model.dto.ChatMessageDto;
 import com.kh.spring.chat.model.dto.ChatRoomDto;
+import com.kh.spring.chat.model.dto.ChatTypingDto;
 import com.kh.spring.chat.model.service.ChatService;
 import com.kh.spring.util.ChatFileUtil;
 
@@ -137,5 +139,49 @@ public class ChatController {
             log.error("File Upload Failed", e);
             return ResponseEntity.internalServerError().body("Upload Failed");
         }
+    }
+    
+    // ===================================
+    // 5. 그룹 관리 (Role & Kick)
+    // ===================================
+
+    @Operation(summary = "채팅방 권한 변경 (방장 위임)", description = "방장이 다른 멤버에게 방장을 위임하거나 권한을 변경합니다.")
+    @PatchMapping("/room/{roomId}/user/{memberId}/role")
+    public ResponseEntity<Void> updateRole(
+            @PathVariable Long roomId,
+            @PathVariable Long memberId,
+            @RequestParam Long requesterId,
+            @RequestParam String newRole) {
+        chatService.updateRole(roomId, memberId, requesterId, newRole);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "멤버 강퇴", description = "방장 또는 관리자가 멤버를 강퇴합니다.")
+    @DeleteMapping("/room/{roomId}/user/{memberId}")
+    public ResponseEntity<Void> kickMember(
+            @PathVariable Long roomId,
+            @PathVariable Long memberId,
+            @RequestParam Long requesterId) {
+        chatService.kickMember(roomId, memberId, requesterId);
+        return ResponseEntity.ok().build();
+        }
+
+    @Operation(summary = "메시지 검색", description = "채팅방 내 메시지를 키워드로 검색합니다 (최신순).")
+    @GetMapping("/room/{roomId}/search")
+    public ResponseEntity<List<ChatMessageDto>> searchMessages(
+            @PathVariable Long roomId,
+            @RequestParam Long memberId,
+            @RequestParam String keyword) {
+        return ResponseEntity.ok(chatService.searchMessages(roomId, memberId, keyword));
+    }
+
+    // ===================================
+    // 4. 입력 상태 표시 (Typing Indicator)
+    // ===================================
+    
+    @MessageMapping("/typing")
+    public void typing(ChatTypingDto typingDto) {
+        // 클라이언트 구독 경로: /topic/chat/room/{roomId}/typing
+        messagingTemplate.convertAndSend("/topic/chat/room/" + typingDto.getChatRoomId() + "/typing", typingDto);
     }
 }

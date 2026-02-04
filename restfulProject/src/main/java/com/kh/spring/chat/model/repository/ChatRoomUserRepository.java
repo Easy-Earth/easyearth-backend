@@ -12,4 +12,7 @@ public interface ChatRoomUserRepository extends JpaRepository<ChatRoomUserEntity
 
     // 나 말고 다른 참여자 찾기 (1:1 채팅방용)
     Optional<ChatRoomUserEntity> findFirstByChatRoomIdAndMemberIdNot(Long chatRoomId, Long memberId);
+
+    // 방 인원수 확인 (방장 탈퇴 정책용)
+    long countByChatRoomId(Long chatRoomId);
 }

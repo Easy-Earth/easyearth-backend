@@ -143,6 +143,7 @@ public class ChatServiceImpl implements ChatService {
             ChatRoomUserEntity roomUser = ChatRoomUserEntity.builder()
                     .chatRoom(saved)
                     .member(creator)
+                    .role("OWNER") // 방장은 OWNER 권한
                     .joinedAt(LocalDateTime.now())
                     .build();
             
@@ -208,6 +209,14 @@ public class ChatServiceImpl implements ChatService {
         ChatRoomUserEntity roomUser = chatRoomUserRepository.findByChatRoomIdAndMemberId(roomId, memberId)
                 .orElseThrow(() -> new IllegalArgumentException("Not participating in this room"));
         
+        // [방장 탈퇴 정책] OWNER는 혼자 남은 경우가 아니면 나갈 수 없음 (위임 필수)
+        if ("OWNER".equals(roomUser.getRole())) {
+            long remainingCount = chatRoomUserRepository.countByChatRoomId(roomId);
+            if (remainingCount > 1) {
+                throw new IllegalArgumentException("다른 사람에게 방장을 위임하고 나가세요.");
+            }
+        }
+        
         //퇴장 메시지 전송을 위해 멤버 이름 조회
         String memberName = roomUser.getMember().getName();
         ChatRoomEntity chatRoom = roomUser.getChatRoom();
@@ -244,13 +253,23 @@ public class ChatServiceImpl implements ChatService {
                 .orElseThrow(() -> new IllegalArgumentException("Member not found"));
 
         // 3. 메시지 엔티티 생성 및 저장
-        ChatMessageEntity messageEntity = ChatMessageEntity.builder()
+        ChatMessageEntity.ChatMessageEntityBuilder messageBuilder = ChatMessageEntity.builder()
                 .chatRoom(chatRoom)
                 .sender(sender) 
                 .content(messageDto.getContent())
                 .messageType(messageDto.getMessageType())
-                .createdAt(LocalDateTime.now())
-                .build();
+                .createdAt(LocalDateTime.now());
+        
+        // [답장/인용] 부모 메시지 연결
+        if (messageDto.getParentMessageId() != null) {
+            ChatMessageEntity parent = chatMessageRepository.findById(messageDto.getParentMessageId())
+                    .orElse(null);
+            if (parent != null) {
+                messageBuilder.parentMessage(parent);
+            }
+        }
+        
+        ChatMessageEntity messageEntity = messageBuilder.build();
         
         ChatMessageEntity savedMessage = chatMessageRepository.save(messageEntity);
         
@@ -286,43 +305,74 @@ public class ChatServiceImpl implements ChatService {
 
         //Dto 객체로 변환
         return messageSlice.getContent().stream()
-                .map(entity -> {
-                    // 리액션 가공
-                    List<ChatMessageDto.ReactionSummary> reactionSummaries = entity.getReactions().stream()
-                        .collect(Collectors.groupingBy(MessageReactionEntity::getEmojiType))
-                        .entrySet().stream()
-                        .map(entry -> {
-                            String emoji = entry.getKey();
-                            List<MessageReactionEntity> list = entry.getValue();
-                            
-                            boolean me = false;
-                            if (memberId != null) {
-                                me = list.stream().anyMatch(r -> r.getMember().getId().equals(memberId));
-                            }
-                            
-                            return ChatMessageDto.ReactionSummary.builder()
-                                    .emojiType(emoji)
-                                    .count(list.size())
-                                    .selectedByMe(me)
-                                    .build();
-                        })
-                        .collect(Collectors.toList());
-
-                    return ChatMessageDto.builder()
-                        .messageId(entity.getId())
-                        .chatRoomId(entity.getChatRoom().getId())
-                        .senderId(entity.getSender().getId())
-                        .senderName(entity.getSender().getName())
-                        .senderProfileImage(entity.getSender().getProfileImageUrl())
-                        .content(entity.getContent())
-                        .messageType(entity.getMessageType())
-                        .createdAt(entity.getCreatedAt())
-                        .reactions(reactionSummaries)
-                        .build();
-                })
+                .map(entity -> convertToDto(entity, memberId))
                 // DB에서 최신순(DESC)으로 가져왔으므로, 화면에 뿌릴 때는 다시 과거순(ASC)으로 뒤집어서 출력
                 .sorted(Comparator.comparing(ChatMessageDto::getCreatedAt)) 
                 .collect(Collectors.toList());
+    }
+
+    // [메시지 검색] 키워드 검색
+    @Override
+    @Transactional(readOnly = true)
+    public List<ChatMessageDto> searchMessages(Long chatRoomId, Long memberId, String keyword) {
+        // 1. 참여 여부 확인 (보안)
+        if (chatRoomUserRepository.findByChatRoomIdAndMemberId(chatRoomId, memberId).isEmpty()) {
+            throw new IllegalArgumentException("Not participating in this room");
+        }
+        
+        // 2. 검색 (최신순)
+        List<ChatMessageEntity> entities = chatMessageRepository.findByChatRoomIdAndContentContainingOrderByCreatedAtDesc(chatRoomId, keyword);
+        
+        // 3. DTO 변환 및 반환
+        return entities.stream()
+                .map(entity -> convertToDto(entity, memberId))
+                .collect(Collectors.toList());
+    }
+
+    // DTO 변환 헬퍼 메서드
+    private ChatMessageDto convertToDto(ChatMessageEntity entity, Long memberId) {
+        // 리액션 가공
+        List<ChatMessageDto.ReactionSummary> reactionSummaries = entity.getReactions().stream()
+            .collect(Collectors.groupingBy(MessageReactionEntity::getEmojiType))
+            .entrySet().stream()
+            .map(entry -> {
+                String emoji = entry.getKey();
+                List<MessageReactionEntity> list = entry.getValue();
+                
+                boolean me = false;
+                if (memberId != null) {
+                    me = list.stream().anyMatch(r -> r.getMember().getId().equals(memberId));
+                }
+                
+                return ChatMessageDto.ReactionSummary.builder()
+                        .emojiType(emoji)
+                        .count(list.size())
+                        .selectedByMe(me)
+                        .build();
+            })
+            .collect(Collectors.toList());
+
+        ChatMessageDto.ChatMessageDtoBuilder builder = ChatMessageDto.builder()
+            .messageId(entity.getId())
+            .chatRoomId(entity.getChatRoom().getId())
+            .senderId(entity.getSender().getId())
+            .senderName(entity.getSender().getName())
+            .senderProfileImage(entity.getSender().getProfileImageUrl())
+            .content(entity.getContent())
+            .messageType(entity.getMessageType())
+            .createdAt(entity.getCreatedAt())
+            .reactions(reactionSummaries);
+
+
+
+        // [답장/인용] 부모 메시지 정보 채우기
+        if (entity.getParentMessage() != null) {
+            builder.parentMessageId(entity.getParentMessage().getId());
+            builder.parentMessageContent(entity.getParentMessage().getContent());
+            builder.parentMessageSenderName(entity.getParentMessage().getSender().getName());
+        }
+
+        return builder.build();
     }
 
     //메시지 읽음 처리 (Optimized)
@@ -405,6 +455,65 @@ public class ChatServiceImpl implements ChatService {
                     .build();
             
             messageReactionRepository.save(reaction);
+    }
+    }
+
+    // [그룹 관리] 역할 변경
+    @Override
+    public void updateRole(Long chatRoomId, Long targetMemberId, Long requesterId, String newRole) {
+        // 1. 요청자 권한 확인
+        ChatRoomUserEntity requester = chatRoomUserRepository.findByChatRoomIdAndMemberId(chatRoomId, requesterId)
+                .orElseThrow(() -> new IllegalArgumentException("Requester not in room"));
+        
+        if (!"OWNER".equals(requester.getRole())) {
+             throw new IllegalArgumentException("Only OWNER can change roles");
         }
+        
+        // 2. 대상 조회
+        ChatRoomUserEntity target = chatRoomUserRepository.findByChatRoomIdAndMemberId(chatRoomId, targetMemberId)
+                .orElseThrow(() -> new IllegalArgumentException("Target user not in room"));
+
+        // 3. 로직 처리
+        // 만약 방장을 위임하는 경우 (OWNER -> MEMBER, Target -> OWNER)
+        if ("OWNER".equals(newRole)) {
+            // 기존 방장은 MEMBER로 강등
+            requester.setRole("MEMBER");
+            target.setRole("OWNER");
+            
+            // 시스템 메시지
+            saveSystemMessage(requester.getChatRoom(), requester.getMember().getName() + "님이 방장을 위임했습니다.");
+        } else {
+            // 단순 관리자(ADMIN) 등 변경
+            target.setRole(newRole);
+        }
+    }
+
+    // [그룹 관리] 멤버 강퇴
+    @Override
+    public void kickMember(Long chatRoomId, Long targetMemberId, Long requesterId) {
+        // 1. 요청자 조회
+        ChatRoomUserEntity requester = chatRoomUserRepository.findByChatRoomIdAndMemberId(chatRoomId, requesterId)
+                .orElseThrow(() -> new IllegalArgumentException("Requester not in room"));
+        
+        // 2. 권한 확인 (OWNER나 ADMIN만 강퇴 가능)
+        if (!"OWNER".equals(requester.getRole()) && !"ADMIN".equals(requester.getRole())) {
+            throw new IllegalArgumentException("No permission to kick");
+        }
+        
+        // 3. 대상 조회
+        ChatRoomUserEntity target = chatRoomUserRepository.findByChatRoomIdAndMemberId(chatRoomId, targetMemberId)
+                .orElseThrow(() -> new IllegalArgumentException("Target user not in room"));
+        
+        // (옵션) 방장은 강퇴 불가
+        if ("OWNER".equals(target.getRole())) {
+            throw new IllegalArgumentException("Cannot kick the OWNER");
+        }
+
+        // 4. 강퇴 (삭제)
+        String targetName = target.getMember().getName();
+        chatRoomUserRepository.delete(target);
+        
+        // 5. 시스템 메시지
+        saveSystemMessage(requester.getChatRoom(), targetName + "님이 강퇴당했습니다.");
     }
 }
