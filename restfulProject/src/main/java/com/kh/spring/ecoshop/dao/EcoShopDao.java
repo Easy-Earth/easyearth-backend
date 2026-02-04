@@ -47,4 +47,8 @@ public class EcoShopDao {
     public int getReviewCount(SqlSessionTemplate sqlSession, String contsId) {
         return sqlSession.selectOne("ecoShopMapper.getReviewCount", contsId);
     }
+
+    public int findShopIdByContsId(SqlSessionTemplate sqlSession, String contsId) {
+        return sqlSession.selectOne("ecoShopMapper.findShopIdByContsId", contsId);
+    }
 }

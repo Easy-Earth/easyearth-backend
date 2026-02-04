@@ -58,4 +58,7 @@ public class EcoShopService {
     public int getReviewCount(String contsId) {
         return ecoShopDao.getReviewCount(sqlSession, contsId);
     }
+    public int findShopIdByContsId(String contsId) {
+        return ecoShopDao.findShopIdByContsId(sqlSession, contsId);
+    }
 }
