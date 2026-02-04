@@ -22,7 +22,7 @@ public class ItemDao {
 	}
 	
 	//포인트상점 보유중인 아이템 조회
-	public List<ItemVO> storeMyItem(SqlSessionTemplate sqlSession,int memberId) {
+	public List<UserItemList> storeMyItem(SqlSessionTemplate sqlSession,int memberId) {
 		
 		return sqlSession.selectList("itemMapper.storeMyItem",memberId);
 	}

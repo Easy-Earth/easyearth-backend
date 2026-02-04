@@ -32,7 +32,7 @@ public class ItemServiceImpl implements ItemService {
 	
 	//포인트상점 보유중인 아이템 조회
 	@Override
-	public List<ItemVO> storeMyItem(int memberId) {
+	public List<UserItemList> storeMyItem(int memberId) {
 		
 		return dao.storeMyItem(sqlSession,memberId);
 	}

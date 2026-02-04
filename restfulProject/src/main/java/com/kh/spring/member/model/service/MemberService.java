@@ -16,6 +16,9 @@ public interface MemberService {
 	//로그인
 	MemberVO loginMember(MemberVO m);
 	
+	//비밀번호 찾기
+	MemberVO findPassword(MemberVO m);
+	
 	//회원 정보 수정
 	int updateMember(MemberVO m);
 	
@@ -29,4 +32,5 @@ public interface MemberService {
     List<Integer> equippedItem(String memberId);
 
 	MemberWalletVO getMemberPoint(int memberId);
+
 }

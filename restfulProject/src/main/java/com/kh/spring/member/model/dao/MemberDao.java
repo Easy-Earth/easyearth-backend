@@ -29,6 +29,12 @@ public class MemberDao {
 		return sqlSession.selectOne("memberMapper.loginMember",m);
 	}
 	
+	//비밀번호 찾기
+	public MemberVO findPassword(SqlSession sqlSession, MemberVO m) {
+		
+		return sqlSession.selectOne("memberMapper.findPassword",m);
+	}
+	
 	//회원 정보 수정
 	public int updateMember(SqlSession sqlSession, MemberVO m) {
 		
@@ -55,4 +61,6 @@ public class MemberDao {
 	public MemberWalletVO getMemberPoint(SqlSession sqlSession, int memberId) {
 		return sqlSession.selectOne("memberMapper.getMemberPoint", memberId);
 	}
+
+	
 }

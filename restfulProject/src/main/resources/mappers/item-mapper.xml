@@ -9,6 +9,7 @@
   	<select id="storeItem" resultType="ItemVO">
   		SELECT *
   		FROM ITEM
+  		ORDER BY PRICE
   	</select>
   	
   	<!-- 포인트상점 보유중인 아이템 조회 매퍼 -->
@@ -99,6 +100,7 @@
 		UPDATED_AT
 		FROM ITEM
 		WHERE CATEGORY = #{category}
+		ORDER BY PRICE
 	</select>
 	
 	<!-- 등급별 아이템 조회 -->
@@ -115,6 +117,7 @@
 		UPDATED_AT
 		FROM ITEM
 		WHERE RARITY = #{rarity}
+		ORDER BY PRICE
 	</select>
 
   	
