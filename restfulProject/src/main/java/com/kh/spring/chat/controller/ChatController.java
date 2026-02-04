@@ -13,10 +13,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.kh.spring.chat.model.dto.ChatMessageDto;
 import com.kh.spring.chat.model.dto.ChatRoomDto;
 import com.kh.spring.chat.model.service.ChatService;
+import com.kh.spring.util.ChatFileUtil;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -112,5 +114,28 @@ public class ChatController {
             @RequestParam String emojiType) {
         chatService.toggleReaction(messageId, memberId, emojiType);
         return ResponseEntity.ok().build();
+    }
+    
+    // ===================================
+    // 3. 파일 업로드 (멀티미디어)
+    // ===================================
+    
+    private final ChatFileUtil chatFileUtil; 
+
+    @Operation(summary = "채팅 파일 업로드", description = "이미지/파일을 업로드하고 URL을 반환받습니다. (저장위치: /uploadFiles/chat/message/)")
+    @PostMapping(value = "/upload", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) {
+        try {
+        	// "chat/message" 폴더에 저장
+            String savedFileName = chatFileUtil.saveFile(file, "chat/message");
+            
+            // 접근 가능한 URL 반환 (/chat/file/message/파일명)
+            String fileUrl = "/chat/file/message/" + savedFileName;
+            
+            return ResponseEntity.ok(fileUrl);
+        } catch (Exception e) {
+            log.error("File Upload Failed", e);
+            return ResponseEntity.internalServerError().body("Upload Failed");
+        }
     }
 }
