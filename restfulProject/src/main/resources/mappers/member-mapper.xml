@@ -25,7 +25,7 @@
 	      MEMBER_SEQ.NEXTVAL,
 	      #{loginId},
 	      #{password},
-	      #{userName},
+	      #{name},
 	      #{birthday},
 	      #{gender},
 	      #{address},
@@ -63,11 +63,19 @@
 		WHERE LOGIN_ID = #{loginId}
 	</select>
 	
+	<!-- 비밀번호 찾기 -->
+	<select id="findPassword" parameterType="MemberVO" resultType="MemberVO">
+		SELECT * 
+		FROM MEMBER 
+    	WHERE LOGIN_ID = #{loginId} 
+      	AND NAME = #{name}
+	</select>
+	
 	<!-- 회원 정보 수정 매퍼 -->
 	<update id="updateMember" parameterType="MemberVO">
 		UPDATE MEMBER
 		SET PASSWORD = #{password},
-		      NAME = #{userName},
+		      NAME = #{name},
 		      BIRTHDAY = #{birthday},
 		      GENDER = #{gender},
 		      ADDRESS = #{address},

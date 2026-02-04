@@ -50,7 +50,7 @@ public class ItemController {
 	@GetMapping("/myItems/{memberId}")
 	public ResponseEntity<?> storeMyItem(@PathVariable int memberId){
 		
-		List<ItemVO> list = service.storeMyItem(memberId);
+		List<UserItemList> list = service.storeMyItem(memberId);
 		
 		return ResponseEntity.ok(list);
 	}

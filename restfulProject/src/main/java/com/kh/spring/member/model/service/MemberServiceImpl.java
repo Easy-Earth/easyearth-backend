@@ -40,6 +40,13 @@ public class MemberServiceImpl implements MemberService {
 		return dao.loginMember(sqlSession,m);
 	}
 	
+	//비밀번호 찾기
+	@Override
+	public MemberVO findPassword(MemberVO m) {
+		
+		return dao.findPassword(sqlSession,m);
+	}
+	
 	//회원 정보 수정
 	@Override
 	public int updateMember(MemberVO m) {
