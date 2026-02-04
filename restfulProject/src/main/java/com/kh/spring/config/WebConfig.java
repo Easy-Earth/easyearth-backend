@@ -25,6 +25,10 @@ public class WebConfig implements WebMvcConfigurer {
                         "classpath:/static/",
                         "classpath:/public/"
                 );
+
+        // [추가] 채팅 멀티미디어 파일 접근 (로컬 저장소 연결)
+        registry.addResourceHandler("/chat/file/**")
+                .addResourceLocations("file:///C:/uploadFiles/chat/");
     }
     @Override
     public void addCorsMappings(CorsRegistry registry) {
