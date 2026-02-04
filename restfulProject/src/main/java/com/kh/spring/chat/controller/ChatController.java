@@ -92,14 +92,25 @@ public class ChatController {
     @GetMapping("/room/{roomId}/messages")
     public ResponseEntity<List<ChatMessageDto>> getMessageList(
             @PathVariable Long roomId, 
-            @RequestParam(required = false) Long cursorId) {
-        return ResponseEntity.ok(chatService.selectMessageList(roomId, cursorId));
+            @RequestParam(required = false) Long cursorId,
+            @RequestParam(required = false) Long memberId) {
+        return ResponseEntity.ok(chatService.selectMessageList(roomId, cursorId, memberId));
     }
     
     @Operation(summary = "메시지 읽음 처리", description = "특정 채팅방의 모든 메시지를 읽음 처리합니다 (마지막 읽은 메시지 ID 갱신).")
     @PostMapping("/room/{roomId}/read")
     public ResponseEntity<Void> markAsRead(@PathVariable Long roomId, @RequestParam Long memberId, @RequestParam Long lastMessageId) {
         chatService.updateReadStatus(roomId, memberId, lastMessageId);
+        return ResponseEntity.ok().build();
+    }
+    
+    @Operation(summary = "메시지 리액션(공감) 토글", description = "특정 메시지에 공감을 남기거나 취소/변경합니다.")
+    @PostMapping("/message/{messageId}/reaction")
+    public ResponseEntity<Void> toggleReaction(
+            @PathVariable Long messageId, 
+            @RequestParam Long memberId, 
+            @RequestParam String emojiType) {
+        chatService.toggleReaction(messageId, memberId, emojiType);
         return ResponseEntity.ok().build();
     }
 }
