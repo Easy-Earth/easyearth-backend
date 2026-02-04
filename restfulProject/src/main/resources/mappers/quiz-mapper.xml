@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kh.spring.quiz.mapper.QuizMapper">
+
+    <resultMap id="quizResultSet" type="com.kh.spring.quiz.model.vo.Quiz">
+        <id property="quizNo" column="QUIZ_NO"/>
+        <result property="quizQuestion" column="QUIZ_QUESTION"/>
+        <result property="quizAnswer" column="QUIZ_ANSWER"/>
+        <result property="quizExplanation" column="QUIZ_EXPLANATION"/>
+        <result property="point" column="POINT"/>
+        <result property="difficulty" column="DIFFICULTY"/>
+        <result property="option1" column="OPTION1"/>
+        <result property="option2" column="OPTION2"/>
+        <result property="option3" column="OPTION3"/>
+        <result property="option4" column="OPTION4"/>
+    </resultMap>
+
+    <!-- 난이도별 퀴즈 조회 (랜덤 5문제) -->
+    <select id="selectQuizByDifficulty" resultMap="quizResultSet">
+        SELECT *
+        FROM (
+            SELECT *
+            FROM QUIZ
+            WHERE DIFFICULTY = #{difficulty}
+            ORDER BY DBMS_RANDOM.VALUE
+        )
+        WHERE ROWNUM &lt;= 5
+    </select>
+
+</mapper>

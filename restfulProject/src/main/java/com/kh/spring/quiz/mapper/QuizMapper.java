@@ -4,5 +4,5 @@ import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
 public interface QuizMapper {
-    // TODO: 쿼리 메서드 정의
+    java.util.List<com.kh.spring.quiz.model.vo.Quiz> selectQuizByDifficulty(String difficulty);
 }
