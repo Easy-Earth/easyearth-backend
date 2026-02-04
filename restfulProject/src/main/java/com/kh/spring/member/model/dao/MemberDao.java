@@ -1,5 +1,6 @@
 package com.kh.spring.member.model.dao;
 
+import com.kh.spring.member.model.vo.MemberWalletVO;
 import org.apache.ibatis.session.SqlSession;
 import org.springframework.stereotype.Repository;
 
@@ -50,4 +51,8 @@ public class MemberDao {
     public List<Integer> equippedItem(SqlSession sqlSession, String memberId) {
 		return sqlSession.selectList("memberMapper.equippedItem", memberId);
     }
+
+	public MemberWalletVO getMemberPoint(SqlSession sqlSession, int memberId) {
+		return sqlSession.selectOne("memberMapper.getMemberPoint", memberId);
+	}
 }
