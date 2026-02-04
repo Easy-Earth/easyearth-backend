@@ -4,13 +4,16 @@ import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -52,6 +55,16 @@ public class ChatRoomEntity {
     @CreationTimestamp
     @Column(name = "CREATED_AT")
     private LocalDateTime createdAt;
+    
+    // [CASCADE] 채팅방 삭제 시 메시지도 함께 삭제
+    @lombok.Builder.Default
+    @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private java.util.List<ChatMessageEntity> messages = new java.util.ArrayList<>();
+    
+    // [동시성 제어] 낙관적 락으로 totalMessageCount 정합성 보장
+    @Version
+    @Column(name = "VERSION")
+    private Long version;
     
     public void updateLastMessage(String content, LocalDateTime at) {
         this.lastMessageContent = content;

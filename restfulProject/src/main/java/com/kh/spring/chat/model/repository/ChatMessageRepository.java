@@ -1,5 +1,7 @@
 package com.kh.spring.chat.model.repository;
 
+import java.util.List;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -31,4 +33,7 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessageEntity, 
     Slice<ChatMessageEntity> findByChatRoomIdOrderByCreatedAtDesc(
             @Param("chatRoomId") Long chatRoomId,
             Pageable pageable);
+
+    // 3. 메시지 검색 (키워드 포함, 최신순)
+    List<ChatMessageEntity> findByChatRoomIdAndContentContainingOrderByCreatedAtDesc(Long chatRoomId, String keyword);
 }

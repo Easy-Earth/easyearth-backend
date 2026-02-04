@@ -52,8 +52,16 @@ public class ChatRoomUserEntity {
     @Column(name = "JOINED_AT")
     private LocalDateTime joinedAt;
 
+    @lombok.Builder.Default
+    @Column(name = "ROLE", nullable = false, length = 20)
+    private String role = "MEMBER"; // OWNER, ADMIN, MEMBER
+
     public void updateLastReadMessageId(Long messageId) {
         this.lastReadMessageId = messageId;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 
     public void updateLastReadMessageCount(Long count) {

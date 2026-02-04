@@ -58,6 +58,10 @@ public class ChatMessageEntity {
     @Column(name = "CREATED_AT")
     private LocalDateTime createdAt;
     
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "PARENT_MESSAGE_ID")
+    private ChatMessageEntity parentMessage;
+    
     @Builder.Default 
     @OneToMany(mappedBy = "chatMessage", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<MessageReactionEntity> reactions = new ArrayList<>();

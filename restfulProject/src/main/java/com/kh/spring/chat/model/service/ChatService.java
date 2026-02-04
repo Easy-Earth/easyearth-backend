@@ -36,4 +36,16 @@ public interface ChatService {
     
     // 메시지 리액션 (공감) 토글
     void toggleReaction(Long messageId, Long memberId, String emojiType);
+    
+    // [그룹 관리] 역할 변경 (방장 위임 등)
+    void updateRole(Long chatRoomId, Long targetMemberId, Long requesterId, String newRole);
+
+    // [그룹 관리] 강퇴 (방장/관리자가 멤버 강퇴)
+    void kickMember(Long chatRoomId, Long targetMemberId, Long requesterId);
+
+    // [메시지 검색] 키워드 검색
+    List<ChatMessageDto> searchMessages(Long chatRoomId, Long memberId, String keyword);
+    
+    // [알림] 글로벌 알림 전송 (비동기)
+    void sendGlobalNotifications(ChatMessageDto savedMessage);
 }
