@@ -3,6 +3,7 @@ package com.kh.spring.member.controller;
 import java.util.HashMap;
 import java.util.List;
 
+import com.kh.spring.member.model.vo.MemberWalletVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -264,7 +265,20 @@ public class MemberController {
         }
     }
 	
-	
+	@Operation(summary = "포인트 조회", description = "누적 사용/획득 포인트 , 보유 포인트 조회")
+    @GetMapping("/point/{memberId}")
+    public ResponseEntity<?> getMemberPoint(@PathVariable int memberId) {
+        MemberWalletVO wallet = service.getMemberPoint(memberId);
+        wallet.setMemberId(memberId);
+        System.out.println(wallet);
+        System.out.println("memberId = " + memberId);
+        if(wallet!=null) {
+            return ResponseEntity.ok(wallet);
+        }
+        else {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("존재하지 않는 회원입니다.");
+        }
+    }
 	
 	
 }

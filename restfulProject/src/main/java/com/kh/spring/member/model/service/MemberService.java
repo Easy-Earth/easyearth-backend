@@ -1,6 +1,7 @@
 package com.kh.spring.member.model.service;
 
 import com.kh.spring.member.model.vo.MemberVO;
+import com.kh.spring.member.model.vo.MemberWalletVO;
 
 import java.util.List;
 
@@ -26,4 +27,6 @@ public interface MemberService {
 
 
     List<Integer> equippedItem(String memberId);
+
+	MemberWalletVO getMemberPoint(int memberId);
 }

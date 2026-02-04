@@ -94,6 +94,13 @@
 		FROM USER_ITEMS
 		WHERE USER_ID = #{memberId} AND IS_EQUIPPED = 'Y'
 	</select>
-  	
+
+	<select id = "getMemberPoint" parameterType="int" resultType="MemberWalletVO">
+		SELECT
+		WALLET_ID, NOW_POINT,
+		TOTAL_EARNED_POINT,
+		TOTAL_SPENT_POINT
+		FROM POINT_WALLET WHERE MEMBER_ID=#{memberId}
+	</select>
   
 </mapper>
