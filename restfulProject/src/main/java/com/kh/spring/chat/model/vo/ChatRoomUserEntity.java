@@ -44,7 +44,19 @@ public class ChatRoomUserEntity {
     @Column(name = "LAST_READ_MESSAGE_ID")
     private Long lastReadMessageId;
 
+    @lombok.Builder.Default
+    @Column(name = "LAST_READ_MESSAGE_COUNT", columnDefinition = "NUMBER DEFAULT 0")
+    private Long lastReadMessageCount = 0L;
+
     @CreationTimestamp
     @Column(name = "JOINED_AT")
     private LocalDateTime joinedAt;
+
+    public void updateLastReadMessageId(Long messageId) {
+        this.lastReadMessageId = messageId;
+    }
+
+    public void updateLastReadMessageCount(Long count) {
+        this.lastReadMessageCount = count;
+    }
 }

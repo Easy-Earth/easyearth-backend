@@ -337,6 +337,77 @@
  		WHERE REPLY_ID = #{replyId}
  		AND MEMBER_ID = #{memberId}
  	</update>
+ 		
+	<!-- 이미 좋아요를 누른 게시글인지 확인 -->
+	<select id="checkPostLike" parameterType="map" resultType="_int">
+		SELECT COUNT(*)
+		FROM COMMUNITY_POST_LIKES
+		WHERE POST_ID = #{postId}
+		AND MEMBER_ID = #{memberId}
+	</select>
+	
+	<!-- 게시글 좋아요 등록 -->
+ 	<insert id="insertPostLike" parameterType="map">
+ 		INSERT INTO 
+ 		COMMUNITY_POST_LIKES (
+ 			PL_ID
+ 			,POST_ID
+ 			,MEMBER_ID
+ 			,CREATED_AT
+ 			,STATUS
+ 		) VALUES (
+ 			PL_ID_SEQ.NEXTVAL
+ 			,#{postId}
+ 			,#{memberId}
+ 			,SYSDATE
+ 			,'Y'
+ 		)
+ 	</insert>
+ 		
+	<!-- 게시글 좋아요 상태 변경 -->
+	<update id="changePostLike" parameterType="map">
+		UPDATE COMMUNITY_POST_LIKES
+		SET STATUS = DECODE(STATUS, 'Y', 'N', 'Y')
+		WHERE POST_ID = #{postId}
+		AND MEMBER_ID = #{memberId}
+	</update>
  	
+ 	<!-- 이미 좋아요를 누른 댓글인지 확인 -->
+	<select id="checkReplyLike" parameterType="map" resultType="_int">
+		SELECT COUNT(*)
+		FROM COMMUNITY_REPLY_LIKES
+		WHERE REPLY_ID = #{replyId}
+		AND POST_ID = #{postId}
+		AND MEMBER_ID = #{memberId}
+	</select>
+	
+	<!-- 댓글 좋아요 등록 -->
+ 	<insert id="insertReplyLike" parameterType="map">
+ 		INSERT INTO 
+ 		COMMUNITY_REPLY_LIKES (
+ 			RL_ID
+ 			,REPLY_ID
+ 			,POST_ID
+ 			,MEMBER_ID
+ 			,CREATED_AT
+ 			,STATUS
+ 		) VALUES (
+ 			RL_ID_SEQ.NEXTVAL
+ 			,#{replyId}
+ 			,#{postId}
+ 			,#{memberId}
+ 			,SYSDATE
+ 			,'Y'
+ 		)
+ 	</insert>
+ 		
+	<!-- 댓글 좋아요 상태 변경 -->
+	<update id="changeReplyLike" parameterType="map">
+		UPDATE COMMUNITY_REPLY_LIKES
+		SET STATUS = DECODE(STATUS, 'Y', 'N', 'Y')
+		WHERE REPLY_ID = #{replyId} 
+		AND POST_ID = #{postId}
+		AND MEMBER_ID = #{memberId}
+	</update>
  	
 </mapper>

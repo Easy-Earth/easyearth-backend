@@ -1,7 +1,7 @@
 package com.kh.spring.chat.model.repository;
 
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -22,13 +22,13 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessageEntity, 
             AND m.id < :cursorId
             ORDER BY m.createdAt DESC
             """)
-    Page<ChatMessageEntity> findByChatRoomIdAndIdLessThan(
+    Slice<ChatMessageEntity> findByChatRoomIdAndIdLessThan(
             @Param("chatRoomId") Long chatRoomId,
             @Param("cursorId") Long cursorId,
             Pageable pageable);
 
     // 첫 진입 시 (가장 최신 메시지 N개)
-    Page<ChatMessageEntity> findByChatRoomIdOrderByCreatedAtDesc(
+    Slice<ChatMessageEntity> findByChatRoomIdOrderByCreatedAtDesc(
             @Param("chatRoomId") Long chatRoomId,
             Pageable pageable);
 }

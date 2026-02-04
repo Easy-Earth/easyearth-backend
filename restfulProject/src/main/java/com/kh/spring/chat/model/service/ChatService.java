@@ -28,5 +28,12 @@ public interface ChatService {
     //채팅방 메시지 내역 조회 (무한 스크롤)
     //roomId 채팅방 ID
     //cursorId 마지막으로 로드된 메시지 ID (첫 조회 시 null 가능)
-    List<ChatMessageDto> selectMessageList(Long roomId, Long cursorId);
+    //memberId 조회하는 사용자 ID (리액션 'selectedByMe' 확인용)
+    List<ChatMessageDto> selectMessageList(Long roomId, Long cursorId, Long memberId);
+    
+    // 메시지 읽음 처리 (마지막 읽은 메시지 ID 업데이트)
+    void updateReadStatus(Long roomId, Long memberId, Long lastMessageId);
+    
+    // 메시지 리액션 (공감) 토글
+    void toggleReaction(Long messageId, Long memberId, String emojiType);
 }
