@@ -4,7 +4,7 @@
 <mapper namespace="ecoShopMapper">
 
     <select id = "reviewList" resultType="ReviewerName">
-        SELECT SHOP_ID, RATING, CONTENT, NAME, MEMBER.MEMBER_ID
+        SELECT ESR_ID, SHOP_ID, RATING, CONTENT, NAME, MEMBER.MEMBER_ID, ECO_SHOP_REVIEW.CREATED_AT
         FROM ECO_SHOP_REVIEW
         JOIN MEMBER ON ECO_SHOP_REVIEW.MEMBER_ID = MEMBER.MEMBER_ID
         WHERE SHOP_ID = #{shopId}
@@ -23,10 +23,13 @@
     </select>
 <!--Shop 삽입-->
     <insert id="insertEcoShop" parameterType="com.kh.spring.ecoshop.vo.EcoShop">
+        <selectKey keyProperty="shopId" resultType="int" order="BEFORE">
+            SELECT SEQ_SHOP_ID.NEXTVAL FROM DUAL
+        </selectKey>
         INSERT INTO ECO_SHOP (
-        NAME, ADDRESS, PHONE, LAT, LNG, ESC_ID, CONTS_ID
+        SHOP_ID, NAME, ADDRESS, PHONE, LAT, LNG, CONTS_ID, ESC_ID
         ) VALUES (
-        #{name}, #{address}, #{phone}, #{lat}, #{lng}, #{escId}, #{contsId}
+        #{shopId}, #{name}, #{address}, #{phone}, #{lat}, #{lng}, #{contsId}, #{escId}
         )
     </insert>
 <!--리뷰 작성-->
@@ -72,7 +75,8 @@
     </select>
 
     <select id = "findShopIdByContsId" parameterType="string" resultType="_int">
-        SELECT SHOP_ID FROM ECO_SHOP
+        SELECT NVL(MAX(SHOP_ID), 0) -- 데이터가 없으면 null 대신 0을 반환
+        FROM ECO_SHOP
         WHERE CONTS_ID = #{contsId}
     </select>
 </mapper>

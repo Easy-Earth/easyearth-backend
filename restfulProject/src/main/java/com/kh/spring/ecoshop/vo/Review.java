@@ -30,5 +30,5 @@ public class Review {
     @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
     private java.util.Date updateAt;
     int memberId;
-
+    private String contsId;
 }
