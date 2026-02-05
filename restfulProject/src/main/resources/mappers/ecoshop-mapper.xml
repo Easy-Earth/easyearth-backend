@@ -4,7 +4,7 @@
 <mapper namespace="ecoShopMapper">
 
     <select id = "reviewList" resultType="ReviewerName">
-        SELECT SHOP_ID, RATING, CONTENT, NAME, MEMBER.MEMBER_ID
+        SELECT ESR_ID, SHOP_ID, RATING, CONTENT, NAME, MEMBER.MEMBER_ID, ECO_SHOP_REVIEW.CREATED_AT
         FROM ECO_SHOP_REVIEW
         JOIN MEMBER ON ECO_SHOP_REVIEW.MEMBER_ID = MEMBER.MEMBER_ID
         WHERE SHOP_ID = #{shopId}
