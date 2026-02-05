@@ -2,19 +2,27 @@ package com.kh.spring.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
 
-//해당 클래스가 설정파일임을 알려주는 어노테이션
 @Configuration
+@EnableWebSecurity
 public class SecurityConfig {
 
-	//등록하고자하는 bean이 있다면 @bean어노테이션 작성
-	
 	@Bean
 	public BCryptPasswordEncoder bcrypt() {
-		
-		//해당 객체 생성하여 반환
 		return new BCryptPasswordEncoder();
 	}
-	
+
+	@Bean
+	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+		http
+			.authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+			.csrf(csrf -> csrf.disable())
+			.cors(Customizer.withDefaults());
+		return http.build();
+	}
 }
