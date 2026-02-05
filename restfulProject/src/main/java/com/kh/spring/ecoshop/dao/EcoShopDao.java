@@ -49,6 +49,10 @@ public class EcoShopDao {
     }
 
     public int findShopIdByContsId(SqlSessionTemplate sqlSession, String contsId) {
-        return sqlSession.selectOne("ecoShopMapper.findShopIdByContsId", contsId);
+        Integer result = sqlSession.selectOne("ecoShopMapper.findShopIdByContsId", contsId);
+
+        // 2. 결과가 null이면 0을, 있으면 그 값을 반환합니다.
+        return (result == null) ? 0 : result;
     }
+
 }
