@@ -36,7 +36,7 @@
 	    JOIN ITEM I
 	        ON UI.ITEM_ID = I.ITEM_ID
 	    WHERE UI.USER_ID = #{memberId}
-	
+		ORDER BY PRICE
 	</select>
 	
 	<!-- 전체 아이템 중 특정 하나 조회 -->

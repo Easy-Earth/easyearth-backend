@@ -138,6 +138,8 @@ public class ItemController {
 
         int result = service.equipItem(userId, uiId);
         
+        System.out.println(result);
+        
         if(result>0) {
         	
         	return ResponseEntity.ok("아이템 장착 완료");
