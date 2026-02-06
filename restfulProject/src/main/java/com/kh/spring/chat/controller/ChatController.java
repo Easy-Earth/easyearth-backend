@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -246,5 +247,41 @@ public class ChatController {
     public void typing(ChatTypingDto typingDto) {
         // 클라이언트 구독 경로: /topic/chat/room/{roomId}/typing
         messagingTemplate.convertAndSend("/topic/chat/room/" + typingDto.getChatRoomId() + "/typing", typingDto);
+    }
+    
+    // ===================================
+    // 6. 메시지 삭제 (Soft Delete)
+    // ===================================
+    
+    @Operation(summary = "메시지 삭제", description = "작성자가 자신의 메시지를 삭제합니다. (Soft Delete)")
+    @PutMapping("/message/{messageId}/delete")
+    public ResponseEntity<Void> deleteMessage(
+            @PathVariable Long messageId, 
+            @RequestParam Long memberId) {
+        chatService.softDeleteMessage(messageId, memberId);
+        return ResponseEntity.ok().build();
+    }
+    
+    // ===================================
+    // 7. 채팅방 공지 관리
+    // ===================================
+    
+    @Operation(summary = "채팅방 공지 설정", description = "방장 또는 관리자가 특정 메시지를 공지로 설정합니다.")
+    @PostMapping("/room/{roomId}/notice")
+    public ResponseEntity<Void> setNotice(
+            @PathVariable Long roomId, 
+            @RequestParam Long memberId,
+            @RequestParam Long messageId) {
+        chatService.setNotice(roomId, memberId, messageId);
+        return ResponseEntity.ok().build();
+    }
+    
+    @Operation(summary = "채팅방 공지 해제", description = "방장 또는 관리자가 채팅방 공지를 해제합니다.")
+    @DeleteMapping("/room/{roomId}/notice")
+    public ResponseEntity<Void> clearNotice(
+            @PathVariable Long roomId, 
+            @RequestParam Long memberId) {
+        chatService.clearNotice(roomId, memberId);
+        return ResponseEntity.ok().build();
     }
 }
