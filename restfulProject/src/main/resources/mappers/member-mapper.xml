@@ -73,14 +73,26 @@
 	
 	<!-- 회원 정보 수정 매퍼 -->
 	<update id="updateMember" parameterType="MemberVO">
-		UPDATE MEMBER
-		SET PASSWORD = #{password},
-		      NAME = #{name},
-		      BIRTHDAY = #{birthday},
-		      GENDER = #{gender},
-		      ADDRESS = #{address},
-		      UPDATE_AT = SYSDATE
-		WHERE MEMBER_ID = #{memberId}
+	    UPDATE MEMBER
+	    <set>
+	        <if test="password != null and password != ''">
+	            PASSWORD = #{password},
+	        </if>
+	        <if test="name != null">
+	            NAME = #{name},
+	        </if>
+	        <if test="birthday != null">
+	            BIRTHDAY = #{birthday},
+	        </if>
+	        <if test="gender != null">
+	            GENDER = #{gender},
+	        </if>
+	        <if test="address != null">
+	            ADDRESS = #{address},
+	        </if>
+	        UPDATE_AT = SYSDATE
+	    </set>
+	    WHERE MEMBER_ID = #{memberId}
 	</update>
 	
 	<!-- 회원 탈퇴 매퍼 -->
