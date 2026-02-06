@@ -63,20 +63,15 @@ public class ReportsDao {
 		
 		return (ArrayList)sqlSession.selectList("reportsMapper.filterReportsList", map, rowBounds);
 	}
+	
+	//신고글 상세보기
+	public ReportsVO reportsDetail(SqlSessionTemplate sqlSession, int reportsId) {
+		return sqlSession.selectOne("reportsMapper.reportsDetail", reportsId);
+	}
 
 	//신고 등록
 	public int reportsInsert(SqlSessionTemplate sqlSession, Map<String, Object> map) {
 		return sqlSession.insert("reportsMapper.reportsInsert", map);
-	}
-
-	//누적 신고 수
-	public int reportsCount(SqlSessionTemplate sqlSession, Map<String, Object> map) {
-		return sqlSession.selectOne("reportsMapper.reportsCount", map);
-	}
-
-	//10회 이상 신고 - status : N 처리
-	public int disableTarget(SqlSessionTemplate sqlSession, Map<String, Object> map) {
-		return sqlSession.update("reportsMapper.disableTarget", map);
 	}
 
 	//신고 수정
@@ -88,4 +83,26 @@ public class ReportsDao {
 	public int reportsDelete(SqlSessionTemplate sqlSession, ReportsVO reports) {
 		return sqlSession.delete("reportsMapper.reportsDelete", reports);
 	}
+
+	//신고글 상태 처리 - 관리자 권한
+	public int reportsStatus(SqlSessionTemplate sqlSession, int reportsId, String status) {
+		
+		HashMap<String, Object> map = new HashMap<>();
+		map.put("reportsId", reportsId);
+		map.put("status", status);
+		
+		return sqlSession.update("reportsMapper.reportsStatus", map);
+	}
+
+	//누적 신고 수 
+	public int selectResolvedCount(SqlSessionTemplate sqlSession, Map<String, Object> map) {
+		return sqlSession.selectOne("reportsMapper.selectResolvedCount", map);
+	}
+	
+	//10회 이상 신고 - status : B 처리 
+	public int reportsBlind(SqlSessionTemplate sqlSession, Map<String, Object> map) {
+		return sqlSession.update("reportsMapper.reportsBlind", map);
+	}
+
+
 }
