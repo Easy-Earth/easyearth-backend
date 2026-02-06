@@ -166,9 +166,9 @@ public class ItemController {
 		//70~94 : RARE  25%
 		//95~99 : EPIC 5%
 		//100 : LEGENDARY 1%
-		if (randomNum <= 69) randomPullHistory.setRarity("COMMON");
-		else if (randomNum <= 94) randomPullHistory.setRarity("RARE");
-		else if (randomNum <= 99) randomPullHistory.setRarity("EPIC");
+		if (randomNum <= 50) randomPullHistory.setRarity("COMMON");
+		else if (randomNum <= 80) randomPullHistory.setRarity("RARE");
+		else if (randomNum <= 95) randomPullHistory.setRarity("EPIC");
 		else randomPullHistory.setRarity("LEGENDARY");
 		randomPullHistory.setMemberId(memberId);
 

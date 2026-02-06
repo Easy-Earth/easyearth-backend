@@ -97,6 +97,7 @@ public class ItemServiceImpl implements ItemService {
 		
 		//상태값 가져와보기
 		String status = dao.selectStatus(sqlSession, uiId);
+	
 		
 		if(status.equals("Y")) {
 			
@@ -106,6 +107,7 @@ public class ItemServiceImpl implements ItemService {
 		}
 		// 1️ 장착하려는 아이템의 카테고리 조회
 		String category = dao.selectCategoryByUiId(sqlSession,userId, uiId);
+		System.out.println("categroy : " + category);
 		if (category == null) {
 		    return -2;
 		}
