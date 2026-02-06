@@ -112,6 +112,22 @@
     	ORDER BY CREATED_AT DESC
 	</select>
 	
+ 	<!-- 게시글 상세보기 -->
+ 	<select id="communityDetail" parameterType="_int" resultType="CommunityPostVO">
+ 		SELECT POST_ID
+ 				,MEMBER_ID
+ 				,TITLE
+ 				,CONTENT
+ 				,VIEW_COUNT
+ 				,LIKE_COUNT
+ 				,UPDATED_AT
+ 				,CATEGORY
+ 				,ORIGIN_NAME
+ 				,CHANGE_NAME
+ 		FROM COMMUNITY_POST
+ 		WHERE POST_ID = #{postId}
+ 	</select>
+	
 	<!-- 신고 등록 -->
 	<insert id="reportsInsert" parameterType="map">
 		INSERT INTO REPORTS (
@@ -145,31 +161,6 @@
 			,#{detail}
 		)
 	</insert>
-
-	<!-- 누적 신고 수 -->
-	<select id="reportsCount" parameterType="map" resultType="_int">
-		SELECT COUNT(*) FROM REPORTS
-		<where>
-			<if test="type == 'POST'">AND POST_ID = #{postId}</if>
-			<if test="type == 'REPLY'">AND REPLY_ID = #{replyId}</if>
-			<if test="type == 'REVIEW'">AND REVIEW_ID = #{reviewId}</if>
-		</where>
-	</select>
-	
-	<!-- 10회 이상 신고 - status : N 처리 -->
- 	<update id="disableTarget" parameterType="map">
- 		<choose>
- 			<when test="type == 'POST'">
- 				UPDATE COMMUNITY_POST SET STATUS = 'N' WHERE POST_ID = #{postId}
- 			</when>
-			<when test="type == 'REPLY'">
- 				UPDATE COMMUNITY_REPLY SET STATUS = 'N' WHERE REPLY_ID = #{replyId}
- 			</when>
- 			<when test="type == 'POST'">
- 				UPDATE ECO_SHOP_REVIEW SET STATUS = 'N' WHERE ESR_ID = #{reviewId}
- 			</when>	
- 		</choose>
- 	</update>
  	
  	<!-- 신고 수정 -->
  	<update id="reportsUpdate" parameterType="ReportsVO">
@@ -189,8 +180,54 @@
  		AND STATUS IS NULL
  	</delete>
  	
- 	
- 	
- 	
+ 	<!-- 신고글 상태 처리 - 관리자 권한 -->
+ 	<update id="reportsStatus">
+ 		UPDATE REPORTS 
+	    SET STATUS = #{status}, 
+	    <choose>
+            <when test="status == 'RESOLVED'">
+                RESOLVED_AT = SYSDATE
+            </when>
+            <otherwise>
+                RESOLVED_AT = NULL
+            </otherwise>
+        </choose>
+	    WHERE REPORTS_ID = #{reportsId}
+ 	</update>
+
+	<!-- 누적 신고 수 -->
+	<select id="selectResolvedCount" resultType="_int">
+		SELECT COUNT(*)
+		FROM REPORTS
+	    WHERE STATUS = 'RESOLVED'
+        AND TYPE = #{type}
+	    <choose>
+	        <when test="type == 'POST'">
+	            AND POST_ID = #{postId}
+	        </when>
+	        <when test="type == 'REPLY'">
+	            AND REPLY_ID = #{replyId}
+	        </when>
+	        <when test="type == 'REVIEW'">
+	            AND REVIEW_ID = #{reviewId}
+	        </when>
+    	</choose>
+	</select>
+
+	<!-- 10회 이상 신고 - status : B 처리  -->
+	<update id="reportsBlind">
+		<choose>
+	        <when test="type == 'POST'">
+	            UPDATE COMMUNITY_POST SET STATUS = 'B' WHERE POST_ID = #{postId}
+	        </when>
+	        <when test="type == 'REPLY'">
+	            UPDATE COMMUNITY_REPLY SET STATUS = 'B' WHERE REPLY_ID = #{replyId}
+	        </when>
+	        <when test="type == 'REVIEW'">
+	            UPDATE ECO_SHOP_REVIEW SET STATUS = 'B' WHERE ESR_ID = #{reviewId}
+	        </when> 
+	    </choose>
+	</update>
+ 
  	
 </mapper>
