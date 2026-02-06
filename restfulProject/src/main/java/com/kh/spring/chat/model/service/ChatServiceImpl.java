@@ -251,16 +251,34 @@ public class ChatServiceImpl implements ChatService {
     @Transactional(readOnly = true)
     public ChatRoomDto selectChatRoom(Long roomId) {
         return chatRoomRepository.findById(roomId)
-                .map(entity -> ChatRoomDto.builder()
-                        .chatRoomId(entity.getId())
-                        .title(entity.getTitle())
-                        .roomType(entity.getRoomType())
-                        .build())
+                .map(entity -> {
+                    // 참여자 목록 조회 및 DTO 변환
+                    List<ChatRoomDto.ParticipantInfo> participants = chatRoomUserRepository
+                            .findAllByChatRoomId(roomId).stream()
+                            .map(roomUser -> ChatRoomDto.ParticipantInfo.builder()
+                                    .memberId(roomUser.getMember().getId())
+                                    .memberName(roomUser.getMember().getName())
+                                    .name(roomUser.getMember().getName()) // 프론트 호환성
+                                    .loginId(roomUser.getMember().getLoginId())
+                                    .profileImageUrl(roomUser.getMember().getProfileImageUrl())
+                                    .role(roomUser.getRole())
+                                    .joinedAt(roomUser.getJoinedAt())
+                                    .build())
+                            .collect(Collectors.toList());
+                    
+                    return ChatRoomDto.builder()
+                            .chatRoomId(entity.getId())
+                            .title(entity.getTitle())
+                            .roomType(entity.getRoomType())
+                            .participants(participants)
+                            .build();
+                })
                 .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다"));
     }
     
     //채팅방에 메시지 저장
     @Override
+    @Transactional
     public ChatMessageDto saveMessage(ChatMessageDto messageDto) {
         // 1. 채팅방 조회
         ChatRoomEntity chatRoom = chatRoomRepository.findById(messageDto.getChatRoomId())
@@ -304,11 +322,23 @@ public class ChatServiceImpl implements ChatService {
         // 4. 채팅방의 마지막 메시지 정보 업데이트 (OptimisticLock 재시도)
         updateLastMessageWithRetry(chatRoom.getId(), messageDto.getContent(), savedMessage.getCreatedAt());
         
-        // 5. 저장된 메시지를 DTO로 변환하여 반환
+        // 5. [개선] 발신자 자동 읽음 처리
+        try {
+            updateReadStatus(chatRoom.getId(), sender.getId(), savedMessage.getId());
+        } catch (Exception e) {
+            log.warn("발신자 자동 읽음 처리 실패: {}", e.getMessage());
+            // 읽음 처리 실패는 메시지 전송에 영향을 주지 않도록 warn 로그만 남김
+        }
+        
+        // 6. 저장된 메시지를 DTO로 변환하여 반환
         messageDto.setMessageId(savedMessage.getId());
         messageDto.setCreatedAt(savedMessage.getCreatedAt());
         messageDto.setSenderName(sender.getName());
         messageDto.setSenderProfileImage(sender.getProfileImageUrl());
+        
+        // [수정] 방금 보낸 메시지의 안 읽은 사람 수 계산 (발신자 제외 모든 사람)
+        Integer unreadCount = calculateUnreadCount(savedMessage);
+        messageDto.setUnreadCount(unreadCount);
         
         return messageDto;
     }
@@ -423,6 +453,9 @@ public class ChatServiceImpl implements ChatService {
             })
             .collect(Collectors.toList());
 
+        // [개선] 읽음 수 계산
+        Integer unreadCount = calculateUnreadCount(entity);
+
         ChatMessageDto.ChatMessageDtoBuilder builder = ChatMessageDto.builder()
             .messageId(entity.getId())
             .chatRoomId(entity.getChatRoom().getId())
@@ -432,7 +465,8 @@ public class ChatServiceImpl implements ChatService {
             .content(entity.getContent())
             .messageType(entity.getMessageType())
             .createdAt(entity.getCreatedAt())
-            .reactions(reactionSummaries);
+            .reactions(reactionSummaries)
+            .unreadCount(unreadCount);
 
 
 
@@ -444,6 +478,40 @@ public class ChatServiceImpl implements ChatService {
         }
 
         return builder.build();
+    }
+    
+    // [개선] 메시지별 안 읽은 사람 수 계산
+    private Integer calculateUnreadCount(ChatMessageEntity message) {
+        try {
+            Long chatRoomId = message.getChatRoom().getId();
+            Long messageId = message.getId();
+            Long senderId = message.getSender().getId();
+            
+            // 채팅방 전체 참여자 조회
+            List<ChatRoomUserEntity> allUsers = chatRoomUserRepository
+                .findAllByChatRoomId(chatRoomId);
+            
+            // 발신자 제외한 참여자 수
+            long totalRecipients = allUsers.stream()
+                .filter(u -> !u.getMember().getId().equals(senderId))
+                .count();
+            
+            // 읽은 사람 수 계산 (lastReadMessageId >= 현재 메시지 ID)
+            long readCount = allUsers.stream()
+                .filter(u -> !u.getMember().getId().equals(senderId))
+                .filter(u -> {
+                    Long lastReadId = u.getLastReadMessageId();
+                    return lastReadId != null && lastReadId >= messageId;
+                })
+                .count();
+            
+            // 안 읽은 사람 수
+            int unread = (int) (totalRecipients - readCount);
+            return unread > 0 ? unread : null; // 0이면 null 반환 (프론트엔드에서 표시 안 함)
+        } catch (Exception e) {
+            log.warn("읽음 수 계산 실패: {}", e.getMessage());
+            return null; // 계산 실패 시 null 반환
+        }
     }
 
     //메시지 읽음 처리 (Optimized)
