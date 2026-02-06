@@ -216,14 +216,16 @@
 			USER_ID,
 			PRICE,
 			ACQUIRED_AT,
-			IS_EQUIPPED
+			IS_EQUIPPED,
+			CATEGORY
 			) VALUES (
 				SEQ_UI_ID.NEXTVAL,
 				#{itemId},
 				#{memberId},
 				#{price},
 				SYSDATE,
-				'N'
+				'N',
+				#{category}
 				)
 	</insert>
 <!--아이템 중복 체크-->
