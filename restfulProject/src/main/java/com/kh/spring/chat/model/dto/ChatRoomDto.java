@@ -1,6 +1,7 @@
 package com.kh.spring.chat.model.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,4 +27,22 @@ public class ChatRoomDto {
     private String otherMemberName; // 1:1 채팅일 경우 상대방 이름
     private String otherMemberProfile; // 1:1 채팅일 경우 상대방 프로필
     private int unreadCount; // 안 읽은 메시지 수
+    
+    // 참여자 목록 (멤버 관리용)
+    private List<ParticipantInfo> participants;
+    
+    // 참여자 정보 내부 클래스
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ParticipantInfo {
+        private Long memberId;
+        private String memberName;
+        private String name; // memberName과 같은 값 (프론트 호환성)
+        private String loginId;
+        private String profileImageUrl;
+        private String role; // OWNER, ADMIN, MEMBER
+        private LocalDateTime joinedAt;
+    }
 }

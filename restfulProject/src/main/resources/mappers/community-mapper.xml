@@ -108,21 +108,7 @@
 		ORDER BY UPDATED_AT DESC
 	</select>
 	
- 	<!-- 게시글 상세보기 -->
- 	<select id="communityDetail" parameterType="_int" resultType="CommunityPostVO">
- 		SELECT POST_ID
- 				,MEMBER_ID
- 				,TITLE
- 				,CONTENT
- 				,VIEW_COUNT
- 				,LIKE_COUNT
- 				,UPDATED_AT
- 				,CATEGORY
- 				,ORIGIN_NAME
- 				,CHANGE_NAME
- 		FROM COMMUNITY_POST
- 		WHERE POST_ID = #{postId}
- 	</select>
+
  	
  	<!-- 게시글 등록 -->
  	<insert id="communityInsert" parameterType="CommunityPostVO">

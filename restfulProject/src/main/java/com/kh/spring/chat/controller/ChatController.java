@@ -41,6 +41,21 @@ public class ChatController {
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatService chatService;
     private final com.kh.spring.chat.model.repository.ChatRoomUserRepository chatRoomUserRepository;
+    private final com.kh.spring.chat.model.repository.MemberRepository memberRepository;
+
+    @Operation(summary = "회원 검색 (Login ID)", description = "로그인 ID로 회원을 검색합니다.")
+    @GetMapping("/users/search")
+    public ResponseEntity<java.util.Map<String, Object>> searchMember(@RequestParam String loginId) {
+        return memberRepository.findByLoginId(loginId)
+                .map(member -> {
+                    java.util.Map<String, Object> response = new java.util.HashMap<>();
+                    response.put("memberId", member.getId());
+                    response.put("name", member.getName());
+                    response.put("loginId", member.getLoginId());
+                    return ResponseEntity.ok(response);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
 
     // ======================================================================
     // 1. 실시간 채팅 (WebSocket/STOMP)
@@ -50,7 +65,7 @@ public class ChatController {
      * 클라이언트가 /app/chat/message 로 메시지를 보내면 이 메소드가 실행
      * 처리 후 /topic/chat/room/{roomId} 로 구독자들에게 메시지를 전송
      */
-    @MessageMapping("/message")
+    @MessageMapping("/chat/message")
     public void sendMessage(ChatMessageDto messageDto) {
         log.info("메시지 수신: {}", messageDto);
         
@@ -227,7 +242,7 @@ public class ChatController {
     // 4. 입력 상태 표시 (Typing Indicator)
     // ===================================
     
-    @MessageMapping("/typing")
+    @MessageMapping("/chat/typing")
     public void typing(ChatTypingDto typingDto) {
         // 클라이언트 구독 경로: /topic/chat/room/{roomId}/typing
         messagingTemplate.convertAndSend("/topic/chat/room/" + typingDto.getChatRoomId() + "/typing", typingDto);
