@@ -68,4 +68,13 @@ public class ChatMessageEntity {
     //reactions = null 이 되지 않기 위헤 기본값 지정
     //mappedBy : 해당 정보는 chatMessage라는 필드가 지금의 컬럼과 연결되어있기에 거울처럼 비춰서 매핑 결과를 보여주는 기능
     //편의성 기능. MessageReactionEntity 에서 조회하는 것이 아닌 chatMessageEntity에서도 반대로 조회할 수 있게 해줌
+    
+    // Soft Delete를 위한 setter 메서드
+    public void setContent(String content) {
+        this.content = content;
+    }
+    
+    public void setMessageType(String messageType) {
+        this.messageType = messageType;
+    }
 }

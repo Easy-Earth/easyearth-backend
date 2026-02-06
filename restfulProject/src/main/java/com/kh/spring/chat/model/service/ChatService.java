@@ -42,7 +42,14 @@ public interface ChatService {
 
     // [그룹 관리] 강퇴 (방장/관리자가 멤버 강퇴)
     void kickMember(Long chatRoomId, Long targetMemberId, Long requesterId);
-
+    
+    // 메시지 삭제 (Soft Delete)
+    void softDeleteMessage(Long messageId, Long memberId);
+    
+    // 채팅방 공지 관리
+    void setNotice(Long roomId, Long memberId, Long messageId);
+    void clearNotice(Long roomId, Long memberId);
+    
     // [메시지 검색] 키워드 검색
     List<ChatMessageDto> searchMessages(Long chatRoomId, Long memberId, String keyword);
     
