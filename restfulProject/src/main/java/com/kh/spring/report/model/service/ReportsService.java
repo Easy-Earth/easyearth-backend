@@ -27,6 +27,9 @@ public interface ReportsService {
 	//신고글 필터링 조회
 	ArrayList<ReportsVO> filterReportsList(HashMap<String, String> map, PageInfo pi);
 	
+	//신고글 상세보기
+	ReportsVO reportsDetail(int reportsId);
+	
 	//신고 등록
 	int reportsInsert(Map<String, Object> map);
 
@@ -35,6 +38,12 @@ public interface ReportsService {
 
 	//신고 삭제
 	int reportsDelete(ReportsVO reports);
+
+	//신고글 상태 처리 - 관리자 권한
+	int reportsStatus(int reportsId, String status);
+
+	//누적 신고 10회 블라인드 처리 
+	int reportsBlind(Map<String, Object> map);
 
 
 	
