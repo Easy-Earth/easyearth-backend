@@ -55,4 +55,16 @@ public interface ChatService {
     
     // [알림] 글로벌 알림 전송 (비동기)
     void sendGlobalNotifications(ChatMessageDto savedMessage);
+    
+    // [즐겨찾기] 채팅방 즐겨찾기 토글
+    void toggleFavorite(Long roomId, Long memberId);
+    
+    // [초대] 사용자 초대
+    void inviteUser(Long roomId, Long invitedMemberId, Long requesterId);
+    
+    // [초대] 초대 수락
+    void acceptInvitation(Long roomId, Long memberId);
+    
+    // [초대] 초대 거절
+    void rejectInvitation(Long roomId, Long memberId);
 }

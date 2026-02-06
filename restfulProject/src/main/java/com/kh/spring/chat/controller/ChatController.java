@@ -70,11 +70,14 @@ public class ChatController {
     public void sendMessage(ChatMessageDto messageDto) {
         log.info("메시지 수신: {}", messageDto);
         
-        // 1. DB에 메시지 저장 (트랜잭션 처리)
-        ChatMessageDto savedMessage = chatService.saveMessage(messageDto);
-        
-        // 2. 구독자들에게 메시지 전송 (채팅방 안)
-        messagingTemplate.convertAndSend("/topic/chat/room/" + messageDto.getChatRoomId(), savedMessage);
+    
+    // 1. DB에 메시지 저장 (트랜잭션 처리)
+    ChatMessageDto savedMessage = chatService.saveMessage(messageDto);
+    log.info("✅ 저장된 메시지 - messageId: {}, unreadCount: {}", 
+        savedMessage.getMessageId(), savedMessage.getUnreadCount());
+    
+    // 2. 구독자들에게 메시지 전송 (채팅방 안)
+    messagingTemplate.convertAndSend("/topic/chat/room/" + messageDto.getChatRoomId(), savedMessage);
         
         // 3. 글로벌 알림 전송 (Service에서 비동기 처리, 트랜잭션 경계 분리)
         chatService.sendGlobalNotifications(savedMessage);
@@ -277,11 +280,48 @@ public class ChatController {
     }
     
     @Operation(summary = "채팅방 공지 해제", description = "방장 또는 관리자가 채팅방 공지를 해제합니다.")
-    @DeleteMapping("/room/{roomId}/notice")
+    @PutMapping("/rooms/{roomId}/notice")
     public ResponseEntity<Void> clearNotice(
             @PathVariable Long roomId, 
             @RequestParam Long memberId) {
         chatService.clearNotice(roomId, memberId);
+        return ResponseEntity.ok().build();
+    }
+    
+    // [즐겨찾기] 채팅방 즐겨찾기 토글
+    @PutMapping("/rooms/{roomId}/favorite")
+    public ResponseEntity<Void> toggleFavorite(
+            @PathVariable Long roomId,
+            @RequestParam Long memberId) {
+        chatService.toggleFavorite(roomId, memberId);
+        return ResponseEntity.ok().build();
+    }
+    
+    // [초대] 사용자 초대
+    @PostMapping("/rooms/{roomId}/invite")
+    public ResponseEntity<Void> inviteUser(
+            @PathVariable Long roomId,
+            @RequestParam Long invitedMemberId,
+            @RequestParam Long requesterId) {
+        chatService.inviteUser(roomId, invitedMemberId, requesterId);
+        return ResponseEntity.ok().build();
+    }
+    
+    // [초대] 초대 수락
+    @PutMapping("/rooms/{roomId}/invitation/accept")
+    public ResponseEntity<Void> acceptInvitation(
+            @PathVariable Long roomId,
+            @RequestParam Long memberId) {
+        chatService.acceptInvitation(roomId, memberId);
+        return ResponseEntity.ok().build();
+    }
+    
+    // [초대] 초대 거절
+    @PutMapping("/rooms/{roomId}/invitation/reject")
+    public ResponseEntity<Void> rejectInvitation(
+            @PathVariable Long roomId,
+            @RequestParam Long memberId) {
+        chatService.rejectInvitation(roomId, memberId);
         return ResponseEntity.ok().build();
     }
 }

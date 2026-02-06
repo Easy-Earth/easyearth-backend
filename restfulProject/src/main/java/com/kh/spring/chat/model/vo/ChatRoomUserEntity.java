@@ -56,6 +56,14 @@ public class ChatRoomUserEntity {
     @Column(name = "ROLE", nullable = false, length = 20)
     private String role = "MEMBER"; // OWNER, ADMIN, MEMBER
 
+    @lombok.Builder.Default
+    @Column(name = "IS_FAVORITE", columnDefinition = "NUMBER(1) DEFAULT 0")
+    private Integer isFavorite = 0; // 0: OFF, 1: ON
+
+    @lombok.Builder.Default
+    @Column(name = "INVITATION_STATUS", length = 20)
+    private String invitationStatus = "ACCEPTED"; // PENDING, ACCEPTED, REJECTED
+
     public void updateLastReadMessageId(Long messageId) {
         this.lastReadMessageId = messageId;
     }
@@ -66,5 +74,13 @@ public class ChatRoomUserEntity {
 
     public void updateLastReadMessageCount(Long count) {
         this.lastReadMessageCount = count;
+    }
+
+    public void toggleFavorite() {
+        this.isFavorite = (this.isFavorite == 0) ? 1 : 0;
+    }
+
+    public void setInvitationStatus(String invitationStatus) {
+        this.invitationStatus = invitationStatus;
     }
 }

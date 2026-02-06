@@ -60,9 +60,31 @@ public class ChatServiceImpl implements ChatService {
         return chatRooms.stream()
                 .map(entity -> {
                     int unreadCount = 0;
+                    boolean isFavorite = false;
+                    String invitationStatus = "ACCEPTED";
+                    
                     if (memberId != null) {
                         // 안 읽은 메시지 수 계산 (최적화: 전체 수 - 내가 읽은 시점 수)
                         unreadCount = countUnreadMessagesOptimized(entity, memberId);
+                        
+                        // 즐겨찾기 및 초대 상태 조회
+                        chatRoomUserRepository.findByChatRoomIdAndMemberId(entity.getId(), memberId)
+                            .ifPresent(roomUser -> {
+                                // isFavorite가 1이면 true, 0이면 false
+                            });
+                    }
+                    
+                    // ChatRoomUserEntity에서 즐겨찾기, 초대 상태 조회
+                    ChatRoomUserEntity userInfo = null;
+                    if (memberId != null) {
+                        userInfo = chatRoomUserRepository
+                            .findByChatRoomIdAndMemberId(entity.getId(), memberId)
+                            .orElse(null);
+                        
+                        if (userInfo != null) {
+                            isFavorite = (userInfo.getIsFavorite() == 1);
+                            invitationStatus = userInfo.getInvitationStatus();
+                        }
                     }
                     
                     //채팅방 정보를 dto로 변환 (아래 조건문에서 완성 후 build)
@@ -72,7 +94,9 @@ public class ChatServiceImpl implements ChatService {
                             .roomType(entity.getRoomType())
                             .lastMessageContent(entity.getLastMessageContent())
                             .lastMessageAt(entity.getLastMessageAt())
-                            .unreadCount(unreadCount);
+                            .unreadCount(unreadCount)
+                            .isFavorite(isFavorite)
+                            .invitationStatus(invitationStatus);
 
                     // 1:1 채팅방(SINGLE)이고 상대방 정보를 채워야 하는 경우
                     if ("SINGLE".equals(entity.getRoomType()) && memberId != null) {
@@ -344,6 +368,8 @@ public class ChatServiceImpl implements ChatService {
         // [수정] 방금 보낸 메시지의 안 읽은 사람 수 계산 (발신자 제외 모든 사람)
         Integer unreadCount = calculateUnreadCount(savedMessage);
         messageDto.setUnreadCount(unreadCount);
+        log.info("💬 메시지 저장 완료 - messageId: {}, unreadCount: {}, content: {}", 
+            savedMessage.getId(), unreadCount, messageDto.getContent());
         
         return messageDto;
     }
@@ -537,10 +563,33 @@ public class ChatServiceImpl implements ChatService {
         roomUser.updateLastReadMessageId(lastMessageId);
         // 카운트 기반 읽음 처리 업데이트
         roomUser.updateLastReadMessageCount(currentTotalCount);
+        
+        // ✨ 읽음 처리 후 영향받는 메시지들의 unreadCount 재계산
+        List<ChatMessageEntity> affectedMessages = chatMessageRepository.findByChatRoomIdAndIdLessThanEqual(
+                roomId, lastMessageId);
+        
+        Map<Long, Integer> unreadCountMap = new HashMap<>();
+        for (ChatMessageEntity message : affectedMessages) {
+            Integer count = calculateUnreadCount(message);
+            unreadCountMap.put(message.getId(), count);
+        }
+        
+        // ✨ 실시간 갱신 이벤트 전송 (업데이트된 unreadCount 포함)
+        Map<String, Object> readEvent = new HashMap<>();
+        readEvent.put("type", "READ_UPDATE");
+        readEvent.put("memberId", memberId);
+        readEvent.put("lastMessageId", lastMessageId);
+        readEvent.put("unreadCountMap", unreadCountMap);  // 메시지별 업데이트된 unreadCount
+        
+        messagingTemplate.convertAndSend("/topic/chat/room/" + roomId + "/read", readEvent);
+        log.debug("읽음 상태 실시간 이벤트 전송: roomId={}, memberId={}, lastMessageId={}, affectedMessages={}", 
+                roomId, memberId, lastMessageId, affectedMessages.size());
     }
 
     // 시스템 메시지 저장
     private void saveSystemMessage(ChatRoomEntity chatRoom, String content) {
+        log.info("🟢 [시스템 메시지] 저장 시작 - chatRoomId: {}, content: {}", chatRoom.getId(), content);
+        
         // 시스템 메시지는 발신자가 없으므로(null) '시스템' 더미 계정을 만들어서 사용
         // Admin 계정을 찾아서 넣는 로직으로 구현.(id가 1인 멤버가 admin)
         MemberEntity systemSender = memberRepository.findById(1L)
@@ -548,9 +597,11 @@ public class ChatServiceImpl implements ChatService {
         
         if (systemSender == null) {
             // [개선] Admin 계정이 없으면 시스템 메시지를 건너뜀 (에러 발생 방지)
-            log.warn("System Account (ID=1) not found. System message skipped: {}", content);
+            log.warn("❌ System Account (ID=1) not found. System message skipped: {}", content);
             return;
         }
+        
+        log.info("✅ System Account 찾음: {}", systemSender.getName());
 
         // [예외 처리] 시스템 메시지 저장 실패 시에도 전체 트랜잭션은 유지
         try {
@@ -562,9 +613,29 @@ public class ChatServiceImpl implements ChatService {
                     .createdAt(LocalDateTime.now())
                     .build();
             
-            chatMessageRepository.save(systemMessage);
+            ChatMessageEntity saved = chatMessageRepository.save(systemMessage);
+            log.info("💾 DB 저장 완료 - messageId: {}", saved.getId());
+            
+            // ✅ WebSocket으로 실시간 전송 추가
+            ChatMessageDto messageDto = ChatMessageDto.builder()
+                    .messageId(saved.getId())
+                    .chatRoomId(chatRoom.getId())
+                    .senderId(systemSender.getId())
+                    .senderName("시스템")
+                    .content(content)
+                    .messageType("SYSTEM")
+                    .createdAt(saved.getCreatedAt())
+                    .build();
+            
+            String topic = "/topic/chat/room/" + chatRoom.getId();
+            log.info("📡 WebSocket 전송 - topic: {}, messageDto: {}", topic, messageDto);
+            
+            messagingTemplate.convertAndSend(topic, messageDto);
+            
+            log.info("✅ 시스템 메시지 저장 및 전송 완료!");
+            
         } catch (Exception e) {
-            log.error("Failed to save system message: {}", content, e);
+            log.error("❌ Failed to save system message: {}", content, e);
         }
     }
     
@@ -642,12 +713,20 @@ public class ChatServiceImpl implements ChatService {
                     .build();
             
             messageReactionRepository.save(reaction);
-    }
+        }
+        
+        // ✨ 실시간 갱신: 업데이트된 메시지 전체 전송
+        ChatMessageDto updatedMsg = convertToDto(message, memberId);
+        messagingTemplate.convertAndSend("/topic/chat/room/" + chatRoomId + "/reaction", updatedMsg);
+        log.debug("공감 실시간 이벤트 전송: roomId={}, messageId={}, memberId={}", chatRoomId, messageId, memberId);
     }
 
     // [그룹 관리] 역할 변경
     @Override
     public void updateRole(Long chatRoomId, Long targetMemberId, Long requesterId, String newRole) {
+        log.info("🔄 [역할 변경 요청] chatRoomId: {}, targetMemberId: {}, newRole: {}, requesterId: {}", 
+                chatRoomId, targetMemberId, newRole, requesterId);
+        
         // [보안] 자기 자신에게 권한 변경 불가
         if (targetMemberId.equals(requesterId)) {
             throw new IllegalArgumentException("자기 자신의 권한은 변경할 수 없습니다");
@@ -671,18 +750,35 @@ public class ChatServiceImpl implements ChatService {
                 .orElseThrow(() -> new IllegalArgumentException("대상 사용자가 채팅방에 없습니다"));
 
         // 3. 로직 처리
+        log.info("🎯 [역할 변경 분기] newRole: {}", newRole);
+        
         // 만약 방장을 위임하는 경우 (OWNER -> MEMBER, Target -> OWNER)
         if ("OWNER".equals(newRole)) {
+            log.info("👑 방장 위임 처리 시작");
             // 기존 방장은 MEMBER로 강등
             requester.setRole("MEMBER");
             target.setRole("OWNER");
             
             // 시스템 메시지
+            log.info("📢 시스템 메시지 호출: 방장 위임");
             saveSystemMessage(requester.getChatRoom(), requester.getMember().getName() + "님이 방장을 위임했습니다.");
+        } else if ("ADMIN".equals(newRole)) {
+            log.info("⬆️ 관리자 승격 처리 시작");
+            // 관리자로 승격
+            target.setRole("ADMIN");
+            log.info("📢 시스템 메시지 호출: 관리자 승격");
+            saveSystemMessage(requester.getChatRoom(), target.getMember().getName() + "님이 관리자로 승격되었습니다.");
+        } else if ("MEMBER".equals(newRole)) {
+            log.info("⬇️ 일반 멤버 강등 처리 시작");
+            // 일반 멤버로 강등
+            target.setRole("MEMBER");
+            log.info("📢 시스템 메시지 호출: 일반 멤버 강등");
+            saveSystemMessage(requester.getChatRoom(), target.getMember().getName() + "님이 일반 멤버로 강등되었습니다.");
         } else {
-            // 단순 관리자(ADMIN) 등 변경
-            target.setRole(newRole);
+            throw new IllegalArgumentException("유효하지 않은 역할입니다: " + newRole);
         }
+        
+        log.info("✅ 역할 변경 완료");
     }
 
     // [그룹 관리] 멤버 강퇴
@@ -821,5 +917,113 @@ public class ChatServiceImpl implements ChatService {
         messagingTemplate.convertAndSend("/topic/chat/room/" + roomId + "/notice", noticeEvent);
         
         log.info("공지 해제: roomId={}, memberId={}", roomId, memberId);
+    }
+    
+    // [즐겨찾기] 채팅방 즐겨찾기 토글
+    @Override
+    public void toggleFavorite(Long roomId, Long memberId) {
+        log.info("⭐ [즐겨찾기 토글] roomId: {}, memberId: {}", roomId, memberId);
+        
+        // 1. 참여자 정보 조회
+        ChatRoomUserEntity roomUser = chatRoomUserRepository
+            .findByChatRoomIdAndMemberId(roomId, memberId)
+            .orElseThrow(() -> new IllegalArgumentException("채팅방에 참여하고 있지 않습니다"));
+        
+        // 2. 즐겨찾기 토글
+        roomUser.toggleFavorite();
+        chatRoomUserRepository.save(roomUser);
+        
+        log.info("✅ 즐겨찾기 변경 완료: isFavorite={}", roomUser.getIsFavorite());
+    }
+    
+    // [초대] 사용자 초대 (PENDING 상태로 추가)
+    @Override
+    public void inviteUser(Long roomId, Long invitedMemberId, Long requesterId) {
+        log.info("📧 [사용자 초대] roomId: {}, invitedMemberId: {}, requesterId: {}", 
+                roomId, invitedMemberId, requesterId);
+        
+        // 1. 초대자 권한 확인
+        ChatRoomUserEntity requester = chatRoomUserRepository
+            .findByChatRoomIdAndMemberId(roomId, requesterId)
+            .orElseThrow(() -> new IllegalArgumentException("채팅방에 참여하고 있지 않습니다"));
+        
+        // 2. 그룹 채팅방인지 확인
+        if ("SINGLE".equals(requester.getChatRoom().getRoomType())) {
+            throw new IllegalArgumentException("1:1 채팅방에는 초대할 수 없습니다");
+        }
+        
+        // 3. 이미 참여 중인지 확인
+        Optional<ChatRoomUserEntity> existing = chatRoomUserRepository
+            .findByChatRoomIdAndMemberId(roomId, invitedMemberId);
+        
+        if (existing.isPresent()) {
+            throw new IllegalArgumentException("이미 채팅방에 참여 중인 사용자입니다");
+        }
+        
+        // 4. 초대받을 사용자 조회
+        MemberEntity invitedMember = memberRepository.findById(invitedMemberId)
+            .orElseThrow(() -> new IllegalArgumentException("초대할 사용자를 찾을 수 없습니다"));
+        
+        // 5. PENDING 상태로 참여자 추가
+        ChatRoomUserEntity newUser = ChatRoomUserEntity.builder()
+            .chatRoom(requester.getChatRoom())
+            .member(invitedMember)
+            .role("MEMBER")
+            .invitationStatus("PENDING")
+            .lastReadMessageId(0L)
+            .lastReadMessageCount(0L)
+            .isFavorite(0)
+            .build();
+        
+        chatRoomUserRepository.save(newUser);
+        
+        log.info("✅ 초대 완료: invitedMemberId={}, status=PENDING", invitedMemberId);
+    }
+    
+    // [초대] 초대 수락
+    @Override
+    public void acceptInvitation(Long roomId, Long memberId) {
+        log.info("✅ [초대 수락] roomId: {}, memberId: {}", roomId, memberId);
+        
+        // 1. 참여자 정보 조회
+        ChatRoomUserEntity roomUser = chatRoomUserRepository
+            .findByChatRoomIdAndMemberId(roomId, memberId)
+            .orElseThrow(() -> new IllegalArgumentException("초대 정보를 찾을 수 없습니다"));
+        
+        // 2. PENDING 상태인지 확인
+        if (!"PENDING".equals(roomUser.getInvitationStatus())) {
+            throw new IllegalArgumentException("처리할 수 있는 초대가 아닙니다");
+        }
+        
+        // 3. 상태를 ACCEPTED로 변경
+        roomUser.setInvitationStatus("ACCEPTED");
+        chatRoomUserRepository.save(roomUser);
+        
+        // 4. 시스템 메시지 전송: "OO님이 들어왔습니다"
+        String memberName = roomUser.getMember().getName();
+        saveSystemMessage(roomUser.getChatRoom(), memberName + "님이 들어왔습니다.");
+        
+        log.info("✅ 초대 수락 완료: memberId={}, memberName={}", memberId, memberName);
+    }
+    
+    // [초대] 초대 거절
+    @Override
+    public void rejectInvitation(Long roomId, Long memberId) {
+        log.info("❌ [초대 거절] roomId: {}, memberId: {}", roomId, memberId);
+        
+        // 1. 참여자 정보 조회
+        ChatRoomUserEntity roomUser = chatRoomUserRepository
+            .findByChatRoomIdAndMemberId(roomId, memberId)
+            .orElseThrow(() -> new IllegalArgumentException("초대 정보를 찾을 수 없습니다"));
+        
+        // 2. PENDING 상태인지 확인
+        if (!"PENDING".equals(roomUser.getInvitationStatus())) {
+            throw new IllegalArgumentException("처리할 수 있는 초대가 아닙니다");
+        }
+        
+        // 3. 참여 레코드 삭제 (거절 시엔 레코드를 제거)
+        chatRoomUserRepository.delete(roomUser);
+        
+        log.info("✅ 초대 거절 완료: memberId={}, 레코드 삭제됨", memberId);
     }
 }

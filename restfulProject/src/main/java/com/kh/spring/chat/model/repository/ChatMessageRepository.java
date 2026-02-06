@@ -36,4 +36,7 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessageEntity, 
 
     // 3. 메시지 검색 (키워드 포함, 최신순)
     List<ChatMessageEntity> findByChatRoomIdAndContentContainingOrderByCreatedAtDesc(Long chatRoomId, String keyword);
+    
+    // 4. 특정 메시지 ID 이하의 모든 메시지 조회 (읽음 처리 갱신용)
+    List<ChatMessageEntity> findByChatRoomIdAndIdLessThanEqual(Long chatRoomId, Long messageId);
 }

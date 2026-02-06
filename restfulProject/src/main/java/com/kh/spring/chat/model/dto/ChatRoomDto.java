@@ -36,6 +36,12 @@ public class ChatRoomDto {
     // 참여자 목록 (멤버 관리용)
     private List<ParticipantInfo> participants;
     
+    // 즐겨찾기 여부
+    private boolean isFavorite;
+    
+    // 초대 상태
+    private String invitationStatus; // PENDING, ACCEPTED, REJECTED
+    
     // 참여자 정보 내부 클래스
     @Data
     @Builder

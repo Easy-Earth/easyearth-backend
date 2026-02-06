@@ -12,5 +12,6 @@ import lombok.NoArgsConstructor;
 public class ChatTypingDto {
     private Long chatRoomId;
     private Long senderId;
+    private String senderName;  // 입력중인 사용자 이름
     private boolean isTyping; // true: 입력중, false: 멈춤
 }
