@@ -29,7 +29,7 @@ public class MemberVO {
 	private int memberId;
 	private String loginId;
 	private String password;
-	private String userName;
+	private String name;
 	private String birthday;
 	private String gender;
 	private String address;

@@ -3,6 +3,7 @@ package com.kh.spring.member.controller;
 import java.util.HashMap;
 import java.util.List;
 
+import com.kh.spring.member.model.vo.MemberWalletVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -45,6 +46,11 @@ public class MemberController {
 	@Operation(summary = "회원 가입", description = "회원 가입")
 	@PostMapping("/join")
 	public ResponseEntity<?> insertMember(@RequestBody MemberVO m){
+		
+		// 필수 값 검증 (간이)
+        if(m.getLoginId() == null || m.getPassword() == null) {
+            return ResponseEntity.badRequest().body("아이디와 비밀번호는 필수입니다.");
+        }
 		
 		m.setPassword(bcrypt.encode(m.getPassword()));
 	
@@ -139,6 +145,45 @@ public class MemberController {
 		//클라이언트에서 토큰 삭제만으로 로그아웃처리 된다.
 		
 		return ResponseEntity.ok("로그아웃 되었습니다.");
+	}
+	
+	// ... 기존 import 생략
+
+	// 비밀번호 찾기 (임시 비밀번호 발급 방식)
+	@Operation(summary = "비밀번호 찾기", description = "아이디와 이름을 확인하여 임시 비밀번호 발급")
+	@PostMapping("/findPassword")
+	public ResponseEntity<?> findPassword(@RequestBody MemberVO m) {
+		log.info("비밀번호 찾기 시도: 아이디={}, 이름={}", m.getLoginId(), m.getName());
+
+		// 1. 아이디와 이름으로 회원 정보 조회
+		// (MemberService에 selectMemberByLoginIdAndName 메서드가 있다고 가정)
+		MemberVO member = service.findPassword(m);
+
+		if (member == null) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND)
+								 .body("일치하는 회원 정보가 없습니다.");
+		}
+
+		// 2. 임시 비밀번호 생성 (예: 8자리 랜덤 문자열)
+		String tempPassword = java.util.UUID.randomUUID().toString().substring(0, 8);
+		
+		// 3. 비밀번호 암호화 후 DB 업데이트
+		member.setPassword(bcrypt.encode(tempPassword));
+		int result = service.updateMember(member);
+
+		if (result > 0) {
+			// 4. 성공 응답
+			// 실제 서비스라면 여기서 이메일 발송 로직(JavaMailSender)이 들어가야 합니다.
+			// 지금은 테스트를 위해 응답 바디에 임시 비밀번호를 담아 보냅니다.
+			HashMap<String, String> response = new HashMap<>();
+			response.put("message", "임시 비밀번호가 발급되었습니다.");
+			response.put("tempPassword", tempPassword); // 실무에서는 보안상 이메일로만 보내야 함!
+			
+			return ResponseEntity.ok(response);
+		} else {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+								 .body("비밀번호 재설정 중 오류가 발생했습니다.");
+		}
 	}
 	
 	//회원 정보 수정
@@ -264,7 +309,20 @@ public class MemberController {
         }
     }
 	
-	
+	@Operation(summary = "포인트 조회", description = "누적 사용/획득 포인트 , 보유 포인트 조회")
+    @GetMapping("/point/{memberId}")
+    public ResponseEntity<?> getMemberPoint(@PathVariable int memberId) {
+        MemberWalletVO wallet = service.getMemberPoint(memberId);
+        wallet.setMemberId(memberId);
+        System.out.println(wallet);
+        System.out.println("memberId = " + memberId);
+        if(wallet!=null) {
+            return ResponseEntity.ok(wallet);
+        }
+        else {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("존재하지 않는 회원입니다.");
+        }
+    }
 	
 	
 }

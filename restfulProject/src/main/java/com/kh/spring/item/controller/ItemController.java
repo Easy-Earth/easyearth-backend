@@ -50,7 +50,7 @@ public class ItemController {
 	@GetMapping("/myItems/{memberId}")
 	public ResponseEntity<?> storeMyItem(@PathVariable int memberId){
 		
-		List<ItemVO> list = service.storeMyItem(memberId);
+		List<UserItemList> list = service.storeMyItem(memberId);
 		
 		return ResponseEntity.ok(list);
 	}
@@ -138,6 +138,8 @@ public class ItemController {
 
         int result = service.equipItem(userId, uiId);
         
+        System.out.println(result);
+        
         if(result>0) {
         	
         	return ResponseEntity.ok("아이템 장착 완료");
@@ -157,7 +159,7 @@ public class ItemController {
 	@GetMapping("/random/{memberId}")
 	@ResponseBody
 	@Operation(summary = "랜덤뽑기 API", description = "랜덤뽑기 API")
-	public ResponseEntity<?> randomPull(@RequestParam int memberId) {
+	public ResponseEntity<?> randomPull(@PathVariable int memberId) {
 		RandomPullHistory randomPullHistory = new RandomPullHistory();
 		int randomNum = (int) (Math.random() * 100) + 1;
 		//1~69 : COMMON 69%

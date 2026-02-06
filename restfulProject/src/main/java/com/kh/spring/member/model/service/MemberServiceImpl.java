@@ -1,5 +1,6 @@
 package com.kh.spring.member.model.service;
 
+import com.kh.spring.member.model.vo.MemberWalletVO;
 import org.apache.ibatis.session.SqlSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -39,6 +40,13 @@ public class MemberServiceImpl implements MemberService {
 		return dao.loginMember(sqlSession,m);
 	}
 	
+	//비밀번호 찾기
+	@Override
+	public MemberVO findPassword(MemberVO m) {
+		
+		return dao.findPassword(sqlSession,m);
+	}
+	
 	//회원 정보 수정
 	@Override
 	public int updateMember(MemberVO m) {
@@ -63,6 +71,11 @@ public class MemberServiceImpl implements MemberService {
 	@Override
 	public List<Integer> equippedItem(String memberId) {
 		return dao.equippedItem(sqlSession, memberId);
+	}
+
+	@Override
+	public MemberWalletVO getMemberPoint(int memberId) {
+		return dao.getMemberPoint(sqlSession, memberId);
 	}
 
 

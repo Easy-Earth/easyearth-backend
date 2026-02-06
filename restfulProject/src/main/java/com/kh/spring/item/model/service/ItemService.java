@@ -14,7 +14,7 @@ public interface ItemService {
 	List<ItemVO> storeItem();
 	
 	//포인트상점 보유중인 아이템 조회
-	List<ItemVO> storeMyItem(int memberId);
+	List<UserItemList> storeMyItem(int memberId);
 
 	//전체 아이템 중 특정 하나 조회
 	ItemVO itemsDetail(int itemId);
