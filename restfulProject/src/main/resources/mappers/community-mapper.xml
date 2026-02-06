@@ -41,9 +41,9 @@
 			<when test="condition == 'writer'">
 				WHERE MEMBER_ID = #{keyword}
 			</when>
-			<otherwise>
+			<when test="condition =='contetn'">
 				WHERE CONTENT LIKE '%' || #{keyword} || '%'
-			</otherwise>
+			</when>
 		</choose>
 	</select>
 	
