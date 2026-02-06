@@ -6,9 +6,11 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -89,6 +91,28 @@ public class ReportsController {
 		return ResponseEntity.ok(ReportsListDTO.of(list, pi));
 	}
 	
+	//신고글 상세보기
+	@Operation(summary = "신고글 상세보기", description = "신고글 상세보기")
+	@GetMapping("/detail/{reportsId}")
+	public ResponseEntity<?> reportsDetail(@PathVariable int reportsId) {
+		
+		try {
+			ReportsVO reports = service.reportsDetail(reportsId);
+			
+			if(reports != null) {
+				Map<String, Object> map = new HashMap<>();
+				map.put("reports", reports);
+				
+				return ResponseEntity.ok(map);
+			}else {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND)
+									 .body("해당 신고 내역을 찾을 수 없습니다.");
+			}
+		}catch(Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+								 .body("조회 중 오류 발생");
+		}
+	}
 	
 	@Operation(summary = "신고 등록", description = "신고 등록")
 	@PostMapping("/insert")
@@ -166,5 +190,62 @@ public class ReportsController {
 								 .body("삭제 가능한 상태가 아닙니다.");
 		}
 	}
+	
+	//신고글 상태 처리 - 관리자 권한
+	@Operation(summary = "(관리자) 신고글 상태 처리", description = "(관리자) 신고글 상태 처리")
+	@PutMapping("/changeStatus")
+	public ResponseEntity<?> reportsStatus(@RequestParam int memberId,
+										   @RequestParam int reportsId,
+										   @RequestParam String status
+	) {
+		if(memberId != 1) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN)
+								 .body("처리 권한이 없습니다.");
+		}
+		
+		try {
+			int result = service.reportsStatus(reportsId, status);
+			
+			if (result > 0) {
+				return ResponseEntity.ok("처리 완료");
+			}else {
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+									 .body("잘못된 요청입니다.");
+			}
+		}catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					 .body("처리 중 오류 발생");
+		}
+	}
+	
+	//누적 신고 10회 블라인드 처리 
+	@Operation(summary = "누적 신고 10회 블라인드 처리", description = "누적 신고 10회 블라인드 처리")
+	@PutMapping("/blind")
+	public ResponseEntity<?> reportsBlind(@RequestParam String type,
+									      @RequestParam(value="postId", required=false, defaultValue="0") int postId,
+									      @RequestParam(value="replyId", required=false, defaultValue="0") int replyId,
+									      @RequestParam(value="reviewId", required=false, defaultValue="0") int reviewId
+	) {
+
+		Map<String, Object> map = new HashMap<>();
+		map.put("type", type);
+		map.put("postId", postId);
+		map.put("replyId", replyId);
+		map.put("reviewId", reviewId);
+		
+		try {
+			int result = service.reportsBlind(map);
+			
+			if(result > 0) {
+				return ResponseEntity.ok("누적 신고 10회 : 블라인트 처리 완료");
+			}else {
+				return ResponseEntity.ok("조건 미달 : 누적 횟수 10회 미만입니다.");
+			}
+		}catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+								 .body("블라인드 자동 처리 중 오류 발생");
+		}
+	}
+	
 	
 }

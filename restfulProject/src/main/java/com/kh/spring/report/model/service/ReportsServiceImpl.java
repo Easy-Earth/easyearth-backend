@@ -13,6 +13,8 @@ import com.kh.spring.common.model.vo.PageInfo;
 import com.kh.spring.report.model.dao.ReportsDao;
 import com.kh.spring.report.model.vo.ReportsVO;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Service
 public class ReportsServiceImpl implements ReportsService{
 
@@ -58,21 +60,18 @@ public class ReportsServiceImpl implements ReportsService{
 		return dao.filterReportsList(sqlSession, map, pi);
 	}
 	
+	//신고글 상세보기
+	@Override
+	public ReportsVO reportsDetail(int reportsId) {
+		return dao.reportsDetail(sqlSession, reportsId);
+	}
+	
 	//신고 등록
 	@Transactional
 	@Override
 	public int reportsInsert(Map<String, Object> map) {
 		
-		int result = dao.reportsInsert(sqlSession, map);
-		
-		if (result > 0) {
-			int reportsCount = dao.reportsCount(sqlSession, map);
-			
-			if (reportsCount >= 10) {
-				dao.disableTarget(sqlSession, map);
-			}
-		}
-		return result;
+		return dao.reportsInsert(sqlSession, map);
 	}
 
 	//신고 수정
@@ -85,5 +84,28 @@ public class ReportsServiceImpl implements ReportsService{
 	@Override
 	public int reportsDelete(ReportsVO reports) {
 		return dao.reportsDelete(sqlSession, reports);
+	}
+
+	//신고글 상태 처리 - 관리자 권한
+	@Override
+	public int reportsStatus(int reportsId, String status) {
+		return dao.reportsStatus(sqlSession, reportsId, status);
+	}
+
+	//누적 신고 10회 블라인드 처리 
+	@Override
+	@Transactional
+	public int reportsBlind(Map<String, Object> map) {
+		
+		// 1. MyBatis를 거치지 않고 Map에 뭐가 들었는지 강제로 다 까보기
+	    System.err.println("=== [자바 데이터 체크] ===");
+	    map.forEach((key, value) -> System.err.println(key + " : " + value + " (타입: " + value.getClass().getSimpleName() + ")"));
+		
+		int resolvedCount = dao.selectResolvedCount(sqlSession, map);
+		
+		if(resolvedCount >= 10) {
+			return dao.reportsBlind(sqlSession, map);
+		}
+		return 0;
 	}
 }
