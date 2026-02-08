@@ -67,4 +67,6 @@ public interface ChatService {
     
     // [초대] 초대 거절
     void rejectInvitation(Long roomId, Long memberId);
+    // [프로필] 프로필 이미지 변경
+    void updateProfile(Long memberId, String profileImageUrl);
 }

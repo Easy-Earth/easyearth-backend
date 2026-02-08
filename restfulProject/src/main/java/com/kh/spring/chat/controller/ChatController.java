@@ -280,7 +280,7 @@ public class ChatController {
     }
     
     @Operation(summary = "채팅방 공지 해제", description = "방장 또는 관리자가 채팅방 공지를 해제합니다.")
-    @PutMapping("/rooms/{roomId}/notice")
+    @DeleteMapping("/room/{roomId}/notice")
     public ResponseEntity<Void> clearNotice(
             @PathVariable Long roomId, 
             @RequestParam Long memberId) {
@@ -322,6 +322,15 @@ public class ChatController {
             @PathVariable Long roomId,
             @RequestParam Long memberId) {
         chatService.rejectInvitation(roomId, memberId);
+        return ResponseEntity.ok().build();
+    }
+    // [프로필] 프로필 이미지 변경
+    @Operation(summary = "프로필 이미지 변경", description = "사용자의 프로필 이미지를 변경합니다. (채팅 전용)")
+    @PatchMapping("/user/profile")
+    public ResponseEntity<Void> updateProfile(
+            @RequestParam Long memberId,
+            @RequestParam String profileImageUrl) {
+        chatService.updateProfile(memberId, profileImageUrl);
         return ResponseEntity.ok().build();
     }
 }

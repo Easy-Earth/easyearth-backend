@@ -77,7 +77,7 @@ public class ChatRoomUserEntity {
     }
 
     public void toggleFavorite() {
-        this.isFavorite = (this.isFavorite == 0) ? 1 : 0;
+        this.isFavorite = (this.isFavorite != null && this.isFavorite == 1) ? 0 : 1;
     }
 
     public void setInvitationStatus(String invitationStatus) {

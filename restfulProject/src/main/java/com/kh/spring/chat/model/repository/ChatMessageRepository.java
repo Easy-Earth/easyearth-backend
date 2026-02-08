@@ -35,8 +35,14 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessageEntity, 
             Pageable pageable);
 
     // 3. 메시지 검색 (키워드 포함, 최신순)
-    List<ChatMessageEntity> findByChatRoomIdAndContentContainingOrderByCreatedAtDesc(Long chatRoomId, String keyword);
+    // CLOB 컬럼에 대해 IgnoreCase(UPPER)를 사용하면 오류가 발생할 수 있으므로, LIKE 연산자를 직접 사용합니다.
+    // Oracle의 경우 CLOB에 대해 LIKE 연산이 가능합니다.
+    @Query("SELECT m FROM ChatMessageEntity m WHERE m.chatRoom.id = :chatRoomId AND m.content LIKE %:keyword% ORDER BY m.createdAt DESC")
+    List<ChatMessageEntity> findByChatRoomIdAndContentContainingOrderByCreatedAtDesc(@Param("chatRoomId") Long chatRoomId, @Param("keyword") String keyword);
     
     // 4. 특정 메시지 ID 이하의 모든 메시지 조회 (읽음 처리 갱신용)
     List<ChatMessageEntity> findByChatRoomIdAndIdLessThanEqual(Long chatRoomId, Long messageId);
+
+    // 5. 특정 범위의 메시지 조회 (읽음 업데이트 최적화용: startId < id <= endId)
+    List<ChatMessageEntity> findByChatRoomIdAndIdGreaterThanAndIdLessThanEqual(Long chatRoomId, Long startId, Long endId);
 }

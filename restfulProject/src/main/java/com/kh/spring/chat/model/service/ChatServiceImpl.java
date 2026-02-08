@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 
 import com.kh.spring.chat.model.dto.ChatMessageDto;
+import com.kh.spring.chat.model.dto.ChatNotificationDto;
 import com.kh.spring.chat.model.dto.ChatRoomDto;
 import com.kh.spring.chat.model.repository.ChatMessageRepository;
 import com.kh.spring.chat.model.repository.ChatRoomRepository;
@@ -64,25 +65,16 @@ public class ChatServiceImpl implements ChatService {
                     String invitationStatus = "ACCEPTED";
                     
                     if (memberId != null) {
-                        // 안 읽은 메시지 수 계산 (최적화: 전체 수 - 내가 읽은 시점 수)
+                        // 안 읽은 메시지 수 계산
                         unreadCount = countUnreadMessagesOptimized(entity, memberId);
                         
-                        // 즐겨찾기 및 초대 상태 조회
-                        chatRoomUserRepository.findByChatRoomIdAndMemberId(entity.getId(), memberId)
-                            .ifPresent(roomUser -> {
-                                // isFavorite가 1이면 true, 0이면 false
-                            });
-                    }
-                    
-                    // ChatRoomUserEntity에서 즐겨찾기, 초대 상태 조회
-                    ChatRoomUserEntity userInfo = null;
-                    if (memberId != null) {
-                        userInfo = chatRoomUserRepository
+                        // ChatRoomUserEntity에서 즐겨찾기, 초대 상태 조회
+                        ChatRoomUserEntity userInfo = chatRoomUserRepository
                             .findByChatRoomIdAndMemberId(entity.getId(), memberId)
                             .orElse(null);
                         
                         if (userInfo != null) {
-                            isFavorite = (userInfo.getIsFavorite() == 1);
+                            isFavorite = (userInfo.getIsFavorite() != null && userInfo.getIsFavorite() == 1);
                             invitationStatus = userInfo.getInvitationStatus();
                         }
                     }
@@ -197,6 +189,21 @@ public class ChatServiceImpl implements ChatService {
              
              chatRoomUserRepository.save(targetUser);
         }
+
+        // 4. [그룹 채팅] 초기 초대 멤버 처리
+        if ("GROUP".equals(roomDto.getRoomType()) && roomDto.getInvitedMemberIds() != null && !roomDto.getInvitedMemberIds().isEmpty()) {
+            for (Long invitedId : roomDto.getInvitedMemberIds()) {
+                // 본인 제외
+                if (invitedId.equals(roomDto.getCreatorId())) continue;
+                
+                try {
+                    // 기존 inviteUser 메서드 재사용 (알림 전송 포함)
+                    inviteUser(saved.getId(), invitedId, roomDto.getCreatorId());
+                } catch (Exception e) {
+                    log.warn("그룹 생성 시 초기 초대 실패: memberId={}, error={}", invitedId, e.getMessage());
+                }
+            }
+        }
         
         //채팅방 Dto를 반환
         return ChatRoomDto.builder()
@@ -262,13 +269,14 @@ public class ChatServiceImpl implements ChatService {
         chatRoomUserRepository.delete(roomUser);
         
         // [System Message] 퇴장 메시지 생성
-        saveSystemMessage(chatRoom, memberName + "님이 나갔습니다.");
-        
-        // [정합성] 마지막 멤버가 나가면 빈 채팅방 삭제
+        // [정합성] 마지막 멤버가 나가면 빈 채팅방 삭제 및 시스템 메시지 처리
         long remainingMembers = chatRoomUserRepository.countByChatRoomId(roomId);
         if (remainingMembers == 0) {
             log.info("마지막 멤버 퇴장으로 채팅방 삭제: roomId={}", roomId);
             chatRoomRepository.deleteById(roomId);
+        } else {
+            // [System Message] 퇴장 메시지 생성 (방이 유지될 때만)
+            saveSystemMessage(chatRoom, memberName + "님이 나갔습니다.");
         }
     }
     
@@ -341,6 +349,10 @@ public class ChatServiceImpl implements ChatService {
                     throw new IllegalArgumentException("부모 메시지는 같은 채팅방에 있어야 합니다");
                 }
                 messageBuilder.parentMessage(parent);
+                
+                // [Fix] 실시간 응답을 위해 DTO에 부모 메시지 정보 채우기
+                messageDto.setParentMessageContent(parent.getContent());
+                messageDto.setParentMessageSenderName(parent.getSender().getName());
             }
         }
         
@@ -445,18 +457,18 @@ public class ChatServiceImpl implements ChatService {
 
     // [메시지 검색] 키워드 검색
     @Override
-    @Transactional(readOnly = true)
-    public List<ChatMessageDto> searchMessages(Long chatRoomId, Long memberId, String keyword) {
-        // 1. 참여 여부 확인 (보안)
-        if (chatRoomUserRepository.findByChatRoomIdAndMemberId(chatRoomId, memberId).isEmpty()) {
-            throw new IllegalArgumentException("채팅방에 참여하고 있지 않습니다");
-        }
+    public List<ChatMessageDto> searchMessages(Long roomId, Long memberId, String keyword) {
+        log.info("🔍 [메시지 검색] roomId: {}, keyword: {}", roomId, keyword);
         
-        // 2. 검색 (최신순)
-        List<ChatMessageEntity> entities = chatMessageRepository.findByChatRoomIdAndContentContainingOrderByCreatedAtDesc(chatRoomId, keyword);
+        // 1. 참여 여부 확인
+        chatRoomUserRepository.findByChatRoomIdAndMemberId(roomId, memberId)
+            .orElseThrow(() -> new IllegalArgumentException("채팅방 참여자가 아닙니다."));
+
+        // 2. 검색 (CLOB 검색 호환성을 위해 이름 변경됨)
+        List<ChatMessageEntity> messages = chatMessageRepository
+                .findByChatRoomIdAndContentContainingOrderByCreatedAtDesc(roomId, keyword);
         
-        // 3. DTO 변환 및 반환
-        return entities.stream()
+        return messages.stream()
                 .map(entity -> convertToDto(entity, memberId))
                 .collect(Collectors.toList());
     }
@@ -559,14 +571,24 @@ public class ChatServiceImpl implements ChatService {
             currentTotalCount = 0L;
         }
 
+        // ID 기반 읽음 처리 업데이트 전, 기존 마지막 읽은 메시지 ID 저장
+        Long oldLastReadId = roomUser.getLastReadMessageId();
+
         // ID 기반 읽음 처리 업데이트
         roomUser.updateLastReadMessageId(lastMessageId);
         // 카운트 기반 읽음 처리 업데이트
         roomUser.updateLastReadMessageCount(currentTotalCount);
         
-        // ✨ 읽음 처리 후 영향받는 메시지들의 unreadCount 재계산
-        List<ChatMessageEntity> affectedMessages = chatMessageRepository.findByChatRoomIdAndIdLessThanEqual(
-                roomId, lastMessageId);
+        // ✨ 읽음 처리 후 영향받는 메시지들의 unreadCount 재계산 (최적화)
+        List<ChatMessageEntity> affectedMessages;
+        if (oldLastReadId == null) {
+             // 처음 읽는 경우 -> lastMessageId 이하 모든 메시지 갱신
+             affectedMessages = chatMessageRepository.findByChatRoomIdAndIdLessThanEqual(roomId, lastMessageId);
+        } else {
+             // 기존에 읽은 기록이 있는 경우 -> oldLastReadId < id <= lastMessageId 범위만 갱신
+             affectedMessages = chatMessageRepository.findByChatRoomIdAndIdGreaterThanAndIdLessThanEqual(
+                     roomId, oldLastReadId, lastMessageId);
+        }
         
         Map<Long, Integer> unreadCountMap = new HashMap<>();
         for (ChatMessageEntity message : affectedMessages) {
@@ -977,6 +999,19 @@ public class ChatServiceImpl implements ChatService {
         
         chatRoomUserRepository.save(newUser);
         
+        // ✨ 실시간 알림 전송 (초대받은 사람에게)
+        ChatNotificationDto notification = ChatNotificationDto.builder()
+                .targetMemberId(invitedMemberId)
+                .type("INVITATION")
+                .chatRoomId(roomId)
+                .senderName(requester.getMember().getName())
+                .content(requester.getMember().getName() + "님이 채팅방에 초대했습니다.")
+                .createdAt(LocalDateTime.now())
+                .url("/chat/room/" + roomId) // 클릭 시 이동할 경로 (바로 입장되지는 않고, Accept 필요)
+                .build();
+            
+        messagingTemplate.convertAndSend("/topic/user/" + invitedMemberId, notification);
+        
         log.info("✅ 초대 완료: invitedMemberId={}, status=PENDING", invitedMemberId);
     }
     
@@ -1025,5 +1060,16 @@ public class ChatServiceImpl implements ChatService {
         chatRoomUserRepository.delete(roomUser);
         
         log.info("✅ 초대 거절 완료: memberId={}, 레코드 삭제됨", memberId);
+    }
+
+    // [프로필] 프로필 이미지 변경
+    @Override
+    @Transactional
+    public void updateProfile(Long memberId, String profileImageUrl) {
+        MemberEntity member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다"));
+        
+        member.updateProfileImage(profileImageUrl);
+        log.info("🖼️ 프로필 이미지 업데이트 완료: memberId={}, url={}", memberId, profileImageUrl);
     }
 }
