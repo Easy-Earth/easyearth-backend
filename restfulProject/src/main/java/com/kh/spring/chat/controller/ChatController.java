@@ -102,9 +102,16 @@ public class ChatController {
 
     @Operation(summary = "채팅방 나가기", description = "채팅방에서 나갑니다.")
     @DeleteMapping("/room/{roomId}/leave")
-    public ResponseEntity<Void> leaveChatRoom(@PathVariable Long roomId, @RequestParam Long memberId) {
-        chatService.leaveChatRoom(roomId, memberId);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<String> leaveChatRoom(@PathVariable Long roomId, @RequestParam Long memberId) {
+        try {
+            chatService.leaveChatRoom(roomId, memberId);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            log.error("채팅방 나가기 중 알 수 없는 오류 발생", e);
+            return ResponseEntity.internalServerError().body("오류 발생: " + e.getClass().getName() + " - " + e.getMessage());
+        }
     }
 
     @Operation(summary = "채팅방 생성", description = "새로운 채팅방을 생성합니다.")

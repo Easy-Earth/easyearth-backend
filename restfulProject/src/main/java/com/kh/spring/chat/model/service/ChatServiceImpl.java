@@ -184,6 +184,7 @@ public class ChatServiceImpl implements ChatService {
                      .chatRoom(saved)
                      .member(target)
                      .role("MEMBER")
+                     .invitationStatus("PENDING") // [변경] 1:1 채팅도 초대 수락 필요
                      .joinedAt(LocalDateTime.now())
                      .build();
              
@@ -278,6 +279,12 @@ public class ChatServiceImpl implements ChatService {
             // [System Message] 퇴장 메시지 생성 (방이 유지될 때만)
             saveSystemMessage(chatRoom, memberName + "님이 나갔습니다.");
         }
+        
+        // ✨ [Real-time] 나간 사용자에게 목록 갱신 이벤트 전송
+        Map<String, Object> leaveEvent = new HashMap<>();
+        leaveEvent.put("type", "LEAVE_ROOM_SUCCESS");
+        leaveEvent.put("chatRoomId", roomId);
+        messagingTemplate.convertAndSend("/topic/user/" + memberId, leaveEvent);
     }
     
     //채팅방 상세 조회
@@ -631,7 +638,7 @@ public class ChatServiceImpl implements ChatService {
                     .chatRoom(chatRoom)
                     .sender(systemSender)
                     .content(content)
-                    .messageType("SYSTEM") // ENTER, LEAVE 등 구체적으로도 가능
+                    .messageType("TEXT") // [수정] DB 제약조건(CHK_MSG_TYPE) 위배 방지를 위해 TEXT로 변경
                     .createdAt(LocalDateTime.now())
                     .build();
             
@@ -645,16 +652,15 @@ public class ChatServiceImpl implements ChatService {
                     .senderId(systemSender.getId())
                     .senderName("시스템")
                     .content(content)
-                    .messageType("SYSTEM")
+                    .messageType("TEXT") // WebSocket 전송 시에도 TEXT로 통일 (프론트에서 senderName="시스템"으로 구분)
                     .createdAt(saved.getCreatedAt())
                     .build();
-            
-            String topic = "/topic/chat/room/" + chatRoom.getId();
-            log.info("📡 WebSocket 전송 - topic: {}, messageDto: {}", topic, messageDto);
-            
-            messagingTemplate.convertAndSend(topic, messageDto);
-            
-            log.info("✅ 시스템 메시지 저장 및 전송 완료!");
+        
+        String topic = "/topic/chat/room/" + chatRoom.getId();
+        log.info("📡 WebSocket 전송 - topic: {}, messageDto: {}", topic, messageDto);
+        
+        messagingTemplate.convertAndSend(topic, messageDto);
+                log.info("✅ 시스템 메시지 저장 및 전송 완료!");
             
         } catch (Exception e) {
             log.error("❌ Failed to save system message: {}", content, e);
@@ -1013,6 +1019,9 @@ public class ChatServiceImpl implements ChatService {
         messagingTemplate.convertAndSend("/topic/user/" + invitedMemberId, notification);
         
         log.info("✅ 초대 완료: invitedMemberId={}, status=PENDING", invitedMemberId);
+        
+        // 5. 시스템 메시지 전송: "OO님이 OO님을 초대했습니다"
+        saveSystemMessage(requester.getChatRoom(), requester.getMember().getName() + "님이 " + invitedMember.getName() + "님을 초대했습니다.");
     }
     
     // [초대] 초대 수락
@@ -1060,6 +1069,10 @@ public class ChatServiceImpl implements ChatService {
         chatRoomUserRepository.delete(roomUser);
         
         log.info("✅ 초대 거절 완료: memberId={}, 레코드 삭제됨", memberId);
+        
+        // 4. 시스템 메시지 전송: "OO님이 초대를 거절했습니다"
+        String memberName = roomUser.getMember().getName();
+        saveSystemMessage(roomUser.getChatRoom(), memberName + "님이 초대를 거절했습니다.");
     }
 
     // [프로필] 프로필 이미지 변경
@@ -1071,5 +1084,20 @@ public class ChatServiceImpl implements ChatService {
         
         member.updateProfileImage(profileImageUrl);
         log.info("🖼️ 프로필 이미지 업데이트 완료: memberId={}, url={}", memberId, profileImageUrl);
+        
+        // ✨ [Real-time] 프로필 변경 이벤트 전송 (본인 및 관련 사용자들에게 갱신 요청)
+        Map<String, Object> profileEvent = new HashMap<>();
+        profileEvent.put("type", "PROFILE_UPDATE");
+        profileEvent.put("memberId", memberId);
+        profileEvent.put("profileImageUrl", profileImageUrl);
+        
+        // 1. 본인에게 전송 (다른 기기/탭 동기화)
+        messagingTemplate.convertAndSend("/topic/user/" + memberId, profileEvent);
+        
+        // 2. (선택적) 이 사용자가 속한 채팅방들에도 알릴 수 있음.
+        // 하지만 지금은 클라이언트가 채팅방 목록/상세 진입 시 이미지를 로드하므로,
+        // 본인 클라이언트가 갱신되는 것이 가장 중요함.
+        // 필요하다면, 채팅방 내의 실시간 갱신을 위해 채팅방 토픽으로도 쏠 수 있음.
+        // 여기서는 "내 프로필이 바뀌었다"는 것을 "나"에게 알려주는 것에 집중.
     }
 }

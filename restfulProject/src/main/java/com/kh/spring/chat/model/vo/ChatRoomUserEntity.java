@@ -14,6 +14,8 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 
 @Entity
@@ -21,10 +23,12 @@ import lombok.Getter;
 @Table(name = "CHAT_ROOM_USER", indexes = {
         @Index(name = "IDX_ROOM_MEMBER_COMP", columnList = "CHAT_ROOM_ID, MEMBER_ID")
 })
-@lombok.Builder
-@lombok.NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
-@lombok.AllArgsConstructor
+@Builder
+@AllArgsConstructor
 public class ChatRoomUserEntity {
+
+    // Lombok @NoArgsConstructor(access = AccessLevel.PROTECTED) 대체
+    protected ChatRoomUserEntity() {}
 	
 
 
