@@ -42,7 +42,11 @@ public interface InquiriesService {
 	//건의글 삭제
 	int inquiriesDelete(Map<String, Object> map);
 
+	//건의글 상태 처리 - 관리자 권한
+	int inquiriesStatus(int inquiriesId, String status);
 
+	//건의글 답변 - 관리자 권한
+	int inquiriesAdmintReply(Map<String, Object> map);
 
 	
 
