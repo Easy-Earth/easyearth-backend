@@ -93,30 +93,32 @@ public class ItemServiceImpl implements ItemService {
 	//아이템 장착/해제
 	@Override
     @Transactional
-    public int equipItem(int userId, int uiId) {
+    public int equipItem(int userId, int itemId) {
 		
 		//상태값 가져와보기
-		String status = dao.selectStatus(sqlSession, uiId);
-	
+		String status = dao.selectStatus(sqlSession, userId, itemId);
+		System.out.println(status);
 		
-		if(status.equals("Y")) {
+		if("Y".equals(status)) {
 			
-			int result = dao.updateStatus(sqlSession,uiId);
+			int result = dao.updateStatus(sqlSession,userId, itemId);
 			
 			return -1;
 		}
 		// 1️ 장착하려는 아이템의 카테고리 조회
-		String category = dao.selectCategoryByUiId(sqlSession,userId, uiId);
+		String category = dao.selectCategoryByUiId(sqlSession,userId, itemId);
 		System.out.println("categroy : " + category);
 		if (category == null) {
 		    return -2;
 		}
 		
 		// 2️ 같은 카테고리 기존 장착 아이템 전부 해제
-		dao.unequipByCategory(sqlSession,userId, category);
-		
+		int s = dao.unequipByCategory(sqlSession,userId, category);
+		System.out.println("s : " + s);
 		// 3️ 선택한 아이템 장착
-		int result = dao.equipItem(sqlSession,userId, uiId);
+		int result = dao.equipItem(sqlSession,userId, itemId);
+		
+		System.out.println(result);
 		
 		return result;
 		

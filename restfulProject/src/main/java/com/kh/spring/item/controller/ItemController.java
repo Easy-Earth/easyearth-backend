@@ -131,14 +131,12 @@ public class ItemController {
 	
 	// 아이템 장착
 	@Operation(summary = "아이템 장착/해제", description = "아이템 장착/해제")
-    @PatchMapping("/{uiId}/equip")
+    @PatchMapping("/{itemId}/equip")
     public ResponseEntity<?> equipItem(
-            @PathVariable int uiId,
+            @PathVariable int itemId,
             @RequestParam int userId) {
 
-        int result = service.equipItem(userId, uiId);
-        
-        System.out.println(result);
+        int result = service.equipItem(userId, itemId);
         
         if(result>0) {
         	

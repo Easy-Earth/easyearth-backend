@@ -155,7 +155,7 @@
             resultType="string">
         SELECT CATEGORY
         FROM USER_ITEMS
-        WHERE UI_ID = #{uiId}
+        WHERE ITEM_ID = #{itemId}
           AND USER_ID = #{userId}
     </select>
 
@@ -177,18 +177,18 @@
         UPDATE USER_ITEMS
         SET IS_EQUIPPED = 'Y',
             EQUIPPED_AT = SYSDATE
-        WHERE UI_ID = #{uiId}
+        WHERE ITEM_ID = #{itemId}
         AND USER_ID = #{userId}
     </update>
 
 	<!-- 아이템 상태값 -->
-	<select id="selectStatus" parameterType="int" resultType="string">
-		SELECT IS_EQUIPPED FROM USER_ITEMS WHERE UI_ID = #{uiId}
+	<select id="selectStatus" parameterType="map" resultType="string">
+		SELECT IS_EQUIPPED FROM USER_ITEMS WHERE ITEM_ID = #{itemId} AND USER_ID = #{userId}
 	</select>
 	
 	<!-- 아이템 장착 해제 -->
-	<update id="updateStatus" parameterType="int">
-		UPDATE USER_ITEMS SET IS_EQUIPPED = 'N' WHERE UI_ID = #{uiId}
+	<update id="updateStatus" parameterType="map">
+		UPDATE USER_ITEMS SET IS_EQUIPPED = 'N' WHERE ITEM_ID = #{itemId} AND USER_ID=#{userId}
 	</update>
 	
 	<!-- 랜덤뽑기 -->
