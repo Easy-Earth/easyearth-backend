@@ -14,19 +14,19 @@ import jakarta.persistence.Lob;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
-import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
 @Table(name = "CHAT_ROOM")
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
 public class ChatRoomEntity {
+
+    // Lombok @NoArgsConstructor(access = AccessLevel.PROTECTED) 대체
+    protected ChatRoomEntity() {}
 	
 
 

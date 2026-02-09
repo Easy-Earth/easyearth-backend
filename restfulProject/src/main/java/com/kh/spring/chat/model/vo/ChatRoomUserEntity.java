@@ -14,6 +14,8 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 
 @Entity
@@ -21,10 +23,12 @@ import lombok.Getter;
 @Table(name = "CHAT_ROOM_USER", indexes = {
         @Index(name = "IDX_ROOM_MEMBER_COMP", columnList = "CHAT_ROOM_ID, MEMBER_ID")
 })
-@lombok.Builder
-@lombok.NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
-@lombok.AllArgsConstructor
+@Builder
+@AllArgsConstructor
 public class ChatRoomUserEntity {
+
+    // Lombok @NoArgsConstructor(access = AccessLevel.PROTECTED) 대체
+    protected ChatRoomUserEntity() {}
 	
 
 
@@ -56,6 +60,14 @@ public class ChatRoomUserEntity {
     @Column(name = "ROLE", nullable = false, length = 20)
     private String role = "MEMBER"; // OWNER, ADMIN, MEMBER
 
+    @lombok.Builder.Default
+    @Column(name = "IS_FAVORITE", columnDefinition = "NUMBER(1) DEFAULT 0")
+    private Integer isFavorite = 0; // 0: OFF, 1: ON
+
+    @lombok.Builder.Default
+    @Column(name = "INVITATION_STATUS", length = 20)
+    private String invitationStatus = "ACCEPTED"; // PENDING, ACCEPTED, REJECTED
+
     public void updateLastReadMessageId(Long messageId) {
         this.lastReadMessageId = messageId;
     }
@@ -66,5 +78,13 @@ public class ChatRoomUserEntity {
 
     public void updateLastReadMessageCount(Long count) {
         this.lastReadMessageCount = count;
+    }
+
+    public void toggleFavorite() {
+        this.isFavorite = (this.isFavorite != null && this.isFavorite == 1) ? 0 : 1;
+    }
+
+    public void setInvitationStatus(String invitationStatus) {
+        this.invitationStatus = invitationStatus;
     }
 }
