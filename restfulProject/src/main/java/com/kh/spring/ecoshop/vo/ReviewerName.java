@@ -19,7 +19,7 @@ public class ReviewerName {
     String content;
     String name;
     String memberId;
-    
+
     @JsonFormat(pattern = "yyyy-MM-dd", timezone = "Asia/Seoul")
     Date createdAt;
 }

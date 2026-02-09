@@ -1,7 +1,6 @@
 package com.kh.spring.inquiries.model.dao;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.ibatis.session.RowBounds;

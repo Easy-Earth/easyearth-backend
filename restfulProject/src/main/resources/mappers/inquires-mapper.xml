@@ -42,7 +42,7 @@
 			  ,TITLE
 			  ,CONTENT
 			  ,STATUS
-			  ,ADMIN_REPLY
+        ,ADMIN_REPLY
 			  ,IS_PUBLIC
 			  ,UPDATED_AT
 			  ,RESOLVED_AT
@@ -113,7 +113,7 @@
 			  ,TITLE
 			  ,CONTENT
 			  ,STATUS
-			  ,ADMIN_REPLY
+        ,ADMIN_REPLY
 			  ,IS_PUBLIC
 			  ,UPDATED_AT
 			  ,RESOLVED_AT
@@ -175,17 +175,13 @@
        </choose>
 	    WHERE INQUIRIES_ID = #{inquiriesId}
  	</update>
-	
+
 	<!-- 건의글 답변 - 관리자 권한 -->
 	<update id="inquiriesAdmintReply" parameterType="map">
 		UPDATE INQUIRIES
 		SET ADMIN_REPLY = #{adminReply}
 		WHERE INQUIRIES_ID = #{inquiriesId}
-	</update>	
-	
-	
-	
-	
+	</update>
 	
  	
 </mapper>
