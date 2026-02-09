@@ -80,7 +80,20 @@ public class InquiriesDao {
 		return sqlSession.delete("inquiriesMapper.inquiriesDelete", map);
 	}
 
+	//건의글 상태 처리 - 관리자 권한
+	public int inquiriesStatus(SqlSessionTemplate sqlSession, int inquiriesId, String status) {
+		
+		HashMap<String, Object> map = new HashMap<>();
+		map.put("inquiriesId", inquiriesId);
+		map.put("status", status);
+		
+		return sqlSession.update("inquiriesMapper.inquiriesStatus", map);
+	}
 
+	//건의글 답변 - 관리자 권한
+	public int inquiriesAdmintReply(SqlSessionTemplate sqlSession, Map<String, Object> map) {
+		return sqlSession.update("inquiriesMapper.inquiriesAdmintReply", map);
+	}
 
 
 

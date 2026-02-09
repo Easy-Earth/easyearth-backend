@@ -202,5 +202,110 @@ public class InquiriesController {
 		}
 		
 	}
+	
+	//건의글 상태 처리 - 관리자 권한
+	@Operation(summary = "(관리자) 건의글 상태 처리", 
+				description = "memberId : 로그인된 사용자 번호   \n\n"
+							+ "inquiriesId : 상태 변경할 건의글 번호   \n\n"
+							+ "status : 변경할 상태값   \n\n"
+							+ "		 -> SUBMITTED(기본값-접수 완료), PROCESSING(진행 중), COMPLETED(답변 완료))")
+	@PutMapping("/changeStatus")
+	public ResponseEntity<?> inquiriesStatus(@RequestParam int memberId,
+										     @RequestParam int inquiriesId,
+										     @RequestParam String status
+	) {
+		if(memberId != 1) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN)
+								 .body("처리 권한이 없습니다.");
+		}
+		
+		try {
+			int result = service.inquiriesStatus(inquiriesId, status);
+			
+			if (result > 0) {
+			
+				if(status.equals("PROCESSING")) {
+					return ResponseEntity.ok("건의글을 '진행 중' 상태로 변경하였습니다.");
+				
+				}else if(status.equals("COMPLETED")) {
+					return ResponseEntity.ok("건의글을 '답변 완료' 상태로 변경하였습니다.");
+				}else {
+					return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+										 .body("존재하지 않는 상태값입니다.");
+				}
+				
+			}else {
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+									 .body("잘못된 요청입니다.");
+			}
+		}catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					 .body("처리 중 오류 발생");
+		}
+	}
+	
+	//건의글 답변 - 관리자 권한
+	@Operation(summary = "(관리자) 건의글 답변", 
+				description = "inquiriesId : 답변(수정)할 건의글 번호   \n\n"
+							+ "memberId : 로그인된 사용자 번호   \n\n"
+							+ "adminReply : 답변(수정) 내용")
+	@PutMapping("/adminReply/{inquiriesId}")
+	public ResponseEntity<?> inquiriesAdmintReply(@PathVariable int inquiriesId,
+												  @RequestParam int memberId,
+												  @RequestParam(required = false) String adminReply
+	) {
+		if(memberId != 1) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN)
+								 .body("관리자만 답변을 작성할 수 있습니다.");
+		}
+		
+		InquiriesVO inquiry = service.selectInquiry(inquiriesId);
+		
+		// 게시글 자체가 없는 경우 방어 로직
+	    if(inquiry == null) {
+	        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	                             .body("존재하지 않는 게시글입니다.");
+	    }
+	    
+	    String oldReply = inquiry.getAdminReply();
+		
+		Map<String, Object> map = new HashMap<>();
+		map.put("inquiriesId", inquiriesId);
+		map.put("adminReply", adminReply);
+		
+
+		int result = service.inquiriesAdmintReply(map);
+		
+		if(result > 0) {
+			if (adminReply == null || adminReply.equals("")) {
+	            return ResponseEntity.ok("답변 삭제 성공");
+	            
+	        } else if (oldReply == null || oldReply.equals("")) {
+	            // 기존 답변이 없었다면 등록
+	            return ResponseEntity.ok("답변 등록 성공");
+	            
+	        } else {
+	            // 기존 답변이 있었다면 수정
+	            return ResponseEntity.ok("답변 수정 성공");
+	        }
+			
+	    } else {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                             .body("답변 처리 중 오류 발생");
+	    }
+	}
+	
+//	//건의글 답변 수정 - 관리자 권한
+//	@Operation(summary = "(관리자) 건의글 답변 수정", 
+//				description = "inquiriesId : 답변 수정할 건의글 번호   \n\n"
+//							+ "memberId : 로그인된 사용자 번호   \n\n"
+//							+ "adminReply : 수정할 답변 내용")
+//	@PutMapping("/adminReply/update/{inquiriesId}")
+//	public ResponseEntity<?> admintReplyUpdate(@PathVariable int inquiriesId,
+//											@RequestParam int memberId,
+//											@RequestParam String adminReply
+//	) {
+//		
+//	}
 
 }

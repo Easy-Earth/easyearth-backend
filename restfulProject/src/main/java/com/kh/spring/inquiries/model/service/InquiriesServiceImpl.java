@@ -88,7 +88,19 @@ public class InquiriesServiceImpl implements InquiriesService {
 	public int inquiriesDelete(Map<String, Object> map) {
 		return dao.inquiriesDelete(sqlSession, map);
 	}
+  
+  //건의글 상태 처리 - 관리자 권한
+	@Override
+	public int inquiriesStatus(int inquiriesId, String status) {
+		return dao.inquiriesStatus(sqlSession, inquiriesId, status);
+	}
 
+	//건의글 답변 - 관리자 권한
+	@Override
+	public int inquiriesAdmintReply(Map<String, Object> map) {
+		
+		return dao.inquiriesAdmintReply(sqlSession, map);
+	}
 
 
 
