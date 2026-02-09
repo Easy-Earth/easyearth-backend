@@ -1,5 +1,6 @@
 package com.kh.spring.member.model.service;
 
+import com.kh.spring.member.model.vo.MemberDetailVO;
 import com.kh.spring.member.model.vo.MemberVO;
 import com.kh.spring.member.model.vo.MemberWalletVO;
 
@@ -33,4 +34,5 @@ public interface MemberService {
 
 	MemberWalletVO getMemberPoint(int memberId);
 
+    MemberDetailVO getMemberDetail(int memberId);
 }
