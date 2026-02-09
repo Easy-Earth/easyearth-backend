@@ -2,7 +2,9 @@ package com.kh.spring.chat.model.service;
 
 import java.time.LocalDateTime;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.*;
@@ -269,8 +271,11 @@ public class ChatServiceImpl implements ChatService {
                     return ChatRoomDto.builder()
                             .chatRoomId(entity.getId())
                             .title(entity.getTitle())
+                            .roomName(entity.getTitle())  // 프론트엔드 호환성
                             .roomType(entity.getRoomType())
                             .participants(participants)
+                            .noticeContent(entity.getNoticeContent())  // 공지 내용 추가
+                            .noticeMessageId(entity.getNoticeMessageId())  // 공지 메시지 ID 추가
                             .build();
                 })
                 .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다"));
@@ -724,5 +729,97 @@ public class ChatServiceImpl implements ChatService {
             log.info("강퇴 후 빈 채팅방 삭제: roomId={}", chatRoomId);
             chatRoomRepository.deleteById(chatRoomId);
         }
+    }
+    
+    // ===================================
+    // 메시지 삭제 (Soft Delete)
+    // ===================================
+    
+    @Override
+    public void softDeleteMessage(Long messageId, Long memberId) {
+        // 1. 메시지 조회
+        ChatMessageEntity message = chatMessageRepository.findById(messageId)
+            .orElseThrow(() -> new IllegalArgumentException("메시지를 찾을 수 없습니다"));
+        
+        // 2. [보안] 작성자 본인 확인
+        if (!message.getSender().getId().equals(memberId)) {
+            throw new IllegalArgumentException("자신의 메시지만 삭제할 수 있습니다");
+        }
+        
+        // 3. Soft Delete: content 및 messageType 변경
+        message.setContent("삭제된 메시지입니다");
+        message.setMessageType("DELETED");
+        chatMessageRepository.save(message);
+        
+        // 4. WebSocket으로 실시간 전파
+        ChatMessageDto dto = convertToDto(message, memberId);
+        messagingTemplate.convertAndSend("/topic/chat/room/" + message.getChatRoom().getId(), dto);
+        
+        log.info("메시지 삭제 완료: messageId={}, memberId={}", messageId, memberId);
+    }
+    
+    // ===================================
+    // 채팅방 공지 관리
+    // ===================================
+    
+    @Override
+    public void setNotice(Long roomId, Long memberId, Long messageId) {
+        // 1. 권한 확인 (방장 또는 관리자)
+        ChatRoomUserEntity roomUser = chatRoomUserRepository
+            .findByChatRoomIdAndMemberId(roomId, memberId)
+            .orElseThrow(() -> new IllegalArgumentException("채팅방에 참여하고 있지 않습니다"));
+        
+        if (!"OWNER".equals(roomUser.getRole()) && !"ADMIN".equals(roomUser.getRole())) {
+            throw new IllegalArgumentException("공지 설정 권한이 없습니다 (방장 또는 관리자만 가능)");
+        }
+        
+        // 2. 메시지 조회
+        ChatMessageEntity message = chatMessageRepository.findById(messageId)
+            .orElseThrow(() -> new IllegalArgumentException("메시지를 찾을 수 없습니다"));
+        
+        // 3. [보안] 메시지가 해당 채팅방에 속해 있는지 확인
+        if (!message.getChatRoom().getId().equals(roomId)) {
+            throw new IllegalArgumentException("다른 채팅방의 메시지를 공지로 설정할 수 없습니다");
+        }
+        
+        // 4. 공지 설정
+        ChatRoomEntity room = roomUser.getChatRoom();
+        room.setNoticeContent(message.getContent());
+        room.setNoticeMessageId(messageId);
+        chatRoomRepository.save(room);
+        
+        // 5. WebSocket으로 공지 변경 이벤트 전송
+        Map<String, Object> noticeEvent = new HashMap<>();
+        noticeEvent.put("type", "NOTICE_UPDATED");
+        noticeEvent.put("noticeContent", message.getContent());
+        noticeEvent.put("noticeMessageId", messageId);
+        messagingTemplate.convertAndSend("/topic/chat/room/" + roomId + "/notice", noticeEvent);
+        
+        log.info("공지 설정: roomId={}, messageId={}, memberId={}", roomId, messageId, memberId);
+    }
+    
+    @Override
+    public void clearNotice(Long roomId, Long memberId) {
+        // 1. 권한 확인
+        ChatRoomUserEntity roomUser = chatRoomUserRepository
+            .findByChatRoomIdAndMemberId(roomId, memberId)
+            .orElseThrow(() -> new IllegalArgumentException("채팅방에 참여하고 있지 않습니다"));
+        
+        if (!"OWNER".equals(roomUser.getRole()) && !"ADMIN".equals(roomUser.getRole())) {
+            throw new IllegalArgumentException("공지 해제 권한이 없습니다");
+        }
+        
+        // 2. 공지 해제
+        ChatRoomEntity room = roomUser.getChatRoom();
+        room.setNoticeContent(null);
+        room.setNoticeMessageId(null);
+        chatRoomRepository.save(room);
+        
+        // 3. WebSocket 이벤트 전송
+        Map<String, Object> noticeEvent = new HashMap<>();
+        noticeEvent.put("type", "NOTICE_CLEARED");
+        messagingTemplate.convertAndSend("/topic/chat/room/" + roomId + "/notice", noticeEvent);
+        
+        log.info("공지 해제: roomId={}, memberId={}", roomId, memberId);
     }
 }
