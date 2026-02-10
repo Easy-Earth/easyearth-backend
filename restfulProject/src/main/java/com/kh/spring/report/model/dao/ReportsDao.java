@@ -105,4 +105,7 @@ public class ReportsDao {
 	}
 
 
+	public int reportsCheck(SqlSessionTemplate sqlSession, HashMap<String, Integer> map) {
+		return sqlSession.selectOne("reportsMapper.reportsCheck",map);
+	}
 }

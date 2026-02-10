@@ -18,7 +18,7 @@ public class MemberDetailVO {
     private String birthday;
     private String gender;
     private String address;
-    
+
     private String createdAt;
     private String updateAt;
     private int isOnline;

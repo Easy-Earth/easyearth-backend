@@ -46,5 +46,5 @@ public interface ReportsService {
 	int reportsBlind(Map<String, Object> map);
 
 
-	
+    int reportsCheck(int memberId, int targetMemberId, int postId, int replyId, int reviewId);
 }

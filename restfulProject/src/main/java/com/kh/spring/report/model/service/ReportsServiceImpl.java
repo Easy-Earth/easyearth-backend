@@ -108,4 +108,17 @@ public class ReportsServiceImpl implements ReportsService{
 		}
 		return 0;
 	}
+
+	@Override
+	public int reportsCheck(int memberId, int targetMemberId, int postId, int replyId, int reviewId) {
+		HashMap<String,Integer> map = new HashMap<>();
+		map.put("memberId", memberId);
+		map.put("targetMemberId", targetMemberId);
+		map.put("postId",postId);
+		map.put("replyId",replyId);
+		map.put("reviewId",reviewId);
+
+		int result = dao.reportsCheck(sqlSession, map);
+		return result;
+	}
 }

@@ -228,6 +228,25 @@
 	        </when> 
 	    </choose>
 	</update>
- 
- 	
+
+	<select id="reportsCheck" parameterType="hashmap" resultType="_int">
+		SELECT COUNT(*)
+		FROM REPORTS
+		WHERE MEMBER_ID = #{memberId}
+		AND TARGET_MEMBER_ID = #{targetMemberId}
+		<choose>
+			<when test="postId != 0">
+				AND POST_ID = #{postId}
+			</when>
+			<when test="replyId != 0">
+				AND REPLY_ID = #{replyId}
+			</when>
+			<when test="reviewId != 0">
+				AND REVIEW_ID = #{reviewId}
+			</when>
+			<otherwise>
+				AND 1=0
+			</otherwise>
+		</choose>
+	</select>
 </mapper>
