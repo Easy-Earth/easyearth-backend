@@ -42,10 +42,31 @@ public interface ChatService {
 
     // [그룹 관리] 강퇴 (방장/관리자가 멤버 강퇴)
     void kickMember(Long chatRoomId, Long targetMemberId, Long requesterId);
-
+    
+    // 메시지 삭제 (Soft Delete)
+    void softDeleteMessage(Long messageId, Long memberId);
+    
+    // 채팅방 공지 관리
+    void setNotice(Long roomId, Long memberId, Long messageId);
+    void clearNotice(Long roomId, Long memberId);
+    
     // [메시지 검색] 키워드 검색
     List<ChatMessageDto> searchMessages(Long chatRoomId, Long memberId, String keyword);
     
     // [알림] 글로벌 알림 전송 (비동기)
     void sendGlobalNotifications(ChatMessageDto savedMessage);
+    
+    // [즐겨찾기] 채팅방 즐겨찾기 토글
+    void toggleFavorite(Long roomId, Long memberId);
+    
+    // [초대] 사용자 초대
+    void inviteUser(Long roomId, Long invitedMemberId, Long requesterId);
+    
+    // [초대] 초대 수락
+    void acceptInvitation(Long roomId, Long memberId);
+    
+    // [초대] 초대 거절
+    void rejectInvitation(Long roomId, Long memberId);
+    // [프로필] 프로필 이미지 변경
+    void updateProfile(Long memberId, String profileImageUrl);
 }

@@ -71,10 +71,10 @@ public class ItemDao {
 	
 	
 	//아이템 장착/해제
-	public String selectCategoryByUiId(SqlSessionTemplate sqlSession,int userId, int uiId) {
+	public String selectCategoryByUiId(SqlSessionTemplate sqlSession,int userId, int itemId) {
         HashMap<String, Object> map = new HashMap<>();
         map.put("userId", userId);
-        map.put("uiId", uiId);
+        map.put("itemId", itemId);
         return sqlSession.selectOne("itemMapper.selectCategoryByUiId", map);
     }
 
@@ -85,15 +85,18 @@ public class ItemDao {
         return sqlSession.update("itemMapper.unequipByCategory", map);
     }
 
-    public int equipItem(SqlSessionTemplate sqlSession,int userId, int uiId) {
+    public int equipItem(SqlSessionTemplate sqlSession,int userId, int itemId) {
     	HashMap<String, Object> map = new HashMap<>();
         map.put("userId", userId);
-        map.put("uiId", uiId);
+        map.put("itemId", itemId);
         return sqlSession.update("itemMapper.equipItem", map);
     }
     
-    public String selectStatus(SqlSessionTemplate sqlSession , int uiId) {
-    	return sqlSession.selectOne("itemMapper.selectStatus", uiId);
+    public String selectStatus(SqlSessionTemplate sqlSession , int userId, int itemId) {
+    	HashMap<String, Object> map = new HashMap<>();
+        map.put("userId", userId);
+        map.put("itemId", itemId);
+    	return sqlSession.selectOne("itemMapper.selectStatus", map);
     }
     
     
@@ -119,9 +122,11 @@ public class ItemDao {
 	public int deductPoint(SqlSessionTemplate sqlSession, int memberId) {
 		return sqlSession.update("itemMapper.deductPoint",memberId);
 	}
-	public int updateStatus(SqlSessionTemplate sqlSession, int uiId) {
-		
-		return sqlSession.update("itemMapper.updateStatus",uiId);
+	public int updateStatus(SqlSessionTemplate sqlSession, int userId, int itemId) {
+		HashMap<String, Object> map = new HashMap<>();
+        map.put("userId", userId);
+        map.put("itemId", itemId);
+		return sqlSession.update("itemMapper.updateStatus",map);
 	}
 
 	

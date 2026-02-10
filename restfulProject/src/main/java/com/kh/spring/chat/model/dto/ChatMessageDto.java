@@ -35,6 +35,9 @@ public class ChatMessageDto {
     @Builder.Default
     private List<ReactionSummary> reactions = new ArrayList<>();
     
+    // 읽음 상태 정보
+    private Integer unreadCount; // 안 읽은 사람 수 (발신자 본인 제외)
+    
     //내부 클래스
     @Data
     @Builder

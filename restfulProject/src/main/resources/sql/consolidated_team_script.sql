@@ -436,3 +436,7 @@ BEGIN
     :NEW.UPDATED_AT := SYSDATE;
 END;
 /
+
+
+
+COMMIT;

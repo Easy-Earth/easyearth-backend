@@ -14,19 +14,19 @@ import jakarta.persistence.Lob;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
-import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
 @Table(name = "CHAT_ROOM")
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
 public class ChatRoomEntity {
+
+    // Lombok @NoArgsConstructor(access = AccessLevel.PROTECTED) 대체
+    protected ChatRoomEntity() {}
 	
 
 
@@ -56,6 +56,13 @@ public class ChatRoomEntity {
     @Column(name = "CREATED_AT")
     private LocalDateTime createdAt;
     
+    @Lob
+    @Column(name = "NOTICE_CONTENT")
+    private String noticeContent;
+    
+    @Column(name = "NOTICE_MESSAGE_ID")
+    private Long noticeMessageId;
+    
     // [CASCADE] 채팅방 삭제 시 메시지도 함께 삭제
     @lombok.Builder.Default
     @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.REMOVE, orphanRemoval = true)
@@ -70,5 +77,13 @@ public class ChatRoomEntity {
         this.lastMessageContent = content;
         this.lastMessageAt = at;
         this.totalMessageCount = (this.totalMessageCount == null ? 0 : this.totalMessageCount) + 1;
+    }
+    
+    public void setNoticeContent(String noticeContent) {
+        this.noticeContent = noticeContent;
+    }
+    
+    public void setNoticeMessageId(Long noticeMessageId) {
+        this.noticeMessageId = noticeMessageId;
     }
 }

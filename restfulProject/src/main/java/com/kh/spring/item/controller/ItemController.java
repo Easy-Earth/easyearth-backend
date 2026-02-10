@@ -131,27 +131,30 @@ public class ItemController {
 	
 	// 아이템 장착
 	@Operation(summary = "아이템 장착/해제", description = "아이템 장착/해제")
-    @PatchMapping("/{uiId}/equip")
-    public ResponseEntity<?> equipItem(
-            @PathVariable int uiId,
-            @RequestParam int userId) {
+	@PatchMapping("/{itemId}/equip")
+	public ResponseEntity<?> equipItem(
+			@PathVariable int itemId,
+			@RequestParam int userId) {
 
-        int result = service.equipItem(userId, uiId);
-        
-        if(result>0) {
-        	
-        	return ResponseEntity.ok("아이템 장착 완료");
-        	
-        }else if(result==-1){
-        	return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("아이템 장착 해제 완료");
-        }
-        else if(result==-2){
-        	return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("아이템이 존재하지 않습니다.");
-        }else {
-        	return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("아이템 장착 실패");
-        }
-        
-    }
+		int result = service.equipItem(userId, itemId);
+
+		// 1. 장착 성공
+		if(result > 0) {
+			return ResponseEntity.ok("아이템 장착 완료");
+		}
+		// 2. 해제 성공
+		else if(result == -1) {
+			return ResponseEntity.ok("아이템 장착 해제 완료");
+		}
+		// 3. 아이템 없음 (401보다는 404가 적절합니다)
+		else if(result == -2) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("아이템이 존재하지 않습니다.");
+		}
+		// 4. 기타 실패 (서버 오류 등)
+		else {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("아이템 장착 실패");
+		}
+	}
 
 
 	@GetMapping("/random/{memberId}")
@@ -164,9 +167,9 @@ public class ItemController {
 		//70~94 : RARE  25%
 		//95~99 : EPIC 5%
 		//100 : LEGENDARY 1%
-		if (randomNum <= 69) randomPullHistory.setRarity("COMMON");
-		else if (randomNum <= 94) randomPullHistory.setRarity("RARE");
-		else if (randomNum <= 99) randomPullHistory.setRarity("EPIC");
+		if (randomNum <= 25) randomPullHistory.setRarity("COMMON");
+		else if (randomNum <= 50) randomPullHistory.setRarity("RARE");
+		else if (randomNum <= 75) randomPullHistory.setRarity("EPIC");
 		else randomPullHistory.setRarity("LEGENDARY");
 		randomPullHistory.setMemberId(memberId);
 

@@ -73,4 +73,8 @@ public class MemberEntity {
     @Column(name = "UPDATE_AT", nullable = false)
     private LocalDateTime updatedAt;
 
+    // 프로필 이미지 변경
+    public void updateProfileImage(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
+    }
 }

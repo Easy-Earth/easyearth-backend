@@ -3,6 +3,7 @@ package com.kh.spring.member.controller;
 import java.util.HashMap;
 import java.util.List;
 
+import com.kh.spring.member.model.vo.MemberDetailVO;
 import com.kh.spring.member.model.vo.MemberWalletVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -318,6 +319,18 @@ public class MemberController {
         System.out.println("memberId = " + memberId);
         if(wallet!=null) {
             return ResponseEntity.ok(wallet);
+        }
+        else {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("존재하지 않는 회원입니다.");
+        }
+    }
+
+    @Operation(summary = "멤버 상세정보 조회", description = "멤버 상세정보 조회")
+    @GetMapping("/detail/{memberId}")
+    public ResponseEntity<?> getMemberDetail(@PathVariable int memberId) {
+        MemberDetailVO detail = service.getMemberDetail(memberId);
+        if(detail!=null) {
+            return ResponseEntity.ok(detail);
         }
         else {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("존재하지 않는 회원입니다.");

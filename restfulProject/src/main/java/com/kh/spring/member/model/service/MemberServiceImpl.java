@@ -1,5 +1,6 @@
 package com.kh.spring.member.model.service;
 
+import com.kh.spring.member.model.vo.MemberDetailVO;
 import com.kh.spring.member.model.vo.MemberWalletVO;
 import org.apache.ibatis.session.SqlSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,6 +77,11 @@ public class MemberServiceImpl implements MemberService {
 	@Override
 	public MemberWalletVO getMemberPoint(int memberId) {
 		return dao.getMemberPoint(sqlSession, memberId);
+	}
+
+	@Override
+	public MemberDetailVO getMemberDetail(int memberId) {
+		return dao.getMemberDetail(sqlSession, memberId);
 	}
 
 

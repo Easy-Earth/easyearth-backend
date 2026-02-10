@@ -73,14 +73,26 @@
 	
 	<!-- 회원 정보 수정 매퍼 -->
 	<update id="updateMember" parameterType="MemberVO">
-		UPDATE MEMBER
-		SET PASSWORD = #{password},
-		      NAME = #{name},
-		      BIRTHDAY = #{birthday},
-		      GENDER = #{gender},
-		      ADDRESS = #{address},
-		      UPDATE_AT = SYSDATE
-		WHERE MEMBER_ID = #{memberId}
+	    UPDATE MEMBER
+	    <set>
+	        <if test="password != null and password != ''">
+	            PASSWORD = #{password},
+	        </if>
+	        <if test="name != null">
+	            NAME = #{name},
+	        </if>
+	        <if test="birthday != null">
+	            BIRTHDAY = #{birthday},
+	        </if>
+	        <if test="gender != null">
+	            GENDER = #{gender},
+	        </if>
+	        <if test="address != null">
+	            ADDRESS = #{address},
+	        </if>
+	        UPDATE_AT = SYSDATE
+	    </set>
+	    WHERE MEMBER_ID = #{memberId}
 	</update>
 	
 	<!-- 회원 탈퇴 매퍼 -->
@@ -109,6 +121,29 @@
 		TOTAL_EARNED_POINT,
 		TOTAL_SPENT_POINT
 		FROM POINT_WALLET WHERE MEMBER_ID=#{memberId}
+	</select>
+
+	<select id="getMemberDetail" parameterType="int" resultType="MemberDetailVO">
+		SELECT
+			M.MEMBER_ID,
+			M.LOGIN_ID,
+			M.NAME,
+			M.QUIZ_CORRECT_COUNT,
+			M.QUIZ_ATTEMPT_COUNT,
+			M.BIRTHDAY,
+			M.GENDER,
+			M.ADDRESS,
+			TO_CHAR(M.CREATED_AT, 'YYYY-MM-DD') AS CREATED_AT,
+			TO_CHAR(M.UPDATE_AT, 'YYYY-MM-DD') AS UPDATE_AT,
+			M.IS_ONLINE,
+			M.STATUS_MESSAGE,
+			(SELECT COUNT(*)
+		FROM ECO_SHOP_REVIEW R
+			WHERE R.MEMBER_ID = M.MEMBER_ID) AS REVIEW_COUNT
+		FROM
+			MEMBER M
+		WHERE
+			M.MEMBER_ID = #{memberId}
 	</select>
   
 </mapper>
