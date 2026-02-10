@@ -30,7 +30,7 @@ public class QuestService {
     public void certifyQuest(int userId, int questNo, MultipartFile file) {
 
         // 파일 저장 로직 (간단하게 구현)
-        String uploadDir = "D:/space/EasyEarth/uploads/quest/";
+        String uploadDir = System.getProperty("user.home") + "/uploadFiles/quest/";
         File dir = new File(uploadDir);
         if (!dir.exists()) {
             dir.mkdirs();
