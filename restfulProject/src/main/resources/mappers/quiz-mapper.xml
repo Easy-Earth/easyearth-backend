@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kh.spring.quiz.mapper.QuizMapper">
+
+    <select id="selectQuizListByDifficulty" resultType="com.kh.spring.quiz.model.vo.Quiz">
+        SELECT 
+            QUIZ_NO,
+            DIFFICULTY,
+            POINT,
+            QUIZ_QUESTION,
+            OPTION1,
+            OPTION2,
+            OPTION3,
+            OPTION4,
+            QUIZ_ANSWER,
+            QUIZ_EXPLANATION
+        FROM QUIZ
+        WHERE DIFFICULTY = #{difficulty}
+    </select>
+
+    <select id="countTodayAttempts" resultType="int">
+        SELECT COUNT(*)
+        FROM QUIZ_HISTORY
+        WHERE MEMBER_ID = #{userId}
+          AND DIFFICULTY = #{difficulty}
+          AND FORMATDATETIME(CREATED_AT, 'yyyy-MM-dd') = CURRENT_DATE
+    </select>
+
+    <insert id="insertQuizHistory">
+        INSERT INTO QUIZ_HISTORY (
+            HISTORY_ID,
+            MEMBER_ID,
+            DIFFICULTY,
+            SCORE,
+            CREATED_AT
+        ) VALUES (
+            SEQ_QUIZ_HISTORY_NO.NEXTVAL,
+            #{userId},
+            #{difficulty},
+            #{score},
+            CURRENT_TIMESTAMP
+        )
+    </insert>
+
+</mapper>
