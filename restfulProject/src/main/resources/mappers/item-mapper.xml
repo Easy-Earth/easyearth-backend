@@ -147,6 +147,7 @@
 		UPDATE POINT_WALLET
 		SET NOW_POINT = NOW_POINT - #{price}
 		WHERE MEMBER_ID = #{memberId}
+		AND NOW_POINT >= #{price}
 	</update>
 
 	<!-- 1️ 장착하려는 아이템의 카테고리 조회 -->

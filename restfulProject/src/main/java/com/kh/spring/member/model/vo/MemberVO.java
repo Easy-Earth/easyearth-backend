@@ -38,5 +38,6 @@ public class MemberVO {
 	private int quizCorrectCount;
 	private Date createdAt;
 	private Date updateAt;
+	private String statusMessage;
 
 }
