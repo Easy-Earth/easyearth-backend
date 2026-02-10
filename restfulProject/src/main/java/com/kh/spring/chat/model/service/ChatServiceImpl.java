@@ -15,6 +15,7 @@ import java.util.Optional;
 import com.kh.spring.chat.model.dto.ChatMessageDto;
 import com.kh.spring.chat.model.dto.ChatNotificationDto;
 import com.kh.spring.chat.model.dto.ChatRoomDto;
+import com.kh.spring.chat.model.dto.ChatMemberDto;
 import com.kh.spring.chat.model.repository.ChatMessageRepository;
 import com.kh.spring.chat.model.repository.ChatRoomRepository;
 import com.kh.spring.chat.model.repository.ChatRoomUserRepository;
@@ -578,6 +579,17 @@ public class ChatServiceImpl implements ChatService {
             currentTotalCount = 0L;
         }
 
+        // [Fix] lastMessageId가 없으면 가장 최신 메시지 ID로 설정
+        if (lastMessageId == null) {
+             Optional<ChatMessageEntity> lastMsg = chatMessageRepository.findFirstByChatRoomIdOrderByCreatedAtDesc(roomId);
+             if (lastMsg.isPresent()) {
+                 lastMessageId = lastMsg.get().getId();
+             } else {
+                 // 메시지가 하나도 없는 경우 처리 불필요
+                 return;
+             }
+        }
+
         // ID 기반 읽음 처리 업데이트 전, 기존 마지막 읽은 메시지 ID 저장
         Long oldLastReadId = roomUser.getLastReadMessageId();
 
@@ -652,7 +664,7 @@ public class ChatServiceImpl implements ChatService {
                     .senderId(systemSender.getId())
                     .senderName("시스템")
                     .content(content)
-                    .messageType("TEXT") // WebSocket 전송 시에도 TEXT로 통일 (프론트에서 senderName="시스템"으로 구분)
+                    .messageType("SYSTEM") // [변경] 프론트엔드에서 시스템 메시지로 인식하도록 SYSTEM 타입 전송
                     .createdAt(saved.getCreatedAt())
                     .build();
         

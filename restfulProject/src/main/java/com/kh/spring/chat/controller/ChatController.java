@@ -137,7 +137,7 @@ public class ChatController {
     
     @Operation(summary = "메시지 읽음 처리", description = "특정 채팅방의 모든 메시지를 읽음 처리합니다 (마지막 읽은 메시지 ID 갱신).")
     @PostMapping("/room/{roomId}/read")
-    public ResponseEntity<Void> markAsRead(@PathVariable Long roomId, @RequestParam Long memberId, @RequestParam Long lastMessageId) {
+    public ResponseEntity<Void> markAsRead(@PathVariable Long roomId, @RequestParam Long memberId, @RequestParam(required = false) Long lastMessageId) {
         chatService.updateReadStatus(roomId, memberId, lastMessageId);
         return ResponseEntity.ok().build();
     }
@@ -150,6 +150,15 @@ public class ChatController {
             @RequestParam String emojiType) {
         chatService.toggleReaction(messageId, memberId, emojiType);
         return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "채팅방 멤버 조회", description = "특정 채팅방의 참여자 목록을 조회합니다.")
+    @GetMapping("/room/{roomId}/members")
+    public ResponseEntity<List<com.kh.spring.chat.model.dto.ChatMemberDto>> getChatRoomMembers(@PathVariable Long roomId) {
+         // Service method needs to be implemented. 
+         // For now, let's assume chatService has a method or we can use chatRoomUserRepository directly if simple.
+         // Better to go through Service.
+        return ResponseEntity.ok(chatService.getChatRoomMembers(roomId));
     }
     
     // ===================================

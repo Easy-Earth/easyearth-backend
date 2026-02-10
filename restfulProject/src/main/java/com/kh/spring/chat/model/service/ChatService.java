@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.kh.spring.chat.model.dto.ChatMessageDto;
 import com.kh.spring.chat.model.dto.ChatRoomDto;
+import com.kh.spring.chat.model.dto.ChatMemberDto;
 
 public interface ChatService {
 
@@ -67,6 +68,10 @@ public interface ChatService {
     
     // [초대] 초대 거절
     void rejectInvitation(Long roomId, Long memberId);
+    
     // [프로필] 프로필 이미지 변경
     void updateProfile(Long memberId, String profileImageUrl);
+
+    // [멤버 조회] 채팅방 멤버 목록 조회
+    List<ChatMemberDto> getChatRoomMembers(Long chatRoomId);
 }
