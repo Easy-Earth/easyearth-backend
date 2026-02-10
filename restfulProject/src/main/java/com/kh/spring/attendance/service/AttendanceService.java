@@ -29,11 +29,13 @@ public class AttendanceService {
     @Transactional
     public int checkAttendance(int memberId) {
 
-        // 1. 오늘 이미 출석했는지 확인
-        int count = attendanceMapper.countAttendanceToday(memberId);
-        if (count > 0) {
-            return -1; // 이미 출석함
-        }
+        // [테스트 시 주석 해제하여 사용 - 하루 1회 제한 로직]
+        /*
+         * int count = attendanceMapper.countAttendanceToday(memberId);
+         * if (count > 0) {
+         * return -1; // 이미 출석함
+         * }
+         */
 
         // 2. 어제 출석 기록 확인 (연속 출석 판단)
         Attendance lastAttendance = attendanceMapper.findLastAttendanceByUserId(memberId);

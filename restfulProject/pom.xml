@@ -181,9 +181,9 @@ https://maven.apache.org/xsd/maven-4.0.0.xsd">
 
 		<!-- H2 (로컬 개발용) -->
 		<dependency>
-			<groupId>com.h2database</groupId>
-			<artifactId>h2</artifactId>
-			<scope>runtime</scope>
+		    <groupId>com.h2database</groupId>
+		    <artifactId>h2</artifactId>
+		    <scope>runtime</scope>
 		</dependency>
 
 	</dependencies>
