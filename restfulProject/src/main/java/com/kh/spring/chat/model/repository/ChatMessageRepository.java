@@ -45,4 +45,7 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessageEntity, 
 
     // 5. 특정 범위의 메시지 조회 (읽음 업데이트 최적화용: startId < id <= endId)
     List<ChatMessageEntity> findByChatRoomIdAndIdGreaterThanAndIdLessThanEqual(Long chatRoomId, Long startId, Long endId);
+
+    // 6. 가장 최신 메시지 1개 조회 (채팅방 입장 시 읽음 처리용)
+    java.util.Optional<ChatMessageEntity> findFirstByChatRoomIdOrderByCreatedAtDesc(Long chatRoomId);
 }

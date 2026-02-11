@@ -20,7 +20,9 @@ public class ChatRoomDto {
     private String title;
     private String roomType; // SINGLE, GROUP
     private String lastMessageContent;
+    private String lastMessageType; // ✨ [New] 메시지 타입 (TEXT, IMAGE, FILE...)
     private LocalDateTime lastMessageAt;
+    private String roomImage; // ✨ [New] 채팅방 이미지 URL
     
     // Frontend 편의를 위한 추가 필드
     private int memberCount; // 참여 인원 수
@@ -31,6 +33,7 @@ public class ChatRoomDto {
     // 공지 관련 필드
     private String noticeContent; // 공지 내용
     private Long noticeMessageId; // 공지로 설정된 메시지 ID
+    private String noticeSenderName; // 공지 작성자 이름
     private String roomName; // title 별칭 (프론트엔드 호환성)
     
     // 참여자 목록 (멤버 관리용)

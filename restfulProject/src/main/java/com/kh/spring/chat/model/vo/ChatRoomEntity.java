@@ -41,12 +41,18 @@ public class ChatRoomEntity {
     @Column(name = "ROOM_TYPE", nullable = false, length = 20)
     private String roomType;
 
+    @Column(name = "ROOM_IMAGE")
+    private String roomImage; // ✨ [New] 채팅방 이미지 URL
+
     @Lob
     @Column(name = "LAST_MESSAGE_CONTENT")
     private String lastMessageContent;
 
     @Column(name = "LAST_MESSAGE_AT")
     private LocalDateTime lastMessageAt;
+
+    @Column(name = "LAST_MESSAGE_TYPE")
+    private String lastMessageType; // ✨ [New] 마지막 메시지 타입 추가
 
     @lombok.Builder.Default
     @Column(name = "TOTAL_MESSAGE_COUNT", columnDefinition = "NUMBER DEFAULT 0")
@@ -63,6 +69,9 @@ public class ChatRoomEntity {
     @Column(name = "NOTICE_MESSAGE_ID")
     private Long noticeMessageId;
     
+    @Column(name = "NOTICE_SENDER_ID")
+    private Long noticeSenderId;
+    
     // [CASCADE] 채팅방 삭제 시 메시지도 함께 삭제
     @lombok.Builder.Default
     @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.REMOVE, orphanRemoval = true)
@@ -73,9 +82,10 @@ public class ChatRoomEntity {
     @Column(name = "VERSION")
     private Long version;
     
-    public void updateLastMessage(String content, LocalDateTime at) {
+    public void updateLastMessage(String content, LocalDateTime at, String messageType) {
         this.lastMessageContent = content;
         this.lastMessageAt = at;
+        this.lastMessageType = messageType; // ✨ 타입 업데이트
         this.totalMessageCount = (this.totalMessageCount == null ? 0 : this.totalMessageCount) + 1;
     }
     
@@ -85,5 +95,17 @@ public class ChatRoomEntity {
     
     public void setNoticeMessageId(Long noticeMessageId) {
         this.noticeMessageId = noticeMessageId;
+    }
+    
+    public void setNoticeSenderId(Long noticeSenderId) {
+        this.noticeSenderId = noticeSenderId;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public void setRoomImage(String roomImage) { // ✨ [New] 이미지 변경 편의 메서드
+        this.roomImage = roomImage;
     }
 }
