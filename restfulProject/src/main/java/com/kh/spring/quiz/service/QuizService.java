@@ -49,5 +49,9 @@ public class QuizService {
          */
         public void saveQuizResult(int userId, String difficulty, int score) {
                 quizMapper.insertQuizHistory(userId, difficulty, score);
+
+                if (score > 0) {
+                        quizMapper.updateMemberPoints(userId, score);
+                }
         }
 }
