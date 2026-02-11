@@ -247,5 +247,19 @@ public class ReportsController {
 		}
 	}
 	
-	
+	@Operation(summary = "신고 중복 여부 확인", description = "신고 중복 여부 확인")
+	@GetMapping("/check/{memberId}/{targetMemberId}")
+	public ResponseEntity<?> reportsCheck(@PathVariable int memberId,
+										  @PathVariable int targetMemberId,
+										  @RequestParam(value="postId", required=false, defaultValue="0") int postId,
+										  @RequestParam(value="replyId", required=false, defaultValue="0") int replyId,
+										  @RequestParam(value="reviewId", required=false, defaultValue="0") int reviewId) {
+		int result = service.reportsCheck(memberId, targetMemberId,postId,replyId,reviewId);
+		if(result == 0) {
+			return ResponseEntity.ok("신고 기록이 없습니다.");
+		}
+		else {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("신고 기록이 존재합니다.");
+		}
+	}
 }

@@ -1,5 +1,6 @@
 package com.kh.spring.member.controller;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -306,7 +307,7 @@ public class MemberController {
             return ResponseEntity.ok(itemList);
         }
         else {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("존재하지 않습니다.");
+            return ResponseEntity.ok(itemList != null ? itemList : Collections.emptyList());
         }
     }
 	

@@ -179,6 +179,13 @@ https://maven.apache.org/xsd/maven-4.0.0.xsd">
 		    <version>0.4.20</version>
 		</dependency>
 
+		<!-- H2 (로컬 개발용) -->
+		<dependency>
+		    <groupId>com.h2database</groupId>
+		    <artifactId>h2</artifactId>
+		    <scope>runtime</scope>
+		</dependency>
+
 	</dependencies>
 	<build>
 		<plugins>

@@ -74,20 +74,27 @@ public class ItemServiceImpl implements ItemService {
 
 	//포인트상점 아이템 구매
 	@Override
+	@Transactional
 	public int buyItem(UserItemsVO userItemsVO) {
 		
 		int memberId = userItemsVO.getUserId();
 		int price = userItemsVO.getPrice();
 		
-		HashMap<String,Object> map = new HashMap();
-		
+		HashMap<String, Object> map = new HashMap<>();
 		map.put("memberId", memberId);
 		map.put("price", price);
 		
+		// 1. 포인트 차감을 먼저 시도합니다.
+		// (매퍼에서 AND NOW_POINT >= #{price} 조건이 있다면 포인트 부족 시 0이 리턴됨)
+		int result = dao.deductItemPoint(sqlSession, map);
 		
-		int result = dao.deductItemPoint(sqlSession,map);
-		
-		return dao.buyItem(sqlSession,userItemsVO);
+		// 2. 차감 성공(result == 1)했을 때만 아이템을 지급합니다.
+		if(result > 0) {
+			return dao.buyItem(sqlSession, userItemsVO);
+		} else {
+			// 포인트가 부족하면 0을 리턴하여 컨트롤러에서 실패 처리하게 함
+			return 0;
+		}
 	}
 	
 	//아이템 장착/해제

@@ -17,6 +17,11 @@
         ORDER BY QUEST_NO ASC
     </select>
 
+    <!-- 특정 퀘스트 조회 -->
+    <select id="selectQuestByNo" resultMap="questResultSet">
+        SELECT * FROM QUEST WHERE QUEST_NO = #{questNo}
+    </select>
+
     <!-- 퀘스트 인증 내역 저장 -->
     <insert id="insertQuestHistory">
         INSERT INTO QUEST_HISTORY (
@@ -31,9 +36,23 @@
             #{userId},
             #{questNo},
             #{savedFileName},
-            'N',
+            'Y',
             SYSDATE
         )
     </insert>
+
+    <select id="countTodayQuests" resultType="int">
+        SELECT COUNT(*)
+        FROM QUEST_HISTORY
+        WHERE MEMBER_ID = #{userId}
+          AND TRUNC(CREATED_AT) = TRUNC(SYSDATE)
+    </select>
+
+    <!-- 포인트 지급 (POINT_WALLET 테이블 수정) -->
+    <update id="updateMemberPoints">
+        UPDATE POINT_WALLET
+        SET NOW_POINT = NOW_POINT + #{points}
+        WHERE MEMBER_ID = #{userId}
+    </update>
 
 </mapper>
