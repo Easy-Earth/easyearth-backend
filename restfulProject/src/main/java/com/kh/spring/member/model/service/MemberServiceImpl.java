@@ -84,5 +84,10 @@ public class MemberServiceImpl implements MemberService {
 		return dao.getMemberDetail(sqlSession, memberId);
 	}
 
+	// 온라인 상태 업데이트
+	@Override
+	public int updateOnlineStatus(int memberId, int isOnline) {
+		return dao.updateOnlineStatus(sqlSession, memberId, isOnline);
+	}
 
 }
