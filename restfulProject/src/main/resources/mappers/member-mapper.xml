@@ -61,7 +61,8 @@
 		      QUIZ_CORRECT_COUNT,
 		      CREATED_AT,
 		      UPDATE_AT,
-		      STATUS_MESSAGE
+		      STATUS_MESSAGE,
+		      PROFILE_IMAGE_URL
 		FROM MEMBER
 		WHERE LOGIN_ID = #{loginId}
 	</select>

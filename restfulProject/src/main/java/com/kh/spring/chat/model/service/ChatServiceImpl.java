@@ -938,11 +938,16 @@ public class ChatServiceImpl implements ChatService {
         chatRoomUserRepository.delete(target);
         
         // ✨ [Real-time] 강퇴 알림 전송 (대상에게)
+        String roomTitle = requester.getChatRoom().getTitle();
+        if (roomTitle == null || roomTitle.isEmpty()) {
+            roomTitle = "채팅방";
+        }
+        
         ChatNotificationDto notification = ChatNotificationDto.builder()
                 .targetMemberId(targetMemberId)
                 .type("KICK")
                 .chatRoomId(chatRoomId)
-                .content("채팅방에서 강퇴당했습니다.")
+                .content(roomTitle + " 채팅방에서 강퇴당했습니다.")
                 .createdAt(LocalDateTime.now())
                 .build();
         

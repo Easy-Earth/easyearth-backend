@@ -30,8 +30,8 @@ public class ChatFileUtil {
 		//확장자 추출
 		String ext = originName.substring(originName.lastIndexOf("."));
 		
-		//합쳐주기
-		String changeName =  currentTime + ranNum + ext;
+		//합쳐주기 (타임스탬프 + 난수 + _ + 원본파일명)
+		String changeName =  currentTime + ranNum + "_" + originName;
 		
 		// 저장 폴더 경로 설정 (기본 경로 + 하위 폴더)
 		String folderPath = savePath;
