@@ -534,6 +534,12 @@ public class ChatServiceImpl implements ChatService {
         // [개선] 읽음 수 계산
         Integer unreadCount = calculateUnreadCount(entity);
 
+        // ✨ [Fix] 삭제된 메시지 처리 (DB에는 TEXT로 저장되나, 조회 시 DELETED로 변환)
+        String messageType = entity.getMessageType();
+        if ("삭제된 메시지입니다".equals(entity.getContent())) {
+            messageType = "DELETED";
+        }
+
         ChatMessageDto.ChatMessageDtoBuilder builder = ChatMessageDto.builder()
             .messageId(entity.getId())
             .chatRoomId(entity.getChatRoom().getId())
@@ -541,7 +547,7 @@ public class ChatServiceImpl implements ChatService {
             .senderName(entity.getSender().getName())
             .senderProfileImage(entity.getSender().getProfileImageUrl())
             .content(entity.getContent())
-            .messageType(entity.getMessageType())
+            .messageType(messageType) // ✨ 수정된 타입 적용
             .createdAt(entity.getCreatedAt())
             .reactions(reactionSummaries)
             .unreadCount(unreadCount);
@@ -971,11 +977,11 @@ public class ChatServiceImpl implements ChatService {
         
         // 3. Soft Delete: content 및 messageType 변경
         message.setContent("삭제된 메시지입니다");
-        message.setMessageType("DELETED");
+        message.setMessageType("TEXT"); // ✨ DB 제약조건(CHK_MSG_TYPE) 준수
         chatMessageRepository.saveAndFlush(message); // ✨ Flush to ensure DB update before broadcast
         
         // 4. WebSocket으로 실시간 전파
-        ChatMessageDto dto = convertToDto(message, memberId);
+        ChatMessageDto dto = convertEntityToDto(message, memberId); // ✨ Use new helper method
         messagingTemplate.convertAndSend("/topic/chat/room/" + message.getChatRoom().getId(), dto);
         
         log.info("메시지 삭제 완료: messageId={}, memberId={}", messageId, memberId);
@@ -1014,7 +1020,8 @@ public class ChatServiceImpl implements ChatService {
         noticeEvent.put("noticeMessageId", messageId);
         noticeEvent.put("senderName", requester.getMember().getName()); // ✨ 작성자 이름
         noticeEvent.put("senderId", memberId);
-        messagingTemplate.convertAndSend("/topic/chat/room/" + roomId + "/notice", noticeEvent);
+        // ✨ [Fix] 프론트엔드가 구독 중인 메인 토픽으로 전송
+        messagingTemplate.convertAndSend("/topic/chat/room/" + roomId, noticeEvent);
         
         log.info("공지 설정: roomId={}, messageId={}, memberId={}", roomId, messageId, memberId);
     }
@@ -1038,7 +1045,8 @@ public class ChatServiceImpl implements ChatService {
         // 3. WebSocket 이벤트 전송
         Map<String, Object> noticeEvent = new HashMap<>();
         noticeEvent.put("type", "NOTICE_CLEARED");
-        messagingTemplate.convertAndSend("/topic/chat/room/" + roomId + "/notice", noticeEvent);
+        // ✨ [Fix] 프론트엔드가 구독 중인 메인 토픽으로 전송
+        messagingTemplate.convertAndSend("/topic/chat/room/" + roomId, noticeEvent);
         
         log.info("공지 해제: roomId={}, memberId={}", roomId, memberId);
     }
@@ -1301,5 +1309,30 @@ public class ChatServiceImpl implements ChatService {
         messagingTemplate.convertAndSend("/topic/chat/room/" + roomId, updateEvent);
         
         log.info("✅ [방 이미지 변경 완료] roomId: {}", roomId);
+    }
+
+    // ✨ [Helper] Entity -> DTO 변환 (삭제된 메시지 처리 포함)
+    private ChatMessageDto convertEntityToDto(ChatMessageEntity entity, Long memberId) {
+        String messageType = entity.getMessageType();
+        
+        // "삭제된 메시지입니다" 내용을 가진 경우 타입을 DELETED로 강제 변환 (DB에는 TEXT로 저장되더라도)
+        if ("삭제된 메시지입니다".equals(entity.getContent())) {
+            messageType = "DELETED";
+        }
+
+        return ChatMessageDto.builder()
+                .messageId(entity.getId())
+                .chatRoomId(entity.getChatRoom().getId())
+                .senderId(entity.getSender().getId())
+                .senderName(entity.getSender().getName())
+                .senderProfileImage(entity.getSender().getProfileImageUrl())
+                .content(entity.getContent())
+                .messageType(messageType)
+                .createdAt(entity.getCreatedAt())
+                .unreadCount(0) // 기본값, 필요 시 별도 계산 로직 추가
+                .parentMessageId(entity.getParentMessage() != null ? entity.getParentMessage().getId() : null)
+                .parentMessageContent(entity.getParentMessage() != null ? entity.getParentMessage().getContent() : null)
+                .parentMessageSenderName(entity.getParentMessage() != null ? entity.getSender().getName() : null)
+                .build();
     }
 }
