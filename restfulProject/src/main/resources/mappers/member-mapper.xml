@@ -19,7 +19,8 @@
 	      QUIZ_ATTEMPT_COUNT,
 	      QUIZ_CORRECT_COUNT,
 	      CREATED_AT,
-	      UPDATE_AT
+	      UPDATE_AT,
+	      STATUS_MESSAGE
 	  )
 	  VALUES (
 	      MEMBER_SEQ.NEXTVAL,
@@ -33,7 +34,8 @@
 	      0,
 	      0,
 	      SYSDATE,
-	      SYSDATE
+	      SYSDATE,
+	      #{statusMessage}
 	  )
 	</insert>
 	
@@ -58,7 +60,8 @@
 		      QUIZ_ATTEMPT_COUNT,
 		      QUIZ_CORRECT_COUNT,
 		      CREATED_AT,
-		      UPDATE_AT
+		      UPDATE_AT,
+		      STATUS_MESSAGE
 		FROM MEMBER
 		WHERE LOGIN_ID = #{loginId}
 	</select>
@@ -89,6 +92,8 @@
 	        </if>
 	        <if test="address != null">
 	            ADDRESS = #{address},
+	        </if>
+	        <if test="statusMessage != null"> STATUS_MESSAGE = #{statusMessage},
 	        </if>
 	        UPDATE_AT = SYSDATE
 	    </set>
@@ -145,5 +150,12 @@
 		WHERE
 			M.MEMBER_ID = #{memberId}
 	</select>
+	
+	<!-- 온라인 상태 업데이트 -->
+	<update id="updateOnlineStatus" parameterType="hashmap">
+		UPDATE MEMBER
+		SET IS_ONLINE = #{isOnline}
+		WHERE MEMBER_ID = #{memberId}
+	</update>
   
 </mapper>

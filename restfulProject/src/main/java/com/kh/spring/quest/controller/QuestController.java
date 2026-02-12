@@ -53,7 +53,7 @@ public class QuestController {
             }
 
             questService.certifyQuest(userId, questNo, file);
-            return ResponseEntity.ok("인증이 완료되었습니다! (관리자 승인 대기중)");
+            return ResponseEntity.ok("인증이 완료되었습니다! 포인트가 지급되었습니다.");
         } catch (Exception e) {
             log.error("Quest Certify Error", e);
             return ResponseEntity.internalServerError().body("인증 처리 중 오류가 발생했습니다.");

@@ -34,5 +34,10 @@ public interface MemberService {
 
 	MemberWalletVO getMemberPoint(int memberId);
 
-    MemberDetailVO getMemberDetail(int memberId);
+  	//멤버 상세정보 조회
+	MemberDetailVO getMemberDetail(int memberId);
+	
+	// 온라인 상태 업데이트
+	int updateOnlineStatus(int memberId, int isOnline);
+	
 }

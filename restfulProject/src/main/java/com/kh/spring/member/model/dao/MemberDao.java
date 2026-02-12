@@ -67,4 +67,12 @@ public class MemberDao {
     public MemberDetailVO getMemberDetail(SqlSession sqlSession, int memberId) {
 		return sqlSession.selectOne("memberMapper.getMemberDetail",memberId);
     }
+    
+    // 온라인 상태 업데이트
+    public int updateOnlineStatus(SqlSession sqlSession, int memberId, int isOnline) {
+    	java.util.HashMap<String, Object> map = new java.util.HashMap<>();
+    	map.put("memberId", memberId);
+    	map.put("isOnline", isOnline);
+    	return sqlSession.update("memberMapper.updateOnlineStatus", map);
+    }
 }
