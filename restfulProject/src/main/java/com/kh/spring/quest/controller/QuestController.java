@@ -42,7 +42,7 @@ public class QuestController {
     @PostMapping("/certify/{questNo}")
     public ResponseEntity<String> certifyQuest(
             @PathVariable int questNo,
-            @RequestParam int userId,
+            @RequestParam(value = "userId", defaultValue = "1") int userId,
             @RequestParam("file") MultipartFile file) {
 
         try {
