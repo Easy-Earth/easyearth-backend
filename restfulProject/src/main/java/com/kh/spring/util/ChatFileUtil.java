@@ -10,8 +10,13 @@ import org.springframework.web.multipart.MultipartFile;
 
 import net.coobird.thumbnailator.Thumbnails;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
 @Component
 public class ChatFileUtil {
+	
+	@Autowired
+	private ThumbnailGenerator thumbnailGenerator;
 	
 	@Value("${file.upload.path}")
 	private String savePath;
@@ -49,19 +54,9 @@ public class ChatFileUtil {
 		File destination = new File(folderPath + changeName);
 		uploadFile.transferTo(destination);
 		
-		// 이미지 파일인 경우 썸네일 생성 (300x300)
+		// 이미지 파일인 경우 썸네일 생성 (300x300) - 비동기 처리
 		if (isImageFile(ext)) {
-			try {
-				String thumbnailName = "s_" + changeName;
-				File thumbnailFile = new File(folderPath + thumbnailName);
-				
-				Thumbnails.of(destination)
-					.size(300, 300)
-					.toFile(thumbnailFile);
-			} catch (Exception e) {
-				// 썸네일 실패해도 원본은 유지 (로그만 남김)
-				e.printStackTrace();
-			}
+			thumbnailGenerator.generateThumbnail(destination, folderPath, changeName);
 		}
 		
 		return changeName;
