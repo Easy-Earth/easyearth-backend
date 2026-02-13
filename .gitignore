@@ -1,3 +1,15 @@
+# Agent Private Files
+.agent/
+.gemini/
+.vscode/
+uploads/
+*.md
+!README.md
+
+# SQL Files (Security)
+sql/
+*.sql
+sql
 HELP.md
 target/
 .mvn/wrapper/maven-wrapper.jar
@@ -31,3 +43,12 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### macOS ###
+.DS_Store
+
+### SQL ###
+sql/
+*.sql
+
+# EasyEarth Backend Rules
