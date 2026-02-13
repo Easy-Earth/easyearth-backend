@@ -337,6 +337,19 @@ public class MemberController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("존재하지 않는 회원입니다.");
         }
     }
+    
+    // 온라인 상태 업데이트
+    @Operation(summary = "온라인 상태 업데이트", description = "멤버의 온라인 상태 업데이트 (0: 오프라인, 1: 온라인)")
+    @PutMapping("/status/{memberId}")
+    public ResponseEntity<?> updateOnlineStatus(@PathVariable int memberId, @RequestParam int isOnline) {
+        int result = service.updateOnlineStatus(memberId, isOnline);
+        if (result > 0) {
+            return ResponseEntity.ok("상태 업데이트 성공");
+        } else {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("상태 업데이트 실패");
+        }
+    }
 	
 	
 }
