@@ -1,0 +1,11 @@
+# Agent Private Files
+.agent/
+.gemini/
+.vscode/
+uploads/
+*.md
+!README.md
+
+# SQL Files (Security)
+sql/
+*.sql

@@ -34,3 +34,7 @@ build/
 
 ### macOS ###
 .DS_Store
+
+### SQL ###
+sql/
+*.sql

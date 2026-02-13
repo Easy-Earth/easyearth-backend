@@ -45,7 +45,11 @@ public class QuizService {
         }
 
         /**
-         * 퀴즈 결과를 저장합니다.
+         * 퀴즈 결과 저장 및 포인트 지급
+         * 
+         * @param userId     유저 ID
+         * @param difficulty 난이도
+         * @param score      점수 (정답 개수)
          */
         public void saveQuizResult(int userId, String difficulty, int score) {
                 quizMapper.insertQuizHistory(userId, difficulty, score);
