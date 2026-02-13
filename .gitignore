@@ -9,3 +9,4 @@ uploads/
 # SQL Files (Security)
 sql/
 *.sql
+sql
