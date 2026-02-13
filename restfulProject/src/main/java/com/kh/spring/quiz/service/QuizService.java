@@ -51,11 +51,17 @@ public class QuizService {
          * @param difficulty 난이도
          * @param score      점수 (정답 개수)
          */
-        public void saveQuizResult(int userId, String difficulty, int score) {
-                quizMapper.insertQuizHistory(userId, difficulty, score);
+        /**
+         * 퀴즈 풀이 결과 저장 및 포인트 지급 (문제별)
+         */
+        public void saveQuizAttempt(int userId, int quizNo, boolean isCorrect, int point) {
+                String correctYn = isCorrect ? "Y" : "N";
+                // 1. 이력 저장
+                quizMapper.insertQuizHistory(userId, quizNo, correctYn);
 
-                if (score > 0) {
-                        quizMapper.updateMemberPoints(userId, score);
+                // 2. 정답일 경우 포인트 지급
+                if (isCorrect && point > 0) {
+                        quizMapper.updateMemberPoints(userId, point);
                 }
         }
 }

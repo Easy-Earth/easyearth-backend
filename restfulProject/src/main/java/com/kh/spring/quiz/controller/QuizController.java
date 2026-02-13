@@ -22,14 +22,15 @@ public class QuizController {
         return quizService.getQuizByDifficulty(difficulty);
     }
 
-    @Operation(summary = "퀴즈 결과 저장", description = "퀴즈 완료 후 점수와 이력을 저장합니다.")
-    @PostMapping("/result")
-    public ResponseEntity<String> saveQuizResult(
+    @Operation(summary = "퀴즈 풀이 결과 저장", description = "퀴즈 1문제 풀이 결과를 저장하고 정답 시 포인트를 지급합니다.")
+    @PostMapping("/attempt")
+    public ResponseEntity<String> saveQuizAttempt(
             @RequestParam int userId,
-            @RequestParam String difficulty,
-            @RequestParam int score) {
+            @RequestParam int quizNo,
+            @RequestParam boolean isCorrect,
+            @RequestParam int point) {
         try {
-            quizService.saveQuizResult(userId, difficulty, score);
+            quizService.saveQuizAttempt(userId, quizNo, isCorrect, point);
             return ResponseEntity.ok("퀴즈 이력이 저장되었습니다.");
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("저장 중 오류 발생: " + e.getMessage());
