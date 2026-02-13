@@ -150,12 +150,5 @@
 		WHERE
 			M.MEMBER_ID = #{memberId}
 	</select>
-	
-	<!-- 온라인 상태 업데이트 -->
-	<update id="updateOnlineStatus" parameterType="hashmap">
-		UPDATE MEMBER
-		SET IS_ONLINE = #{isOnline}
-		WHERE MEMBER_ID = #{memberId}
-	</update>
   
 </mapper>

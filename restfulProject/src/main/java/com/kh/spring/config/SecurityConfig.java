@@ -22,8 +22,7 @@ public class SecurityConfig {
 				.csrf(csrf -> csrf.disable()) // CSRF 방어 비활성화 (API 서버에서는 보통 끔)
 				.cors(cors -> cors.disable()) // CORS 설정 (필요시 별도 설정)
 				.authorizeHttpRequests(auth -> auth
-						.requestMatchers("/items/**").permitAll() // 아이템 관련 경로는 일단 다 허용
-						.requestMatchers("/ws-chat/**").permitAll() // 웹소켓 허용
+						.requestMatchers("/spring/items/**").permitAll() // 아이템 관련 경로는 일단 다 허용
 						.anyRequest().permitAll() // 그 외 모든 요청도 일단 허용 (테스트용)
 				);
 

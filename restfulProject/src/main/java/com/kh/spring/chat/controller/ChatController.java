@@ -41,23 +41,21 @@ public class ChatController {
 
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatService chatService;
+    private final com.kh.spring.chat.model.repository.ChatRoomUserRepository chatRoomUserRepository;
+    private final com.kh.spring.chat.model.repository.MemberRepository memberRepository;
 
-    @Operation(summary = "회원 검색 (이름/닉네임)", description = "이름(닉네임)으로 회원을 검색합니다. (부분 일치)")
+    @Operation(summary = "회원 검색 (Login ID)", description = "로그인 ID로 회원을 검색합니다.")
     @GetMapping("/users/search")
-    public ResponseEntity<List<java.util.Map<String, Object>>> searchMember(@RequestParam String keyword) {
-        List<com.kh.spring.chat.model.dto.ChatMemberDto> members = chatService.searchMember(keyword);
-        
-        List<java.util.Map<String, Object>> responseList = new java.util.ArrayList<>();
-        for (com.kh.spring.chat.model.dto.ChatMemberDto member : members) {
-            java.util.Map<String, Object> map = new java.util.HashMap<>();
-            map.put("memberId", member.getMemberId());
-            map.put("name", member.getName());
-            map.put("loginId", member.getLoginId());
-            map.put("profileImageUrl", member.getProfileImageUrl());
-            responseList.add(map);
-        }
-        
-        return ResponseEntity.ok(responseList);
+    public ResponseEntity<java.util.Map<String, Object>> searchMember(@RequestParam String loginId) {
+        return memberRepository.findByLoginId(loginId)
+                .map(member -> {
+                    java.util.Map<String, Object> response = new java.util.HashMap<>();
+                    response.put("memberId", member.getId());
+                    response.put("name", member.getName());
+                    response.put("loginId", member.getLoginId());
+                    return ResponseEntity.ok(response);
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
     // ======================================================================
@@ -139,7 +137,7 @@ public class ChatController {
     
     @Operation(summary = "메시지 읽음 처리", description = "특정 채팅방의 모든 메시지를 읽음 처리합니다 (마지막 읽은 메시지 ID 갱신).")
     @PostMapping("/room/{roomId}/read")
-    public ResponseEntity<Void> markAsRead(@PathVariable Long roomId, @RequestParam Long memberId, @RequestParam(required = false) Long lastMessageId) {
+    public ResponseEntity<Void> markAsRead(@PathVariable Long roomId, @RequestParam Long memberId, @RequestParam Long lastMessageId) {
         chatService.updateReadStatus(roomId, memberId, lastMessageId);
         return ResponseEntity.ok().build();
     }
@@ -152,12 +150,6 @@ public class ChatController {
             @RequestParam String emojiType) {
         chatService.toggleReaction(messageId, memberId, emojiType);
         return ResponseEntity.ok().build();
-    }
-
-    @Operation(summary = "채팅방 멤버 조회", description = "특정 채팅방의 참여자 목록을 조회합니다.")
-    @GetMapping("/room/{roomId}/members")
-    public ResponseEntity<List<com.kh.spring.chat.model.dto.ChatMemberDto>> getChatRoomMembers(@PathVariable Long roomId) {
-        return ResponseEntity.ok(chatService.getChatRoomMembers(roomId));
     }
     
     // ===================================
@@ -248,15 +240,13 @@ public class ChatController {
         return ResponseEntity.ok().build();
         }
 
-    @Operation(summary = "메시지 검색", description = "채팅방 내 메시지를 키워드로 검색합니다 (최신순, 페이징 지원).")
+    @Operation(summary = "메시지 검색", description = "채팅방 내 메시지를 키워드로 검색합니다 (최신순).")
     @GetMapping("/room/{roomId}/search")
     public ResponseEntity<List<ChatMessageDto>> searchMessages(
             @PathVariable Long roomId,
             @RequestParam Long memberId,
-            @RequestParam String keyword,
-            @RequestParam(defaultValue = "10") int limit,
-            @RequestParam(defaultValue = "0") int offset) {
-        return ResponseEntity.ok(chatService.searchMessages(roomId, memberId, keyword, limit, offset));
+            @RequestParam String keyword) {
+        return ResponseEntity.ok(chatService.searchMessages(roomId, memberId, keyword));
     }
 
     // ===================================
@@ -348,26 +338,6 @@ public class ChatController {
             @RequestParam Long memberId,
             @RequestParam String profileImageUrl) {
         chatService.updateProfile(memberId, profileImageUrl);
-        return ResponseEntity.ok().build();
-    }
-    // [방 설정] 채팅방 이름 변경
-    @Operation(summary = "채팅방 이름 변경", description = "방장이 채팅방의 이름을 변경합니다.")
-    @PatchMapping("/room/{roomId}/title")
-    public ResponseEntity<Void> updateRoomTitle(
-            @PathVariable Long roomId,
-            @RequestParam Long memberId,
-            @RequestParam String newTitle) {
-        chatService.updateRoomTitle(roomId, memberId, newTitle);
-        return ResponseEntity.ok().build();
-    }
-
-    @Operation(summary = "채팅방 이미지 변경", description = "방장이 채팅방의 이미지를 변경합니다.")
-    @PatchMapping("/room/{roomId}/image")
-    public ResponseEntity<Void> updateRoomImage(
-            @PathVariable Long roomId,
-            @RequestParam Long memberId,
-            @RequestParam String imageUrl) {
-        chatService.updateRoomImage(roomId, memberId, imageUrl);
         return ResponseEntity.ok().build();
     }
 }

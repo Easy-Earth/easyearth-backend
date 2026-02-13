@@ -105,4 +105,26 @@ public class AttendanceService {
         params.put("yearMonth", yearMonth);
         return attendanceMapper.findAttendanceHistoryByMonth(params);
     }
+
+    /**
+     * [테스트용] 포인트 강제 지급
+     */
+    @Transactional
+    public boolean grantAdminPoints(int memberId, int points) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("memberId", memberId);
+        params.put("points", points);
+        return attendanceMapper.addPointsForTesting(params) > 0;
+    }
+
+    /**
+     * [테스트용] 로그인 아이디로 포인트 강제 지급
+     */
+    @Transactional
+    public boolean grantAdminPointsByLoginId(String loginId, int points) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("loginId", loginId);
+        params.put("points", points);
+        return attendanceMapper.addPointsByLoginIdForTesting(params) > 0;
+    }
 }

@@ -23,4 +23,10 @@ public interface AttendanceMapper {
 
     // 이번 달 출석 기록 조회 (캘린더용)
     List<Attendance> findAttendanceHistoryByMonth(Map<String, Object> params);
+
+    // 테스트용 포인트 증률 (누적 포인트 포함)
+    int addPointsForTesting(Map<String, Object> params);
+
+    // 테스트용 포인트 증률 (로그인 아이디 기준)
+    int addPointsByLoginIdForTesting(Map<String, Object> params);
 }

@@ -70,4 +70,24 @@ public class AttendanceController {
         List<Attendance> list = attendanceService.getAttendanceHistory(userId, yearMonth);
         return ResponseEntity.ok(list);
     }
+
+    /**
+     * [테스트 전용] 포인트 강제 지급 API
+     * POST /attendance/grant-points
+     */
+    @PostMapping("/grant-points")
+    public ResponseEntity<String> grantPoints(@RequestParam int userId, @RequestParam int points) {
+        boolean success = attendanceService.grantAdminPoints(userId, points);
+        return success ? ResponseEntity.ok("포인트 획득 성공 (총 " + points + "P)") : ResponseEntity.badRequest().body("포인트 획득 실패");
+    }
+
+    /**
+     * [테스트 전용] 로그인 아이디로 포인트 강제 지급 API
+     * POST /attendance/grant-points-by-loginid
+     */
+    @PostMapping("/grant-points-by-loginid")
+    public ResponseEntity<String> grantPointsByLoginId(@RequestParam String loginId, @RequestParam int points) {
+        boolean success = attendanceService.grantAdminPointsByLoginId(loginId, points);
+        return success ? ResponseEntity.ok("아이디 [" + loginId + "]님에게 포인트 지급 성공 (총 " + points + "P)") : ResponseEntity.badRequest().body("포인트 지급 실패");
+    }
 }

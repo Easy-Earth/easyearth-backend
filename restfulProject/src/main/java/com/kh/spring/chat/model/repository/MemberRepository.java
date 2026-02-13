@@ -5,5 +5,4 @@ import com.kh.spring.chat.model.vo.MemberEntity;
 
 public interface MemberRepository extends JpaRepository<MemberEntity, Long> {
     java.util.Optional<MemberEntity> findByLoginId(String loginId);
-    java.util.List<MemberEntity> findByNameContaining(String name);
 }
