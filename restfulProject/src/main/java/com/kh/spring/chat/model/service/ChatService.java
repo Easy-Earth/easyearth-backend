@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.kh.spring.chat.model.dto.ChatMessageDto;
 import com.kh.spring.chat.model.dto.ChatRoomDto;
+import com.kh.spring.chat.model.dto.ChatMemberDto;
 
 public interface ChatService {
 
@@ -50,8 +51,8 @@ public interface ChatService {
     void setNotice(Long roomId, Long memberId, Long messageId);
     void clearNotice(Long roomId, Long memberId);
     
-    // [메시지 검색] 키워드 검색
-    List<ChatMessageDto> searchMessages(Long chatRoomId, Long memberId, String keyword);
+    // [메시지 검색] 키워드 검색 (페이징 지원)
+    List<ChatMessageDto> searchMessages(Long chatRoomId, Long memberId, String keyword, int limit, int offset);
     
     // [알림] 글로벌 알림 전송 (비동기)
     void sendGlobalNotifications(ChatMessageDto savedMessage);
@@ -67,6 +68,19 @@ public interface ChatService {
     
     // [초대] 초대 거절
     void rejectInvitation(Long roomId, Long memberId);
+    
     // [프로필] 프로필 이미지 변경
     void updateProfile(Long memberId, String profileImageUrl);
+
+    // [멤버 조회] 채팅방 멤버 목록 조회
+    List<ChatMemberDto> getChatRoomMembers(Long chatRoomId);
+    
+    // [멤버 검색] 이름(닉네임)으로 회원 검색 (목록 반환)
+    List<ChatMemberDto> searchMember(String keyword);
+
+    // [방 설정] 채팅방 이름 변경 (방장 전용)
+    void updateRoomTitle(Long roomId, Long memberId, String newTitle);
+
+    // [방 설정] 채팅방 이미지 변경 (방장 전용)
+    void updateRoomImage(Long roomId, Long memberId, String imageUrl);
 }

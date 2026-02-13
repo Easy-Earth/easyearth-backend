@@ -22,4 +22,7 @@ public class ChatNotificationDto {
     // 추가 정보
     private Long chatRoomId;
     private String senderName;
+    private String senderProfileImage; // ✨ 프로필 이미지 추가
+    private String messageType; // ✨ 메시지 타입 추가 (TEXT, IMAGE, FILE...)
+    private String roomName; // ✨ 채팅방 이름 추가 (그룹 채팅방 표시용)
 }
