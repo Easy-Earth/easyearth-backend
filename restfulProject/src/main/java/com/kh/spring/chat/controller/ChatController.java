@@ -72,17 +72,38 @@ public class ChatController {
     public void sendMessage(ChatMessageDto messageDto) {
         log.info("메시지 수신: {}", messageDto);
         
-    
-    // 1. DB에 메시지 저장 (트랜잭션 처리)
-    ChatMessageDto savedMessage = chatService.saveMessage(messageDto);
-    log.info("✅ 저장된 메시지 - messageId: {}, unreadCount: {}", 
-        savedMessage.getMessageId(), savedMessage.getUnreadCount());
-    
-    // 2. 구독자들에게 메시지 전송 (채팅방 안)
-    messagingTemplate.convertAndSend("/topic/chat/room/" + messageDto.getChatRoomId(), savedMessage);
-        
-        // 3. 글로벌 알림 전송 (Service에서 비동기 처리, 트랜잭션 경계 분리)
-        chatService.sendGlobalNotifications(savedMessage);
+        try {
+            // 1. DB에 메시지 저장 (트랜잭션 처리)
+            ChatMessageDto savedMessage = chatService.saveMessage(messageDto);
+            log.info("✅ 저장된 메시지 - messageId: {}, unreadCount: {}", 
+                savedMessage.getMessageId(), savedMessage.getUnreadCount());
+            
+            // 2. 구독자들에게 메시지 전송 (채팅방 안)
+            messagingTemplate.convertAndSend("/topic/chat/room/" + messageDto.getChatRoomId(), savedMessage);
+            
+            // 3. 글로벌 알림 전송 (Service에서 비동기 처리, 트랜잭션 경계 분리)
+            chatService.sendGlobalNotifications(savedMessage);
+            
+        } catch (IllegalArgumentException e) {
+            log.error("메시지 전송 실패 (유효성 검증): {}", e.getMessage());
+            
+            // ✨ 에러 메시지 전송 (사용자에게 알림)
+            ChatMessageDto errorMsg = ChatMessageDto.builder()
+                    .messageType("ERROR") // [Fix] type -> messageType
+                    .content(e.getMessage())
+                    .chatRoomId(messageDto.getChatRoomId())
+                    .build();
+            messagingTemplate.convertAndSend("/topic/user/" + messageDto.getSenderId(), errorMsg);
+            
+        } catch (Exception e) {
+            log.error("메시지 전송 중 알 수 없는 오류 발생", e);
+             ChatMessageDto errorMsg = ChatMessageDto.builder()
+                    .messageType("ERROR") // [Fix] type -> messageType
+                    .content("메시지 전송 중 오류가 발생했습니다.")
+                    .chatRoomId(messageDto.getChatRoomId())
+                    .build();
+            messagingTemplate.convertAndSend("/topic/user/" + messageDto.getSenderId(), errorMsg);
+        }
     }
 
     // ======================================================================
@@ -339,6 +360,24 @@ public class ChatController {
             @PathVariable Long roomId,
             @RequestParam Long memberId) {
         chatService.rejectInvitation(roomId, memberId);
+        return ResponseEntity.ok().build();
+    }
+    
+    // [초대] 초대 중인 사용자 목록 조회 (New)
+    @Operation(summary = "초대 중인 사용자 조회", description = "채팅방에 초대되었으나 아직 수락하지 않은 사용자 목록을 조회합니다.")
+    @GetMapping("/rooms/{roomId}/invitations")
+    public ResponseEntity<List<com.kh.spring.chat.model.dto.ChatMemberDto>> getInvitedUsers(@PathVariable Long roomId) {
+        return ResponseEntity.ok(chatService.getInvitedUsers(roomId));
+    }
+
+    // [초대] 초대 취소 (New)
+    @Operation(summary = "초대 취소", description = "방장 또는 관리자가 보낸 초대를 취소합니다.")
+    @DeleteMapping("/rooms/{roomId}/invitations/{targetMemberId}")
+    public ResponseEntity<Void> cancelInvitation(
+            @PathVariable Long roomId,
+            @PathVariable Long targetMemberId,
+            @RequestParam Long requesterId) {
+        chatService.cancelInvitation(roomId, targetMemberId, requesterId);
         return ResponseEntity.ok().build();
     }
     // [프로필] 프로필 이미지 변경
