@@ -42,10 +42,8 @@ public class QuestController {
     @PostMapping("/certify/{questNo}")
     public ResponseEntity<String> certifyQuest(
             @PathVariable int questNo,
+            @RequestParam int userId,
             @RequestParam("file") MultipartFile file) {
-
-        // TODO: 실제로는 로그인한 유저 ID를 세션/토큰에서 가져와야 함
-        int userId = 1; // 테스트용 ID
 
         try {
             if (file == null || file.isEmpty()) {

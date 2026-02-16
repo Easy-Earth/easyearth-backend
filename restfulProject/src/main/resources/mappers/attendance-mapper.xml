@@ -67,4 +67,18 @@
         ORDER BY ATTENDANCE_DATE ASC
     </select>
 
+    <!-- 테스트용 포인트 증률 (누적 포인트 포함 - 트리거 이용) -->
+    <update id="addPointsForTesting" parameterType="map">
+        UPDATE POINT_WALLET
+        SET NOW_POINT = NOW_POINT + #{points}
+        WHERE MEMBER_ID = #{memberId}
+    </update>
+
+    <!-- 테스트용 포인트 증률 (로그인 아이디 기준 - 트리거 이용) -->
+    <update id="addPointsByLoginIdForTesting" parameterType="map">
+        UPDATE POINT_WALLET
+        SET NOW_POINT = NOW_POINT + #{points}
+        WHERE MEMBER_ID = (SELECT MEMBER_ID FROM MEMBER WHERE LOGIN_ID = #{loginId})
+    </update>
+
 </mapper>

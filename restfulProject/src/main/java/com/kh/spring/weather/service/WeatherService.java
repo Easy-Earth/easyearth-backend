@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +29,7 @@ public class WeatherService {
 
     public List<ForecastDto> getForecastList() {
         String serviceKey = "0520e76efb72e41ae374ba77a910d0264246d16b23c171e4e817e576b2a1f52d";
+        LocalDateTime now = LocalDateTime.now(); // 현재 시간
 
         WebClient webClient = WebClient.builder()
                 .baseUrl("https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0")
@@ -40,7 +42,7 @@ public class WeatherService {
                         .queryParam("pageNo", "1")
                         .queryParam("numOfRows", "1000")
                         .queryParam("dataType", "JSON")
-                        .queryParam("base_date", today.format(DateTimeFormatter.ofPattern("yyyyMMdd")))
+                        .queryParam("base_date", now.format(DateTimeFormatter.ofPattern("yyyyMMdd")))
                         .queryParam("base_time", "0500")
                         .queryParam("nx", "55")
                         .queryParam("ny", "127")
@@ -49,7 +51,24 @@ public class WeatherService {
                 .bodyToMono(ForecastResult.class)
                 .block();
 
-        return result != null && result.getForecastList() != null ? result.getForecastList() : new ArrayList<>();
+        if (result == null || result.getForecastList() == null) {
+            return new ArrayList<>();
+        }
+
+        // --- 필터링 로직 시작 ---
+        return result.getForecastList().stream()
+                .filter(dto -> {
+                    // fcstDate(20260212)와 fcstTime(0600)을 LocalDateTime으로 변환
+                    LocalDateTime forecastTime = LocalDateTime.parse(
+                            dto.getFcstDate() + dto.getFcstTime(),
+                            DateTimeFormatter.ofPattern("yyyyMMddHHmm")
+                    );
+
+                    // 현재 시간 기준 -3시간 ~ +3시간 사이인 데이터만 포함
+                    return forecastTime.isAfter(now.minusHours(4)) &&
+                            forecastTime.isBefore(now.plusHours(4));
+                })
+                .collect(Collectors.toList());
     }
 	
 
