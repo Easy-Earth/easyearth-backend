@@ -66,9 +66,17 @@ public interface CommunityService {
 
 	//게시글 좋아요
 	String communityLikes(Map<String, Object> map);
+	
+	//게시글 좋아요 상태 조회
+	String getPostLikeStatus(Map<String, Object> map);
 
 	//댓글 좋아요
 	String replyLikes(Map<String, Object> map);
+
+	//댓글 좋아요 상태 조회
+	String getReplyLikeStatus(Map<String, Object> map);
+
+
 	
 
 

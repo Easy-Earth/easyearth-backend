@@ -59,7 +59,7 @@ public class CommunityController {
 	        @RequestParam(required = false) String category) {
 		
 		int listCount = 0;
-		int boardLimit = 5;
+		int boardLimit = 10;
 		int pageLimit = size;
 		
 		HashMap<String, String> map = new HashMap<>();
@@ -133,7 +133,7 @@ public class CommunityController {
     			description = "memberId : 로그인된 사용자 아이디 \n\n"
 							+ "title : 게시글 제목 \n\n"
 							+ "content : 게시글 내용 \n\n"
-							+ "category : SHARE(나눔) / FREE(자유) / VERIFY(인증) / ETC(기타)   \n\n"
+							+ "category : 나눔 / 자유 / 인증 / 정보 / 기타   \n\n"
 							+ "uploadFile : 업로드 할 첨부파일")
     @PostMapping(value = "/post/insert", consumes = MediaType.MULTIPART_FORM_DATA_VALUE) // 1. 미디어 타입 명시
     public ResponseEntity<?> communityInsert(
@@ -146,6 +146,12 @@ public class CommunityController {
      
     ) {
     	try {
+    		
+    		//카테고리 정보 체크
+    		if(category == null || category.isEmpty()) {
+    			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    								 .body("카테고리를 선택해주세요.");
+    		}
     		
     		// 1. 게시글 정보 담기
             CommunityPostVO cp = new CommunityPostVO();
@@ -195,7 +201,7 @@ public class CommunityController {
     						+ "memberId : 로그인된 사용자 아이디 \n\n"
 							+ "title : 게시글 제목  \n\n"
 							+ "content : 게시글 내용  \n\n"
-							+ "category : SHARE(나눔) / FREE(자유) / VERIFY(인증) / ETC(기타)   \n\n"
+							+ "category : 나눔 / 자유 / 인증 / 정보 / 기타   \n\n"
 							+ "uploadFile : 업로드에 추가할 첨부파일   \n\n"
 							+ "delFileIds : 기존 업로드에서 삭제할 첨부파일 번호")
 	@PutMapping(value = "/post/update/{postId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -431,6 +437,21 @@ public class CommunityController {
     	
     }
     
+    //게시글 좋아요 상태 조회
+    @Operation(summary = "게시글 좋아요 상태 조회", 
+			description = "postId : 좋아요 상태 조회할 게시글 번호   \n\n"
+						+ "memberId : 로그인된 사용자 아이디")
+    @GetMapping("/post/{postId}/likes/status")
+    public ResponseEntity<?> getPostLikeStatus(@PathVariable int postId,
+                                                @RequestParam int memberId) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("postId", postId);
+        map.put("memberId", memberId);
+        
+        String status = service.getPostLikeStatus(map);
+        return ResponseEntity.ok(status != null ? status : "N");
+    }
+    
     //댓글 좋아요 기능 (등록 / 취소)
     @Operation(summary = "댓글 좋아요", 
     			description = "postId : 해당 댓글의 게시글 번호   \n\n"
@@ -450,6 +471,24 @@ public class CommunityController {
     	
     	return ResponseEntity.ok(result);
     	
+    }
+    
+    //댓글 좋아요 상태 조회
+    @Operation(summary = "댓글 좋아요 상태 조회", 
+			description = "postId : 좋아요 상태 조회할 게시글 번호   \n\n"
+						+ "replyId : 좋아요 상태 조회할 댓글 번호   \n\n"
+						+ "memberId : 로그인된 사용자 아이디")
+    @GetMapping("/reply/{postId}/{replyId}/likes/status")
+    public ResponseEntity<?> getReplyLikeStatus(@PathVariable int postId,
+                                                 @PathVariable int replyId,
+                                                 @RequestParam int memberId) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("postId", postId);
+        map.put("replyId", replyId);
+        map.put("memberId", memberId);
+        
+        String status = service.getReplyLikeStatus(map);
+        return ResponseEntity.ok(status != null ? status : "N");
     }
     
     

@@ -42,4 +42,6 @@ public class CommunityPostVO {
 	private Date createdAt;
 	private Date updatedAt;
 	private String category;	
+	
+	private String name;
 }
