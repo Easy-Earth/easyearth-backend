@@ -29,13 +29,11 @@ public class AttendanceService {
     @Transactional
     public int checkAttendance(int memberId) {
 
-        // [테스트 시 주석 해제하여 사용 - 하루 1회 제한 로직]
-        /*
-         * int count = attendanceMapper.countAttendanceToday(memberId);
-         * if (count > 0) {
-         * return -1; // 이미 출석함
-         * }
-         */
+        // [테스트용 주석 처리 - 하루 1회 제한 로직]
+        // int count = attendanceMapper.countAttendanceToday(memberId);
+        // if (count > 0) {
+        // return -1; // 이미 출석함
+        // }
 
         // 2. 어제 출석 기록 확인 (연속 출석 판단)
         Attendance lastAttendance = attendanceMapper.findLastAttendanceByUserId(memberId);
@@ -104,5 +102,27 @@ public class AttendanceService {
         params.put("memberId", memberId);
         params.put("yearMonth", yearMonth);
         return attendanceMapper.findAttendanceHistoryByMonth(params);
+    }
+
+    /**
+     * [테스트용] 포인트 강제 지급
+     */
+    @Transactional
+    public boolean grantAdminPoints(int memberId, int points) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("memberId", memberId);
+        params.put("points", points);
+        return attendanceMapper.addPointsForTesting(params) > 0;
+    }
+
+    /**
+     * [테스트용] 로그인 아이디로 포인트 강제 지급
+     */
+    @Transactional
+    public boolean grantAdminPointsByLoginId(String loginId, int points) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("loginId", loginId);
+        params.put("points", points);
+        return attendanceMapper.addPointsByLoginIdForTesting(params) > 0;
     }
 }

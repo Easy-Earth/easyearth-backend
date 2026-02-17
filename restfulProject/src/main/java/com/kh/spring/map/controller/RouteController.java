@@ -33,7 +33,7 @@ public class RouteController {
         Map<String, Object> result = orsRouteService.getRouteWithEcoInfo(startX, startY, goalX, goalY, mode);
 
         if (result.containsKey("error")) {
-            return ResponseEntity.internalServerError().body(result.get("error"));
+            return ResponseEntity.internalServerError().body(result.get("정보를 불러오는데 오류가 발생했습니다."));
         }
 
         return ResponseEntity.ok(result);
@@ -49,7 +49,7 @@ public class RouteController {
         Map<String, Object> result = transitRouteService.getTransitRoute(startX, startY, goalX, goalY);
 
         if (result.containsKey("error")) {
-            return ResponseEntity.badRequest().body(result);
+            return ResponseEntity.badRequest().body("정보를 불러오는데 오류가 발생했습니다.");
         }
 
         return ResponseEntity.ok(result);
