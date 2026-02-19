@@ -28,6 +28,9 @@ public interface ChatRoomUserRepository extends JpaRepository<ChatRoomUserEntity
 
     // 방 인원수 확인 (방장 탈퇴 정책용)
     long countByChatRoomId(Long chatRoomId);
+    
+    // ✨ [New] 특정 상태가 아닌 멤버 수 카운트 (PENDING 제외용)
+    long countByChatRoomIdAndInvitationStatusNot(Long chatRoomId, String invitationStatus);
 
     // 방의 모든 참여자 조회 (알림 발송용) - Member Eager Fetch로 LazyInitializationException 방지
     @EntityGraph(attributePaths = {"member"})

@@ -39,5 +39,6 @@ public class MemberVO {
 	private Date createdAt;
 	private Date updateAt;
 	private String statusMessage;
+	private String profileImageUrl;
 
 }

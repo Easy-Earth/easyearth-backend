@@ -83,4 +83,10 @@ public interface ChatService {
 
     // [방 설정] 채팅방 이미지 변경 (방장 전용)
     void updateRoomImage(Long roomId, Long memberId, String imageUrl);
+
+    // [초대 관리] 초대 중인 사용자 목록 조회
+    List<ChatMemberDto> getInvitedUsers(Long chatRoomId);
+
+    // [초대 관리] 초대 취소 (회수)
+    void cancelInvitation(Long chatRoomId, Long targetMemberId, Long requesterId);
 }
