@@ -43,8 +43,8 @@ public class ChatController {
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatService chatService;
 
-    // 회원 검색 (이름/닉네임 부분 일치)
-    @Operation(summary = "회원 검색 (이름/닉네임)", description = "이름(닉네임)으로 회원을 검색합니다. (부분 일치)")
+    // 회원 검색 (닉네임 부분 일치)
+    @Operation(summary = "회원 검색 (닉네임)", description = "닉네임으로 회원을 검색합니다. (부분 일치)")
     @GetMapping("/users/search")
     public ResponseEntity<List<java.util.Map<String, Object>>> searchMember(@RequestParam String keyword) {
         List<com.kh.spring.chat.model.dto.ChatMemberDto> members = chatService.searchMember(keyword);
