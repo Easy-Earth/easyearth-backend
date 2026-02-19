@@ -26,7 +26,6 @@ public class WebConfig implements WebMvcConfigurer {
                         "classpath:/public/"
                 );
 
-
     }
     @Override
     public void addCorsMappings(CorsRegistry registry) {

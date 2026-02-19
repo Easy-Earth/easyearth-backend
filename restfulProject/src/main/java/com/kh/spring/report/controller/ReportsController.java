@@ -36,16 +36,15 @@ import lombok.extern.slf4j.Slf4j;
 @Tag(name = "신고", description = "신고")
 public class ReportsController {
 
-    private final AttendanceController attendanceController;
-
 	@Autowired
 	private ReportsService service;
-
-    ReportsController(AttendanceController attendanceController) {
-        this.attendanceController = attendanceController;
-    }
 	
-	@Operation(summary = "신고 목록 조회", description = "전체 목록 || 검색 목록 || 필터링 목록")
+	@Operation(summary = "신고 목록 조회", 
+			description =  "condition : title(제목) / writer(작성자) / content(내용)   \n\n"
+						+ "keyword : condition에 대한 검색어   \n\n"
+						+ "type(신고 대상 유형) : POST(커뮤니티 게시글) / REPLY(커뮤니티 댓글) / REVIEW (상점 리뷰)  \n\n"
+						+ "status(처리 상태) : RECEIVED(접수 완료) / RESOLVED(처리 완료) / REJECTED(반려)   \n\n"
+						+ "				-> 기본 값 : null - 관리자가 접수 처리하기 전 상태, 신고 요청만 보낸 상태")
 	@GetMapping("/list")
 	public ResponseEntity<ReportsListDTO> reportsList(
 			@RequestParam(value="page", defaultValue = "1") int currentPage,
@@ -92,7 +91,7 @@ public class ReportsController {
 	}
 	
 	//신고글 상세보기
-	@Operation(summary = "신고글 상세보기", description = "신고글 상세보기")
+	@Operation(summary = "신고글 상세보기", description = "reportsId : 조회할 신고글 번호")
 	@GetMapping("/detail/{reportsId}")
 	public ResponseEntity<?> reportsDetail(@PathVariable int reportsId) {
 		
@@ -114,7 +113,15 @@ public class ReportsController {
 		}
 	}
 	
-	@Operation(summary = "신고 등록", description = "신고 등록")
+	@Operation(summary = "신고 등록", 
+				description = "memberId : 로그인된 사용자 아이디 \n\n"
+							+ "targetMemberId : 신고할 사용자 아이디 \n\n"
+							+ "type(신고 대상 유형) : POST(커뮤니티 게시글) / REPLY(커뮤니티 댓글) / REVIEW (상점 리뷰)  \n\n"
+							+ "postId : 신고할 커뮤니티 게시글 번호   \n\n"
+							+ "replyId : 신고할 커뮤니티 댓글 번호   \n\n"
+							+ "reviewId : 신고할 상점 리뷰 번호   \n\n"
+							+ "reason(신고 유형) : ----기능 수정 중----) \n\n"
+							+ "detail : 신고 내용 \n\n")
 	@PostMapping("/insert")
 	public ResponseEntity<?> reportsInsert (@RequestParam int memberId,
 										    @RequestParam int targetMemberId,
@@ -146,9 +153,14 @@ public class ReportsController {
 		}
 	}
 
-	@Operation(summary = "신고 수정", description = "신고 수정")
-	@PutMapping("/update")
-	public ResponseEntity<?> reportsUpdate(@RequestParam int reportsId,
+	@Operation(summary = "신고 수정", 
+			description = "reportsId : 수정할 신고글 번호  \n\n"
+						+ "memberId : 로그인된 사용자 아이디    \n\n"
+						+ "reason(신고 유형) : ----기능 수정 중----  \n\n"
+						+ "detail : 신고 내용  \n\n"
+						+ "		-> 삭제할 신고글 작성자와 로그인된 사용자가 동일해야 함")
+	@PutMapping("/update/{reportsId}")
+	public ResponseEntity<?> reportsUpdate(@PathVariable int reportsId,
 										   @RequestParam int memberId,
 										   @RequestParam(required = false) String reason,
 										   @RequestParam(required = false) String detail
@@ -170,9 +182,12 @@ public class ReportsController {
 		}
 	}
 	
-	@Operation(summary = "신고 삭제", description = "신고 삭제")
-	@DeleteMapping("/delete")
-	public ResponseEntity<?> reportsDelete(@RequestParam int reportsId,
+	@Operation(summary = "신고 삭제", 
+				description = "reportsId : 삭제할 신고글 번호  \n\n"
+							+ "memberId : 로그인된 사용자 아이디   \n\n"
+							+ "		-> 삭제할 신고글 작성자와 로그인된 사용자가 동일해야 함")
+	@DeleteMapping("/delete/{reportsId}")
+	public ResponseEntity<?> reportsDelete(@PathVariable int reportsId,
 										   @RequestParam int memberId
 	) {
 		
@@ -192,7 +207,10 @@ public class ReportsController {
 	}
 	
 	//신고글 상태 처리 - 관리자 권한
-	@Operation(summary = "(관리자) 신고글 상태 처리", description = "(관리자) 신고글 상태 처리")
+	@Operation(summary = "(관리자) 신고글 상태 처리", 
+				description = "memberId : 로그인된 사용자 아이디 -> 관리자 : 1   \n\n"
+							+ "reportsId : 상태값 변경할 신고글 번호   \n\n"
+							+ "status(처리 상태) : RECEIVED(접수 완료) / RESOLVED(처리 완료) / REJECTED(반려)")
 	@PutMapping("/changeStatus")
 	public ResponseEntity<?> reportsStatus(@RequestParam int memberId,
 										   @RequestParam int reportsId,
@@ -219,7 +237,11 @@ public class ReportsController {
 	}
 	
 	//누적 신고 10회 블라인드 처리 
-	@Operation(summary = "누적 신고 10회 블라인드 처리", description = "누적 신고 10회 블라인드 처리")
+	@Operation(summary = "누적 신고 10회 블라인드 처리", 
+				description = "type(신고 대상 유형) : POST(커뮤니티 게시글) / REPLY(커뮤니티 댓글) / REVIEW (상점 리뷰)  \n\n"
+							+ "postId : 신고할 커뮤니티 게시글 번호   \n\n"
+							+ "replyId : 신고할 커뮤니티 댓글 번호   \n\n"
+							+ "reviewId : 신고할 상점 리뷰 번호   \n\n")
 	@PutMapping("/blind")
 	public ResponseEntity<?> reportsBlind(@RequestParam String type,
 									      @RequestParam(value="postId", required=false, defaultValue="0") int postId,

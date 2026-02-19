@@ -26,7 +26,6 @@ import com.kh.spring.community.model.vo.CommunityListDTO;
 import com.kh.spring.community.model.vo.CommunityPostVO;
 import com.kh.spring.community.model.vo.CommunityReplyVO;
 import com.kh.spring.community.model.vo.PostFilesVO;
-import com.kh.spring.member.model.vo.MemberVO;
 import com.kh.spring.util.FileUtil;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -47,7 +46,10 @@ public class CommunityController {
 	private FileUtil fileUtil;
 	
 	//게시글 목록 || 검색 목록 || 필터링 목록
-    @Operation(summary = "게시글 목록 조회", description = "전체 목록 || 검색 목록 || 필터링 목록")
+    @Operation(summary = "게시글 목록 조회", 
+    		description =  "condition : title(제목) / writer(작성자) / content(내용)   \n\n"
+						+ "keyword : condition에 대한 검색어   \n\n"
+						+ "status(등록 상태) : Y(정상-기본값) / N(삭제) / B(블라인드)   \n\n")
 	@GetMapping("/post/list")
 	public ResponseEntity<CommunityListDTO> communityList(
 			@RequestParam(value="page", defaultValue = "1") int currentPage,
@@ -57,7 +59,7 @@ public class CommunityController {
 	        @RequestParam(required = false) String category) {
 		
 		int listCount = 0;
-		int boardLimit = 5;
+		int boardLimit = 10;
 		int pageLimit = size;
 		
 		HashMap<String, String> map = new HashMap<>();
@@ -92,7 +94,7 @@ public class CommunityController {
 	}
     
     //게시글 상세보기
-    @Operation(summary = "게시글 상세보기", description = "게시글 상세보기")
+    @Operation(summary = "게시글 상세보기", description = "postId : 조회할 게시글 번호")
     @GetMapping("/post/detail/{postId}")
     public ResponseEntity<?> communityDetail(@PathVariable int postId) {
     	
@@ -127,7 +129,12 @@ public class CommunityController {
     }
     
     //게시글 등록
-    @Operation(summary = "게시글 등록", description = "게시글 등록")
+    @Operation(summary = "게시글 등록", 
+    			description = "memberId : 로그인된 사용자 아이디 \n\n"
+							+ "title : 게시글 제목 \n\n"
+							+ "content : 게시글 내용 \n\n"
+							+ "category : 나눔 / 자유 / 인증 / 정보 / 기타   \n\n"
+							+ "uploadFile : 업로드 할 첨부파일")
     @PostMapping(value = "/post/insert", consumes = MediaType.MULTIPART_FORM_DATA_VALUE) // 1. 미디어 타입 명시
     public ResponseEntity<?> communityInsert(
     		HttpSession session,
@@ -139,6 +146,12 @@ public class CommunityController {
      
     ) {
     	try {
+    		
+    		//카테고리 정보 체크
+    		if(category == null || category.isEmpty()) {
+    			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    								 .body("카테고리를 선택해주세요.");
+    		}
     		
     		// 1. 게시글 정보 담기
             CommunityPostVO cp = new CommunityPostVO();
@@ -156,7 +169,7 @@ public class CommunityController {
 
             		if (!file.isEmpty()) {
                     	String originName = file.getOriginalFilename();
-                    	String changeName = fileUtil.saveFile(file); // 서버에 저장
+                    	String changeName = fileUtil.saveFile(file, "community"); // 서버에 저장
                         
                         PostFilesVO pf = new PostFilesVO();
                         pf.setOriginName(originName);
@@ -183,10 +196,17 @@ public class CommunityController {
 	}
 	
     //게시글 수정
-    @Operation(summary = "게시글 수정", description = "게시글 수정")
-	@PutMapping(value = "/post/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "게시글 수정", 
+    			description = "postId : 수정할 게시글 번호 \n\n"
+    						+ "memberId : 로그인된 사용자 아이디 \n\n"
+							+ "title : 게시글 제목  \n\n"
+							+ "content : 게시글 내용  \n\n"
+							+ "category : 나눔 / 자유 / 인증 / 정보 / 기타   \n\n"
+							+ "uploadFile : 업로드에 추가할 첨부파일   \n\n"
+							+ "delFileIds : 기존 업로드에서 삭제할 첨부파일 번호")
+	@PutMapping(value = "/post/update/{postId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<?> communityUpdate(
-	    @RequestParam("postId") int postId,
+	    @PathVariable("postId") int postId,
 	    @RequestParam("memberId") int memberId,
 	    @RequestParam("title") String title,
 	    @RequestParam("content") String content,
@@ -221,7 +241,7 @@ public class CommunityController {
 	        		
 	        		if (originName != null && !originName.equals("")) {
 	        			
-	        			String changeName = fileUtil.saveFile(file);
+	        			String changeName = fileUtil.saveFile(file, "community");
 	        			
 	        			PostFilesVO pf = new PostFilesVO();
 	        			pf.setPostId(postId);
@@ -245,7 +265,7 @@ public class CommunityController {
 	        if (result > 0 && delFiles != null) {
 	        	for (PostFilesVO pf : delFiles) {
 	        		try {
-	        			fileUtil.deleteFile(pf.getChangeName());
+	        			fileUtil.deleteFile(pf.getChangeName(), "community");
 	        			
 	        		}catch (Exception e) {
 	        			e.printStackTrace();
@@ -264,7 +284,7 @@ public class CommunityController {
     }
     
     //게시글 삭제 list 사용으로 수정
-    @Operation(summary = "게시글 삭제", description = "게시글 삭제")
+    @Operation(summary = "게시글 삭제", description = "postId : 삭제할 게시글 번호")
 	@DeleteMapping("/post/delete/{postId}")
 	public ResponseEntity<?> communityDelete(@PathVariable int postId) {
 		
@@ -288,7 +308,7 @@ public class CommunityController {
 				for (PostFilesVO pf : fileList) {
 					if (pf.getChangeName() != null && !pf.getChangeName().equals("")) {
 						
-						boolean flag = fileUtil.deleteFile(pf.getChangeName());
+						boolean flag = fileUtil.deleteFile(pf.getChangeName(), "community");
 						
 						if (!flag) {
 							log.warn("정보 삭제는 되었지만 파일 삭제 오류 발생");
@@ -303,7 +323,7 @@ public class CommunityController {
     }
     
     //댓글 목록 조회
-    @Operation(summary = "댓글 목록 조회", description = "댓글 목록 조회")
+    @Operation(summary = "댓글 목록 조회", description = "postId : 댓글 조회할 게시글 번호")
     @GetMapping("/reply/list/{postId}")
     public ResponseEntity<?> replyList(@PathVariable int postId) {
     	
@@ -313,7 +333,13 @@ public class CommunityController {
     }
     
     //댓글 등록
-    @Operation(summary = "댓글 등록", description = "댓글 등록")
+    @Operation(summary = "댓글 등록", 
+    			description = "postId : 댓글 등록할 게시글 번호   \n\n"
+    						+ "memberId : 로그인된 사용자 아이디   \n\n"
+    						+ "content : 댓글 내용   \n\n"
+    						+ "parentReplyId : 부모 댓글 번호   \n\n"
+    						+ "		-> 대댓글이 아닌 일반 댓글 등록 : 0 (기본값)  \n\n"
+    						+ "		-> 기존 댓글에 대댓글 등록하는 경우 : 대댓글을 등록하고 싶은 기존 댓글 번호")
 	@PostMapping("/reply/insert/{postId}")
     public ResponseEntity<?> replyInsert(@PathVariable int postId,
     							 		 @RequestParam("memberId") int memberId,
@@ -339,8 +365,13 @@ public class CommunityController {
     }
 
     //댓글 수정
-    @Operation(summary = "댓글 수정", description = "댓글 수정")
-	@PostMapping("/reply/update/{postId}")
+    @Operation(summary = "댓글 수정", 
+    			description = "postId : 댓글 수정할 게시글 번호   \n\n"
+							+ "reply : 수정할 댓글 번호   \n\n"
+							+ "memberId : 로그인된 사용자 아이디   \n\n"
+    						+ "content : 수정할 댓글 내용   \n\n"
+    						+ "		-> 수정할 댓글 작성자와 로그인된 사용자가 동일해야 함")
+	@PutMapping("/reply/update/{postId}")
     public ResponseEntity<?> replyUpdate(@PathVariable int postId,
     									 @RequestParam int replyId,
     									 @RequestParam int memberId,
@@ -362,9 +393,13 @@ public class CommunityController {
     	}
     }
     
-    //댓글 수정
-    @Operation(summary = "댓글 삭제", description = "댓글 삭제")
-	@PostMapping("/reply/delete/{postId}")
+    //댓글 삭제
+    @Operation(summary = "댓글 삭제", 
+    			description = "postId : 댓글 삭제할 게시글 번호  \n\n"
+    						+ "replyId : 삭제할 댓글 번호  \n\n"
+    						+ "memberId : 로그인된 사용자 아이디  \n\n"
+    						+ "		-> 삭제할 댓글 작성자와 로그인된 사용자가 동일해야 함")
+	@DeleteMapping("/reply/delete/{postId}")
     public ResponseEntity<?> replyDelete(@PathVariable int postId,
     									 @RequestParam int replyId,
     									 @RequestParam int memberId
@@ -385,7 +420,9 @@ public class CommunityController {
     }
     
     //게시글 좋아요 기능 (등록 / 취소)
-    @Operation(summary = "게시글 좋아요", description = "게시글 좋아요")
+    @Operation(summary = "게시글 좋아요", 
+    			description = "postId : 좋아요 추가할 게시글 번호   \n\n"
+    						+ "memberId : 로그인된 사용자 아이디")
     @PostMapping("/post/{postId}/likes") 
     public ResponseEntity<?> communityLikes (@PathVariable int postId,
     									  	 @RequestParam int memberId
@@ -400,11 +437,29 @@ public class CommunityController {
     	
     }
     
+    //게시글 좋아요 상태 조회
+    @Operation(summary = "게시글 좋아요 상태 조회", 
+			description = "postId : 좋아요 상태 조회할 게시글 번호   \n\n"
+						+ "memberId : 로그인된 사용자 아이디")
+    @GetMapping("/post/{postId}/likes/status")
+    public ResponseEntity<?> getPostLikeStatus(@PathVariable int postId,
+                                                @RequestParam int memberId) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("postId", postId);
+        map.put("memberId", memberId);
+        
+        String status = service.getPostLikeStatus(map);
+        return ResponseEntity.ok(status != null ? status : "N");
+    }
+    
     //댓글 좋아요 기능 (등록 / 취소)
-    @Operation(summary = "댓글 좋아요", description = "댓글 좋아요")
-    @PostMapping("/reply/{postId}/likes") 
+    @Operation(summary = "댓글 좋아요", 
+    			description = "postId : 해당 댓글의 게시글 번호   \n\n"
+    						+ "replyId : 좋아요 추가할 댓글 번호   \n\n"
+    						+ "memberId : 로그인된 사용자 아이디")
+    @PostMapping("/reply/{postId}/{replyId}/likes") 
     public ResponseEntity<?> replyLikes (@PathVariable int postId,
-    									 @RequestParam int replyId,
+    									 @PathVariable int replyId,
 									  	 @RequestParam int memberId
     ) {
     	Map<String, Object> map = new HashMap<>();
@@ -416,6 +471,24 @@ public class CommunityController {
     	
     	return ResponseEntity.ok(result);
     	
+    }
+    
+    //댓글 좋아요 상태 조회
+    @Operation(summary = "댓글 좋아요 상태 조회", 
+			description = "postId : 좋아요 상태 조회할 게시글 번호   \n\n"
+						+ "replyId : 좋아요 상태 조회할 댓글 번호   \n\n"
+						+ "memberId : 로그인된 사용자 아이디")
+    @GetMapping("/reply/{postId}/{replyId}/likes/status")
+    public ResponseEntity<?> getReplyLikeStatus(@PathVariable int postId,
+                                                 @PathVariable int replyId,
+                                                 @RequestParam int memberId) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("postId", postId);
+        map.put("replyId", replyId);
+        map.put("memberId", memberId);
+        
+        String status = service.getReplyLikeStatus(map);
+        return ResponseEntity.ok(status != null ? status : "N");
     }
     
     
