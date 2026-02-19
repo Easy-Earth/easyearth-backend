@@ -1,7 +1,7 @@
 package com.kh.spring.global.model.service;
 
 import java.io.StringReader;
-import java.util.ArrayList;
+
 import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -40,9 +40,7 @@ public class GlobalEcoNewsService {
             "https://rss.nytimes.com/services/xml/rss/nyt/Weather.xml"
     );
 
-    // 1. 뉴스 조회 (캐시 우선 전략)
-    // - 캐시 파일이 있으면 그걸 먼저 반환
-    // - 없으면 API 호출해서 새로 받아옴
+    // [뉴스 조회] 캐시 데이터 반환 (없으면 갱신)
     public String getGlobalEcoNews() {
         // 캐시 확인 (String 타입으로 로드)
         String cached = fileCacheService.load(CACHE_FILE, String.class);
@@ -60,8 +58,7 @@ public class GlobalEcoNewsService {
         return refreshGlobalNews();
     }
 
-    // 2. 뉴스 데이터 갱신 (RSS -> Gemini 요약/번역 -> 파일 저장)
-    // - 외부 API 호출이 포함되므로 스케줄러나 강제 갱신 시 사용됨
+    // [뉴스 갱신] API 호출 및 파일 저장
     public String refreshGlobalNews() {
         log.info(">>> 글로벌 환경 뉴스 갱신 시작...");
         String newData = fetchGlobalNewsFromApi();
@@ -76,10 +73,7 @@ public class GlobalEcoNewsService {
         return newData;
     }
 
-    // 3. 실제 뉴스 수집 및 가공 로직 (Private)
-    // - NYT RSS 피드 파싱 -> 중요 뉴스 선별 -> Gemini에게 번역 요청
-    // 3. 실제 뉴스 수집 및 가공 로직 (Private)
-    // - NYT RSS 피드 3개 파싱 -> 각 5개씩 추출 (총 15개) -> Gemini에게 번역 및 분류 요청
+    // [뉴스 수집] NYT RSS 파싱 -> Gemini 번역/요약
     private String fetchGlobalNewsFromApi() {
         try {
             RestTemplate restTemplate = new RestTemplate();
@@ -185,8 +179,7 @@ public class GlobalEcoNewsService {
         }
     }
 
-    // XML 태그 값 추출을 위한 헬퍼 메소드
-    // 예: <title>기사 제목</title> -> "기사 제목" 반환
+    // [Helper] XML 태그 값 추출
     private String getTagValue(String tag, Element element) {
         NodeList nodeList = element.getElementsByTagName(tag);
         if (nodeList != null && nodeList.getLength() > 0) {

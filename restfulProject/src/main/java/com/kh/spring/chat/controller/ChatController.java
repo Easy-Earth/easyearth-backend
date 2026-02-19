@@ -37,11 +37,13 @@ import lombok.extern.slf4j.Slf4j;
 @Tag(name = "Chat", description = "채팅 관련 API")
 @RequiredArgsConstructor
 @Slf4j
+// 채팅 기능 컨트롤러
 public class ChatController {
 
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatService chatService;
 
+    // 회원 검색 (이름/닉네임 부분 일치)
     @Operation(summary = "회원 검색 (이름/닉네임)", description = "이름(닉네임)으로 회원을 검색합니다. (부분 일치)")
     @GetMapping("/users/search")
     public ResponseEntity<List<java.util.Map<String, Object>>> searchMember(@RequestParam String keyword) {
@@ -64,10 +66,7 @@ public class ChatController {
     // 1. 실시간 채팅 (WebSocket/STOMP)
     // ======================================================================
     
-    /*
-     * 클라이언트가 /app/chat/message 로 메시지를 보내면 이 메소드가 실행
-     * 처리 후 /topic/chat/room/{roomId} 로 구독자들에게 메시지를 전송
-     */
+    // 실시간 메시지 전송 (WebSocket)
     @MessageMapping("/chat/message")
     public void sendMessage(ChatMessageDto messageDto) {
         log.info("메시지 수신: {}", messageDto);
@@ -110,12 +109,14 @@ public class ChatController {
     // 2. REST API (Swagger에 노출됨)
     // ======================================================================
 
+    // 채팅방 목록 조회
     @Operation(summary = "채팅방 목록 조회", description = "채팅방 목록을 조회합니다. memberId가 있으면 해당 회원이 참여한 방만 조회하고 안 읽은 메시지 수도 계산합니다.")
     @GetMapping("/rooms")
     public ResponseEntity<List<ChatRoomDto>> getChatRoomList(@RequestParam(required = false) Long memberId) {
         return ResponseEntity.ok(chatService.selectChatRoomList(memberId));
     }
 
+    // 채팅방 참여
     @Operation(summary = "채팅방 참여", description = "채팅방에 참여합니다.")
     @PostMapping("/room/{roomId}/join")
     public ResponseEntity<Void> joinChatRoom(@PathVariable Long roomId, @RequestParam Long memberId) {
@@ -123,6 +124,7 @@ public class ChatController {
         return ResponseEntity.ok().build();
     }
 
+    // 채팅방 나가기
     @Operation(summary = "채팅방 나가기", description = "채팅방에서 나갑니다.")
     @DeleteMapping("/room/{roomId}/leave")
     public ResponseEntity<String> leaveChatRoom(@PathVariable Long roomId, @RequestParam Long memberId) {
@@ -137,18 +139,21 @@ public class ChatController {
         }
     }
 
+    // 채팅방 생성
     @Operation(summary = "채팅방 생성", description = "새로운 채팅방을 생성합니다.")
     @PostMapping("/room")
     public ResponseEntity<ChatRoomDto> createChatRoom(@RequestBody ChatRoomDto roomDto) {
         return ResponseEntity.ok(chatService.createChatRoom(roomDto));
     }
 
+    // 채팅방 상세 정보 조회
     @Operation(summary = "채팅방 상세/입장", description = "특정 채팅방의 정보를 조회합니다.")
     @GetMapping("/room/{roomId}")
     public ResponseEntity<ChatRoomDto> getChatRoom(@PathVariable Long roomId) {
         return ResponseEntity.ok(chatService.selectChatRoom(roomId));
     }
     
+    // 채팅방 메시지 내역 조회
     @Operation(summary = "채팅방 메시지 조회", description = "특정 채팅방의 메시지를 조회합니다.")
     @GetMapping("/room/{roomId}/messages")
     public ResponseEntity<List<ChatMessageDto>> getMessageList(
@@ -158,6 +163,7 @@ public class ChatController {
         return ResponseEntity.ok(chatService.selectMessageList(roomId, cursorId, memberId));
     }
     
+    // 메시지 읽음 처리 (마지막 읽은 ID 갱신)
     @Operation(summary = "메시지 읽음 처리", description = "특정 채팅방의 모든 메시지를 읽음 처리합니다 (마지막 읽은 메시지 ID 갱신).")
     @PostMapping("/room/{roomId}/read")
     public ResponseEntity<Void> markAsRead(@PathVariable Long roomId, @RequestParam Long memberId, @RequestParam(required = false) Long lastMessageId) {
@@ -165,6 +171,7 @@ public class ChatController {
         return ResponseEntity.ok().build();
     }
     
+    // 메시지 리액션(공감) 토글
     @Operation(summary = "메시지 리액션(공감) 토글", description = "특정 메시지에 공감을 남기거나 취소/변경합니다.")
     @PostMapping("/message/{messageId}/reaction")
     public ResponseEntity<Void> toggleReaction(
@@ -175,6 +182,7 @@ public class ChatController {
         return ResponseEntity.ok().build();
     }
 
+    // 채팅방 멤버 목록 조회
     @Operation(summary = "채팅방 멤버 조회", description = "특정 채팅방의 참여자 목록을 조회합니다.")
     @GetMapping("/room/{roomId}/members")
     public ResponseEntity<List<com.kh.spring.chat.model.dto.ChatMemberDto>> getChatRoomMembers(@PathVariable Long roomId) {
@@ -187,6 +195,7 @@ public class ChatController {
     
     private final ChatFileUtil chatFileUtil; 
 
+    // 파일 업로드 (이미지/파일)
     @Operation(summary = "채팅 파일 업로드", description = "이미지/파일을 업로드하고 URL을 반환받습니다. (저장위치: /uploadFiles/chat/message/)")
     @PostMapping(value = "/upload", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) {
@@ -248,6 +257,7 @@ public class ChatController {
     // 5. 그룹 관리 (Role & Kick)
     // ===================================
 
+    // 채팅방 권한 변경 (방장 위임)
     @Operation(summary = "채팅방 권한 변경 (방장 위임)", description = "방장이 다른 멤버에게 방장을 위임하거나 권한을 변경합니다.")
     @PatchMapping("/room/{roomId}/user/{memberId}/role")
     public ResponseEntity<Void> updateRole(
@@ -259,6 +269,7 @@ public class ChatController {
         return ResponseEntity.ok().build();
     }
 
+    // 멤버 강퇴
     @Operation(summary = "멤버 강퇴", description = "방장 또는 관리자가 멤버를 강퇴합니다.")
     @DeleteMapping("/room/{roomId}/user/{memberId}")
     public ResponseEntity<Void> kickMember(
@@ -269,6 +280,7 @@ public class ChatController {
         return ResponseEntity.ok().build();
         }
 
+    // 메시지 검색 (키워드)
     @Operation(summary = "메시지 검색", description = "채팅방 내 메시지를 키워드로 검색합니다 (최신순, 페이징 지원).")
     @GetMapping("/room/{roomId}/search")
     public ResponseEntity<List<ChatMessageDto>> searchMessages(
@@ -284,6 +296,7 @@ public class ChatController {
     // 4. 입력 상태 표시 (Typing Indicator)
     // ===================================
     
+    // 입력 중 상태 표시 (WebSocket)
     @MessageMapping("/chat/typing")
     public void typing(ChatTypingDto typingDto) {
         // 클라이언트 구독 경로: /topic/chat/room/{roomId}/typing
@@ -294,6 +307,7 @@ public class ChatController {
     // 6. 메시지 삭제 (Soft Delete)
     // ===================================
     
+    // 메시지 삭제 (Soft Delete)
     @Operation(summary = "메시지 삭제", description = "작성자가 자신의 메시지를 삭제합니다. (Soft Delete)")
     @PutMapping("/message/{messageId}/delete")
     public ResponseEntity<Void> deleteMessage(
@@ -307,6 +321,7 @@ public class ChatController {
     // 7. 채팅방 공지 관리
     // ===================================
     
+    // 채팅방 공지 설정
     @Operation(summary = "채팅방 공지 설정", description = "방장 또는 관리자가 특정 메시지를 공지로 설정합니다.")
     @PostMapping("/room/{roomId}/notice")
     public ResponseEntity<Void> setNotice(
@@ -317,6 +332,7 @@ public class ChatController {
         return ResponseEntity.ok().build();
     }
     
+    // 채팅방 공지 해제
     @Operation(summary = "채팅방 공지 해제", description = "방장 또는 관리자가 채팅방 공지를 해제합니다.")
     @DeleteMapping("/room/{roomId}/notice")
     public ResponseEntity<Void> clearNotice(
@@ -326,7 +342,7 @@ public class ChatController {
         return ResponseEntity.ok().build();
     }
     
-    // [즐겨찾기] 채팅방 즐겨찾기 토글
+    // 채팅방 즐겨찾기 토글
     @PutMapping("/rooms/{roomId}/favorite")
     public ResponseEntity<Void> toggleFavorite(
             @PathVariable Long roomId,
@@ -335,7 +351,7 @@ public class ChatController {
         return ResponseEntity.ok().build();
     }
     
-    // [초대] 사용자 초대
+    // 사용자 초대
     @PostMapping("/rooms/{roomId}/invite")
     public ResponseEntity<Void> inviteUser(
             @PathVariable Long roomId,
@@ -345,7 +361,7 @@ public class ChatController {
         return ResponseEntity.ok().build();
     }
     
-    // [초대] 초대 수락
+    // 초대 수락
     @PutMapping("/rooms/{roomId}/invitation/accept")
     public ResponseEntity<Void> acceptInvitation(
             @PathVariable Long roomId,
@@ -354,7 +370,7 @@ public class ChatController {
         return ResponseEntity.ok().build();
     }
     
-    // [초대] 초대 거절
+    // 초대 거절
     @PutMapping("/rooms/{roomId}/invitation/reject")
     public ResponseEntity<Void> rejectInvitation(
             @PathVariable Long roomId,
@@ -363,14 +379,14 @@ public class ChatController {
         return ResponseEntity.ok().build();
     }
     
-    // [초대] 초대 중인 사용자 목록 조회 (New)
+    // 초대 중인 사용자 목록 조회
     @Operation(summary = "초대 중인 사용자 조회", description = "채팅방에 초대되었으나 아직 수락하지 않은 사용자 목록을 조회합니다.")
     @GetMapping("/rooms/{roomId}/invitations")
     public ResponseEntity<List<com.kh.spring.chat.model.dto.ChatMemberDto>> getInvitedUsers(@PathVariable Long roomId) {
         return ResponseEntity.ok(chatService.getInvitedUsers(roomId));
     }
 
-    // [초대] 초대 취소 (New)
+    // 초대 취소 (회수)
     @Operation(summary = "초대 취소", description = "방장 또는 관리자가 보낸 초대를 취소합니다.")
     @DeleteMapping("/rooms/{roomId}/invitations/{targetMemberId}")
     public ResponseEntity<Void> cancelInvitation(
@@ -380,7 +396,7 @@ public class ChatController {
         chatService.cancelInvitation(roomId, targetMemberId, requesterId);
         return ResponseEntity.ok().build();
     }
-    // [프로필] 프로필 이미지 변경
+    // 프로필 이미지 변경 (채팅 전용)
     @Operation(summary = "프로필 이미지 변경", description = "사용자의 프로필 이미지를 변경합니다. (채팅 전용)")
     @PatchMapping("/user/profile")
     public ResponseEntity<Void> updateProfile(
@@ -389,7 +405,7 @@ public class ChatController {
         chatService.updateProfile(memberId, profileImageUrl);
         return ResponseEntity.ok().build();
     }
-    // [방 설정] 채팅방 이름 변경
+    // 채팅방 이름 변경 (방장 전용)
     @Operation(summary = "채팅방 이름 변경", description = "방장이 채팅방의 이름을 변경합니다.")
     @PatchMapping("/room/{roomId}/title")
     public ResponseEntity<Void> updateRoomTitle(
@@ -400,6 +416,7 @@ public class ChatController {
         return ResponseEntity.ok().build();
     }
 
+    // 채팅방 이미지 변경 (방장 전용)
     @Operation(summary = "채팅방 이미지 변경", description = "방장이 채팅방의 이미지를 변경합니다.")
     @PatchMapping("/room/{roomId}/image")
     public ResponseEntity<Void> updateRoomImage(
