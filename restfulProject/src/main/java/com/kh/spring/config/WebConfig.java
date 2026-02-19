@@ -29,6 +29,10 @@ public class WebConfig implements WebMvcConfigurer {
         // [추가] 채팅 멀티미디어 파일 접근 (로컬 저장소 연결)
         registry.addResourceHandler("/chat/file/**")
                 .addResourceLocations("file:///C:/uploadFiles/chat/");
+        
+        // [추가] 커뮤니티 멀티미디어 파일 접근 (로컬 저장소 연결)
+        registry.addResourceHandler("/community/file/**")
+                .addResourceLocations("file:///C:/uploadFiles/community/");
     }
     @Override
     public void addCorsMappings(CorsRegistry registry) {

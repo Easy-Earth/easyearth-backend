@@ -85,10 +85,10 @@ public class InquiriesController {
 
 	//건의글 상세보기
 	@Operation(summary = "건의글 상세보기", description = "inquiriesId : 조회할 건의글 번호  \n\n"
-													+ "loginId : 로그인된 사용자 번호")
+													+ "memberId : 로그인된 사용자 아이디")
 	@GetMapping("/post/detail/{inquiriesId}")
 	public ResponseEntity<?> inquiriesDetail(@PathVariable int inquiriesId,
-											 @RequestParam int loginId) {
+											 @RequestParam int memberId) {
 		
 		int result = service.increaseCount(inquiriesId);
 		
@@ -100,7 +100,7 @@ public class InquiriesController {
 				String isPublic = inquiry.getIsPublic();
 				
 				if(isPublic.equals("N")) {
-					if(loginId != 1 && inquiry.getMemberId() != loginId) {
+					if(memberId != 1 && inquiry.getMemberId() != memberId) {
 						return ResponseEntity.status(HttpStatus.FORBIDDEN)
 											 .body("비공개 건의글은 작성자와 관리자만 확인할 수 있습니다.");
 					}
@@ -117,7 +117,7 @@ public class InquiriesController {
 	
 	//건의글 등록
 	@Operation(summary = "건의글 등록", 
-			description = "memberId : 사용자 아이디 \n\n"
+			description = "memberId : 로그인된 사용자 아이디 \n\n"
 						+ "title : 건의글 제목 \n\n"
 						+ "content : 건의 내용 \n\n"
 						+ "isPublic(전체 공개 여부) : Y / N  \n\n"
@@ -148,12 +148,13 @@ public class InquiriesController {
 	
 	//건의글 수정
 	@Operation(summary = "건의글 수정", 
-				description = "inquiriesId : 건의글 번호 \n\n"
-							+ "memberId : 사용자 아이디  \n\n"
+				description = "inquiriesId : 수정할 건의글 번호 \n\n"
+							+ "memberId : 로그인된 사용자 아이디  \n\n"
 							+ "title : 건의글 제목  \n\n"
 							+ "content : 건의 내용  \n\n"
 							+ "isPublic(전체 공개 여부) : Y / N  \n\n"
-							+ "isFaq(자주 묻는 질문) : Y / N  \n\n")
+							+ "isFaq(자주 묻는 질문) : Y / N  \n\n"
+							+ "		-> 수정할 건의글 작성자와 로그인된 사용자가 동일해야 함")
 	@PutMapping("/post/update/{inquiriesId}")
 	public ResponseEntity<?> inquiriesUpdate(@PathVariable int inquiriesId,
 											 @RequestParam int memberId,
@@ -182,8 +183,9 @@ public class InquiriesController {
 
 	//건의글 삭제
 	@Operation(summary = "건의글 삭제", 
-				description = "inquiriesId : 건의글 번호  \n\n"
-							+ "memberId : 사용자 아이디")
+				description = "inquiriesId : 삭제할 건의글 번호  \n\n"
+							+ "memberId : 로그인된 사용자 아이디   \n\n"
+							+ "		-> 삭제할 건의글 작성자와 로그인된 사용자가 동일해야 함")
 	@DeleteMapping("/post/delete/{inquiriesId}")
 	public ResponseEntity<?> inquiriesDelete(@PathVariable int inquiriesId,
 											 @RequestParam int memberId) {
@@ -208,7 +210,7 @@ public class InquiriesController {
 				description = "memberId : 로그인된 사용자 번호   \n\n"
 							+ "inquiriesId : 상태 변경할 건의글 번호   \n\n"
 							+ "status : 변경할 상태값   \n\n"
-							+ "		 -> SUBMITTED(기본값-접수 완료), PROCESSING(진행 중), COMPLETED(답변 완료))")
+							+ "		 -> SUBMITTED(기본값-접수 완료), PROCESSING(진행 중), COMPLETED(답변 완료)")
 	@PutMapping("/changeStatus")
 	public ResponseEntity<?> inquiriesStatus(@RequestParam int memberId,
 										     @RequestParam int inquiriesId,
@@ -247,8 +249,11 @@ public class InquiriesController {
 	//건의글 답변 - 관리자 권한
 	@Operation(summary = "(관리자) 건의글 답변", 
 				description = "inquiriesId : 답변(수정)할 건의글 번호   \n\n"
-							+ "memberId : 로그인된 사용자 번호   \n\n"
-							+ "adminReply : 답변(수정) 내용")
+							+ "memberId : 로그인된 사용자 아이디   \n\n"
+							+ "adminReply : 답변(등록, 수정, 삭제) 내용  \n\n"
+							+ "		-> 기존 답변이 없었으면 신규 등록으로 처리    \n\n"
+							+ "		-> 기존 답변이 있었으면 수정으로 처리    \n\n"
+							+ "		-> adminReply에 빈칸(null) 입력하면 삭제로 처리")
 	@PutMapping("/adminReply/{inquiriesId}")
 	public ResponseEntity<?> inquiriesAdmintReply(@PathVariable int inquiriesId,
 												  @RequestParam int memberId,
@@ -295,17 +300,5 @@ public class InquiriesController {
 	    }
 	}
 	
-//	//건의글 답변 수정 - 관리자 권한
-//	@Operation(summary = "(관리자) 건의글 답변 수정", 
-//				description = "inquiriesId : 답변 수정할 건의글 번호   \n\n"
-//							+ "memberId : 로그인된 사용자 번호   \n\n"
-//							+ "adminReply : 수정할 답변 내용")
-//	@PutMapping("/adminReply/update/{inquiriesId}")
-//	public ResponseEntity<?> admintReplyUpdate(@PathVariable int inquiriesId,
-//											@RequestParam int memberId,
-//											@RequestParam String adminReply
-//	) {
-//		
-//	}
 
 }

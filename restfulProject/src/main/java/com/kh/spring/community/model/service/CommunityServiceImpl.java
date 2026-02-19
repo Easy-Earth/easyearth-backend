@@ -181,8 +181,17 @@ public class CommunityServiceImpl implements CommunityService {
 			reply.setDepth(parent.getDepth() + 1);  //부모 댓글보다 한 단계 깊은 계층
 		}
 		
+		int result = dao.replyInsert(sqlSession, reply);
 		
-		return dao.replyInsert(sqlSession, reply);
+		//댓글 수 증감
+		if(result > 0) {
+			Map<String, Object> map = new HashMap<>();
+			map.put("postId", reply.getPostId());
+			map.put("count", 1);
+			dao.updatePostCommentCount(sqlSession, map);
+		}
+		
+		return result;
 	}
 
 	//댓글 수정
@@ -192,9 +201,18 @@ public class CommunityServiceImpl implements CommunityService {
 	}
 
 	//댓글 삭제
+	@Transactional
 	@Override
 	public int replyDelete(CommunityReplyVO reply) {
-		return dao.replyDelete(sqlSession, reply);
+		int result = dao.replyDelete(sqlSession, reply);
+		
+		if(result > 0) {
+			Map<String, Object> map = new HashMap<>();
+			map.put("postId", reply.getPostId());
+			map.put("count", -1);
+			dao.updatePostCommentCount(sqlSession, map);
+		}
+		return result;
 	}
 
 	//게시글 좋아요
@@ -202,18 +220,39 @@ public class CommunityServiceImpl implements CommunityService {
 	public String communityLikes(Map<String, Object> map) {
 		
 		//이미 좋아요를 누른 게시글인지 확인
-		int count = dao.checkPostLike(sqlSession, map);
+		int check = dao.checkPostLike(sqlSession, map);
+		String resultMsg = "";
+		int count = 0;
 
-		if (count == 0) {
+		if (check == 0) {
 			dao.insertPostLike(sqlSession, map);
-			return "LIKE_INSERT";
+			count = 1;
+			resultMsg = "좋아요 등록";
 			
 		}else {
 			dao.changePostLike(sqlSession, map);
-			return "LIKE_CHANGE";
+			
+			String currentStatus = dao.getPostLikeStatus(sqlSession, map);
+			
+			if(currentStatus.equals("Y")) {
+				count = 1;
+				resultMsg = "좋아요 등록";
+			}else {
+				count = -1;
+				resultMsg = "좋아요 취소";
+			}
 		}
 		
+		map.put("count", count);
+		dao.updatePostLikeCount(sqlSession, map);
 		
+		return resultMsg;
+	}
+	
+	//게시글 좋아요 상태 조회
+	@Override
+	public String getPostLikeStatus(Map<String, Object> map) {
+		return dao.getPostLikeStatus(sqlSession, map);
 	}
 
 	//댓글 좋아요
@@ -221,17 +260,40 @@ public class CommunityServiceImpl implements CommunityService {
 	public String replyLikes(Map<String, Object> map) {
 		
 		//이미 좋아요를 누른 댓글인지 확인
-		int count = dao.checkReplyLike(sqlSession, map);
+		int check = dao.checkReplyLike(sqlSession, map);
+		String resultMsg = "";
+		int count = 0;
 		
-		if (count == 0) {
+		if (check == 0) {
 			dao.insertReplyLike(sqlSession, map);
-			return "LIKE_INSERT";
+			count = 1;
+			resultMsg = "댓글 좋아요 등록";
+			
 		}else {
 			dao.changeReplyLike(sqlSession, map);
-			return "LIKE_CHANGE";
+			
+			String currentStatus = dao.getReplyLikeStatus(sqlSession, map);
+			
+			if(currentStatus.equals("Y")) {
+				count = 1;
+				resultMsg = "댓글 좋아요 등록";
+			}else {
+				count = -1;
+				resultMsg = "댓글 좋아요 취소";
+			}
 		}
-
+		map.put("count", count);
+		dao.updateReplyLikeCount(sqlSession, map);
+		
+		return resultMsg;
 	}
+
+	//댓글 좋아요 상태 조회
+	@Override
+	public String getReplyLikeStatus(Map<String, Object> map) {
+		return dao.getReplyLikeStatus(sqlSession, map);
+	}
+
 
 
 	

@@ -159,6 +159,11 @@ public class CommunityDao {
 	public int replyInsert(SqlSessionTemplate sqlSession, CommunityReplyVO reply) {
 		return sqlSession.insert("communityMapper.replyInsert", reply);
 	}
+	
+	//댓글 수 증감 값 DB 업데이트
+	public int updatePostCommentCount(SqlSessionTemplate sqlSession, Map<String, Object> map) {
+		return sqlSession.update("communityMapper.updatePostCommentCount", map);
+	}
 
 	//댓글 수정
 	public int replyUpdate(SqlSessionTemplate sqlSession, CommunityReplyVO reply) {
@@ -184,6 +189,16 @@ public class CommunityDao {
 	public int changePostLike(SqlSessionTemplate sqlSession, Map<String, Object> map) {
 		return sqlSession.update("communityMapper.changePostLike", map);
 	}
+	
+	//게시글 좋아요 상태 변경 값 가져오기
+	public String getPostLikeStatus(SqlSessionTemplate sqlSession, Map<String, Object> map) {
+		return sqlSession.selectOne("communityMapper.getPostLikeStatus", map);
+	}
+
+	//게시글 좋아요 증감 값 DB 업데이트
+	public int updatePostLikeCount(SqlSessionTemplate sqlSession, Map<String, Object> map) {
+		return sqlSession.update("communityMapper.updatePostLikeCount", map);
+	}
 
 	//이미 좋아요를 누른 댓글인지 확인
 	public int checkReplyLike(SqlSessionTemplate sqlSession, Map<String, Object> map) {
@@ -197,8 +212,22 @@ public class CommunityDao {
 
 	//댓글 좋아요 상태 변경
 	public int changeReplyLike(SqlSessionTemplate sqlSession, Map<String, Object> map) {
-		return sqlSession.update("communityMapper.insertReplyLike", map);
+		return sqlSession.update("communityMapper.changeReplyLike", map);
 	}
+
+	//댓글 좋아요 상태 변경 값 가져오기
+	public String getReplyLikeStatus(SqlSessionTemplate sqlSession, Map<String, Object> map) {
+		return sqlSession.selectOne("communityMapper.getReplyLikeStatus", map);
+	}
+
+	//댓글 좋아요 증감 값 DB 업데이트
+	public int updateReplyLikeCount(SqlSessionTemplate sqlSession, Map<String, Object> map) {
+		return sqlSession.update("communityMapper.updateReplyLikeCount", map);
+	}
+
+
+
+
 
 
 	

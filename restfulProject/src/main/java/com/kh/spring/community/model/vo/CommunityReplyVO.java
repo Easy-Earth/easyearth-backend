@@ -39,4 +39,6 @@ public class CommunityReplyVO {
 	private int depth;
 	private String status;
 	
+	private String name;
+	
 }
