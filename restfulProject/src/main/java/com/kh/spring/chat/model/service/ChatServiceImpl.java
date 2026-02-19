@@ -1306,7 +1306,7 @@ public class ChatServiceImpl implements ChatService {
     @Transactional(readOnly = true)
     public List<ChatMemberDto> searchMember(String keyword) {
         log.info("🔍 [멤버 검색] keyword: {}", keyword);
-        List<MemberEntity> members = memberRepository.findByNameContainingOrLoginIdContaining(keyword, keyword);
+        List<MemberEntity> members = memberRepository.findByNameContaining(keyword);
         log.info("✅ [멤버 검색 결과] 갯수: {}", members.size());
         
         return members.stream()
