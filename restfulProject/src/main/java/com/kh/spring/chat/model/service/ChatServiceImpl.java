@@ -47,7 +47,7 @@ public class ChatServiceImpl implements ChatService {
     private final org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
     private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
-    //MemberId를 이용한 채팅방 목록(리스트) 조회
+    // 채팅방 목록 조회 (참여 방 및 안 읽은 메시지 포함)
     @Override
     @Transactional(readOnly = true)
     public List<ChatRoomDto> selectChatRoomList(Long memberId) {
@@ -119,7 +119,7 @@ public class ChatServiceImpl implements ChatService {
                 .collect(Collectors.toList());
     }
 
-    // 안 읽은 메시지 갯수 (최적화 로직)
+    // 안 읽은 메시지 갯수 계산 (최적화)
     private int countUnreadMessagesOptimized(ChatRoomEntity chatRoom, Long memberId) {
         // 1. 참여자 정보 조회
         ChatRoomUserEntity roomUser = chatRoomUserRepository.findByChatRoomIdAndMemberId(chatRoom.getId(), memberId)
@@ -137,7 +137,7 @@ public class ChatServiceImpl implements ChatService {
         return (int) Math.max(0, total - read);
     }
     
-    //채팅방 생성 로직
+    // 채팅방 생성
     @Override
     public ChatRoomDto createChatRoom(ChatRoomDto roomDto) {
         // 1:1 채팅방이고, 생성자와 맴버가 같으면
@@ -231,7 +231,7 @@ public class ChatServiceImpl implements ChatService {
                 .build();
     }
 
-    //채팅방 입장 로직
+    // 채팅방 입장
     @Override
     @CacheEvict(value = "chatRoomDetails", key = "#roomId")
     public void joinChatRoom(Long roomId, Long memberId) {
@@ -269,7 +269,7 @@ public class ChatServiceImpl implements ChatService {
         saveSystemMessage(chatRoom, member.getName() + "님이 들어왔습니다.");
     }
 
-    //채팅방 나가기
+    // 채팅방 나가기
     @Override
     @CacheEvict(value = "chatRoomDetails", key = "#roomId")
     public void leaveChatRoom(Long roomId, Long memberId) {
@@ -328,7 +328,7 @@ public class ChatServiceImpl implements ChatService {
         }
     }
     
-    //채팅방 상세 조회
+    // 채팅방 상세 조회
     @Override
     @Transactional(readOnly = true)
     @Cacheable(value = "chatRoomDetails", key = "#roomId")
@@ -381,7 +381,7 @@ public class ChatServiceImpl implements ChatService {
                 .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다"));
     }
     
-    //채팅방에 메시지 저장
+    // 메시지 저장
     @Override
     @Transactional
     public ChatMessageDto saveMessage(ChatMessageDto messageDto) {
@@ -464,9 +464,7 @@ public class ChatServiceImpl implements ChatService {
         return messageDto;
     }
     
-    /**
-     * [동시성 제어] OptimisticLockException 발생 시 재시도하는 updateLastMessage
-     */
+    // [동시성 제어] 마지막 메시지 업데이트 (OptimisticLock 재시도)
     @CacheEvict(value = "chatRoomDetails", key = "#roomId")
     private void updateLastMessageWithRetry(Long roomId, String content, LocalDateTime createdAt, String messageType) {
         int maxRetries = 3;
@@ -507,7 +505,7 @@ public class ChatServiceImpl implements ChatService {
     
     private static final int PAGE_SIZE = 30;
 
-    //채팅방 메시지 조회
+    // 채팅방 메시지 내역 조회 (페이징)
     @Override
     public List<ChatMessageDto> selectMessageList(Long roomId, Long cursorId, Long memberId) {
         // [보안] 참여자만 메시지 조회 가능
@@ -535,7 +533,7 @@ public class ChatServiceImpl implements ChatService {
                 .collect(Collectors.toList());
     }
 
-    // [메시지 검색] 키워드 검색 (페이징 지원)
+    // 메시지 검색 (키워드/페이징)
     @Override
     public List<ChatMessageDto> searchMessages(Long roomId, Long memberId, String keyword, int limit, int offset) {
         log.info("🔍 [메시지 검색] roomId: {}, keyword: {}, limit: {}, offset: {}", roomId, keyword, limit, offset);
@@ -559,7 +557,7 @@ public class ChatServiceImpl implements ChatService {
                 .collect(Collectors.toList());
     }
 
-    // DTO 변환 헬퍼 메서드
+    // [Helper] Entity -> DTO 변환
     private ChatMessageDto convertToDto(ChatMessageEntity entity, Long memberId) {
         // 리액션 가공
         List<ChatMessageDto.ReactionSummary> reactionSummaries = entity.getReactions().stream()
@@ -615,7 +613,7 @@ public class ChatServiceImpl implements ChatService {
         return builder.build();
     }
     
-    // [개선] 메시지별 안 읽은 사람 수 계산 (단일 메시지용 - 내부적으로 전체 유저 조회함)
+    // [Helper] 메시지별 안 읽은 사람 수 계산 (전체 유저 DB 조회)
     private Integer calculateUnreadCount(ChatMessageEntity message) {
         try {
             Long chatRoomId = message.getChatRoom().getId();
@@ -628,7 +626,7 @@ public class ChatServiceImpl implements ChatService {
         }
     }
 
-    // [최적화] 메시지별 안 읽은 사람 수 계산 (미리 조회된 사용자 목록 사용)
+    // [Helper] 메시지별 안 읽은 사람 수 계산 (미리 조회된 유저 목록 사용 - 최적화)
     private Integer calculateUnreadCount(ChatMessageEntity message, List<ChatRoomUserEntity> allUsers) {
         try {
             Long messageId = message.getId();
@@ -660,7 +658,7 @@ public class ChatServiceImpl implements ChatService {
         }
     }
 
-    //메시지 읽음 처리 (Optimized)
+    // 메시지 읽음 처리
     @Override
     public void updateReadStatus(Long roomId, Long memberId, Long lastMessageId) {
         ChatRoomUserEntity roomUser = chatRoomUserRepository.findByChatRoomIdAndMemberId(roomId, memberId)
@@ -730,7 +728,7 @@ public class ChatServiceImpl implements ChatService {
                 roomId, memberId, lastMessageId, affectedMessages.size());
     }
 
-    // 시스템 메시지 저장
+    // [Helper] 시스템 메시지 저장 및 전송
     private void saveSystemMessage(ChatRoomEntity chatRoom, String content) {
         log.info("🟢 [시스템 메시지] 저장 시작 - chatRoomId: {}, content: {}", chatRoom.getId(), content);
         
@@ -786,9 +784,7 @@ public class ChatServiceImpl implements ChatService {
         }
     }
     
-    /**
-     * [알림] 글로벌 알림 전송 (비동기, @Transactional(readOnly = true))
-     */
+    // 글로벌 알림 전송 (비동기)
     @Override
     @Transactional(readOnly = true)
     public void sendGlobalNotifications(ChatMessageDto savedMessage) {
@@ -832,7 +828,7 @@ public class ChatServiceImpl implements ChatService {
         });
     }
 
-    // 리액션 토글 로직
+    // 메시지 리액션 토글
     @Override
     public void toggleReaction(Long messageId, Long memberId, String emojiType) {
         // 1. 메시지 존재 확인
@@ -899,7 +895,7 @@ public class ChatServiceImpl implements ChatService {
                 chatRoomId, messageId, memberId, action);
     }
 
-    // [그룹 관리] 역할 변경
+    // 권한 변경 (방장 위임 등)
     @Override
     public void updateRole(Long chatRoomId, Long targetMemberId, Long requesterId, String newRole) {
         log.info("🔄 [역할 변경 요청] chatRoomId: {}, targetMemberId: {}, newRole: {}, requesterId: {}", 
@@ -968,7 +964,7 @@ public class ChatServiceImpl implements ChatService {
         log.info("✅ 역할 변경 완료 & 이벤트 전송");
     }
 
-    // [그룹 관리] 멤버 강퇴
+    // 멤버 강퇴
     @Override
     public void kickMember(Long chatRoomId, Long targetMemberId, Long requesterId) {
         // [보안] 자기 자신을 강퇴할 수 없음
@@ -1124,7 +1120,7 @@ public class ChatServiceImpl implements ChatService {
         log.info("공지 해제: roomId={}, memberId={}", roomId, memberId);
     }
     
-    // [즐겨찾기] 채팅방 즐겨찾기 토글
+    // 채팅방 즐겨찾기 토글
     @Override
     public void toggleFavorite(Long roomId, Long memberId) {
         log.info("⭐ [즐겨찾기 토글] roomId: {}, memberId: {}", roomId, memberId);
@@ -1141,7 +1137,7 @@ public class ChatServiceImpl implements ChatService {
         log.info("✅ 즐겨찾기 변경 완료: isFavorite={}", roomUser.getIsFavorite());
     }
     
-    // [초대] 사용자 초대 (PENDING 상태로 추가)
+    // 사용자 초대
     @Override
     public void inviteUser(Long roomId, Long invitedMemberId, Long requesterId) {
         log.info("📧 [사용자 초대] roomId: {}, invitedMemberId: {}, requesterId: {}", 
@@ -1195,7 +1191,7 @@ public class ChatServiceImpl implements ChatService {
         saveSystemMessage(requester.getChatRoom(), requester.getMember().getName() + "님이 " + invitedMember.getName() + "님을 " + inviteTargetName + "에 초대했습니다.");
     }
     
-    // [초대] 초대 수락
+    // 초대 수락
     @Override
     public void acceptInvitation(Long roomId, Long memberId) {
         log.info("✅ [초대 수락] roomId: {}, memberId: {}", roomId, memberId);
@@ -1221,7 +1217,7 @@ public class ChatServiceImpl implements ChatService {
         log.info("✅ 초대 수락 완료: memberId={}, memberName={}", memberId, memberName);
     }
     
-    // [초대] 초대 거절
+    // 초대 거절
     @Override
     public void rejectInvitation(Long roomId, Long memberId) {
         log.info("❌ [초대 거절] roomId: {}, memberId: {}", roomId, memberId);
@@ -1246,7 +1242,7 @@ public class ChatServiceImpl implements ChatService {
         saveSystemMessage(roomUser.getChatRoom(), memberName + "님이 초대를 거절했습니다.");
     }
 
-    // [프로필] 프로필 이미지 변경
+    // 프로필 이미지 변경 (채팅 전용)
     @Override
     @Transactional
     public void updateProfile(Long memberId, String profileImageUrl) {
@@ -1274,6 +1270,7 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     @Transactional(readOnly = true)
+    // 채팅방 멤버 목록 조회
     public List<ChatMemberDto> getChatRoomMembers(Long chatRoomId) {
         return chatRoomUserRepository.findAllByChatRoomId(chatRoomId).stream()
                 // ✨ [Fix] PENDING 상태인 멤버는 목록에서 제외
@@ -1289,7 +1286,7 @@ public class ChatServiceImpl implements ChatService {
                 .collect(Collectors.toList());
     }
 
-    // [Helper] 채팅방 유저 추가 공통 메서드
+    // [Helper] 채팅방 유저(ChatRoomUser) 추가
     private ChatRoomUserEntity addChatRoomUser(ChatRoomEntity chatRoom, MemberEntity member, String role, String invitationStatus) {
         ChatRoomUserEntity roomUser = ChatRoomUserEntity.builder()
                 .chatRoom(chatRoom)
@@ -1304,6 +1301,7 @@ public class ChatServiceImpl implements ChatService {
         return chatRoomUserRepository.save(roomUser);
     }
     
+    // 회원 검색 (이름/닉네임)
     @Override
     @Transactional(readOnly = true)
     public List<ChatMemberDto> searchMember(String keyword) {
@@ -1321,6 +1319,7 @@ public class ChatServiceImpl implements ChatService {
                 .collect(Collectors.toList());
     }
 
+    // 채팅방 이름 변경 (방장 전용)
     @Override
     @Transactional
     public void updateRoomTitle(Long roomId, Long memberId, String newTitle) {
@@ -1358,6 +1357,7 @@ public class ChatServiceImpl implements ChatService {
         log.info("✅ [방 이름 변경 완료] roomId: {}", roomId);
     }
 
+    // 채팅방 이미지 변경 (방장 전용)
     @Override
     @Transactional
     public void updateRoomImage(Long roomId, Long memberId, String imageUrl) {
@@ -1391,7 +1391,7 @@ public class ChatServiceImpl implements ChatService {
         log.info("✅ [방 이미지 변경 완료] roomId: {}", roomId);
     }
 
-    // ✨ [Helper] Entity -> DTO 변환 (삭제된 메시지 처리 포함)
+    // [Helper] Entity -> DTO 변환 (삭제 처리 포함)
     private ChatMessageDto convertEntityToDto(ChatMessageEntity entity, Long memberId) {
         String messageType = entity.getMessageType();
         
@@ -1415,7 +1415,7 @@ public class ChatServiceImpl implements ChatService {
                 .build();
     }
     
-    // [초대 관리] 초대 중인 사용자 목록 조회
+    // 초대 중인 사용자 목록 조회
     @Override
     @Transactional(readOnly = true)
     public List<ChatMemberDto> getInvitedUsers(Long chatRoomId) {
@@ -1431,7 +1431,7 @@ public class ChatServiceImpl implements ChatService {
                 .collect(Collectors.toList());
     }
 
-    // [초대 관리] 초대 취소 (회수)
+    // 초대 취소 (회수)
     @Override
     @Transactional
     public void cancelInvitation(Long chatRoomId, Long targetMemberId, Long requesterId) {

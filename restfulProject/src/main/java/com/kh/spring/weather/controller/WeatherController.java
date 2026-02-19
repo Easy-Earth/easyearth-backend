@@ -22,7 +22,7 @@ public class WeatherController {
     @Autowired
     private com.kh.spring.common.scheduler.DataScheduler dataScheduler;
 
-    //일기예보 조회
+    // 일기예보 조회 (단기/중기)
     @Operation(summary = "일기예보 조회")
     @GetMapping("/forecast")
     public ResponseEntity<?> getForecast(){
@@ -31,8 +31,8 @@ public class WeatherController {
 
     }
 
-    // 기본 기상 관측 자료 조회
-    @Operation(summary = "기본 기상 관측 자료 조회")
+    // 기상 관측 자료 조회 (ASOS/AWS)
+    @Operation(summary = "기상 관측 자료 조회")
     @GetMapping("/obs")
     public ResponseEntity<?> getObs(){
 
@@ -40,8 +40,8 @@ public class WeatherController {
 
     }
 
-    // 황사+ 미세먼지
-    @Operation(summary = "황사 자료 조회")
+    // 미세먼지/황사 조회
+    @Operation(summary = "황사/미세먼지 조회")
     @GetMapping("/dust")
     public ResponseEntity<?> getDust() {
 
@@ -49,8 +49,8 @@ public class WeatherController {
 
     }
 
-    // 자외선 자료
-    @Operation(summary = "자외선 자료 조회")
+    // 자외선 지수 조회
+    @Operation(summary = "자외선 지수 조회")
     @GetMapping("/uv")
     public ResponseEntity<?> getUv() {
 
@@ -58,15 +58,15 @@ public class WeatherController {
 
     }
     
-    //날씨 데이터 확인용
-    @Operation(summary = "데이터 테스트용")
+    // 전체 날씨 데이터 조회 (테스트용)
+    @Operation(summary = "전체 데이터 조회 (테스트)")
     @GetMapping("/allData")
     public ResponseEntity<?> getData() {
     	return ResponseEntity.ok(weatherService.getCheckWeather());
     }
     
-    // 캐시 강제 갱신
-    @Operation(summary = "날씨/뉴스 캐시 강제 갱신")
+    // 날씨/뉴스 캐시 강제 갱신 (스케줄러 수동 실행)
+    @Operation(summary = "캐시 강제 갱신")
     @GetMapping("/refresh")
     public ResponseEntity<?> refreshCache() {
         dataScheduler.scheduleWeatherUpdate();
