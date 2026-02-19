@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.stream.Collectors;
+import java.util.Arrays;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import com.kh.spring.weather.model.vo.DustDto;
 import com.kh.spring.weather.model.vo.ForecastDto;
@@ -25,9 +27,41 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Service
 public class WeatherService {
 
-    private LocalDate today = LocalDate.now();
 
+
+    @Autowired
+    private com.kh.spring.common.service.FileCacheService fileCacheService;
+    
+    // 캐시 파일명 상수
+    private static final String CACHE_FORECAST = "weather_forecast.json";
+    private static final String CACHE_OBS = "weather_obs.json";
+    private static final String CACHE_DUST = "weather_dust.json";
+    private static final String CACHE_UV = "weather_uv.json";
+
+    // --- Public Methods (Cache Read) ---
+
+    // 1. 단기 예보
     public List<ForecastDto> getForecastList() {
+        // 캐시 확인
+        ForecastDto[] cached = fileCacheService.load(CACHE_FORECAST, ForecastDto[].class);
+        if (cached != null) {
+            return Arrays.asList(cached);
+        }
+        // 캐시 없으면 바로 갱신 후 반환
+        return refreshForecastList();
+    }
+
+    // --- Private Fetch Methods & Refresh Logic ---
+    
+    public List<ForecastDto> refreshForecastList() {
+        List<ForecastDto> data = fetchForecastList(); // API 호출
+        if (!data.isEmpty()) {
+            fileCacheService.save(CACHE_FORECAST, data);
+        }
+        return data;
+    }
+
+    private List<ForecastDto> fetchForecastList() {
         String serviceKey = "0520e76efb72e41ae374ba77a910d0264246d16b23c171e4e817e576b2a1f52d";
         LocalDateTime now = LocalDateTime.now(); // 현재 시간
 
@@ -35,21 +69,27 @@ public class WeatherService {
                 .baseUrl("https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0")
                 .build();
 
-        ForecastResult result = webClient.get()
-                .uri(uriBuilder -> uriBuilder
-                        .path("/getVilageFcst")
-                        .queryParam("serviceKey", serviceKey)
-                        .queryParam("pageNo", "1")
-                        .queryParam("numOfRows", "1000")
-                        .queryParam("dataType", "JSON")
-                        .queryParam("base_date", now.format(DateTimeFormatter.ofPattern("yyyyMMdd")))
-                        .queryParam("base_time", "0500")
-                        .queryParam("nx", "55")
-                        .queryParam("ny", "127")
-                        .build())
-                .retrieve()
-                .bodyToMono(ForecastResult.class)
-                .block();
+        ForecastResult result = null;
+        try {
+            result = webClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/getVilageFcst")
+                            .queryParam("serviceKey", serviceKey)
+                            .queryParam("pageNo", "1")
+                            .queryParam("numOfRows", "1000")
+                            .queryParam("dataType", "JSON")
+                            .queryParam("base_date", getBaseDate(now))
+                            .queryParam("base_time", getBaseTime(now))
+                            .queryParam("nx", "55")
+                            .queryParam("ny", "127")
+                            .build())
+                    .retrieve()
+                    .bodyToMono(ForecastResult.class)
+                    .block();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
 
         if (result == null || result.getForecastList() == null) {
             return new ArrayList<>();
@@ -64,25 +104,41 @@ public class WeatherService {
                             DateTimeFormatter.ofPattern("yyyyMMddHHmm")
                     );
 
-                    // 현재 시간 기준 -3시간 ~ +3시간 사이인 데이터만 포함
-                    return forecastTime.isAfter(now.minusHours(4)) &&
-                            forecastTime.isBefore(now.plusHours(4));
+                    // 현재 시간 기준 -6시간 ~ +6시간 사이인 데이터만 포함
+                    return forecastTime.isAfter(now.minusHours(7)) &&
+                            forecastTime.isBefore(now.plusHours(7));
                 })
                 .collect(Collectors.toList());
     }
 	
 
+    // 2. 종관 관측
     public List<ObsDto> getObsList() {
+        ObsDto[] cached = fileCacheService.load(CACHE_OBS, ObsDto[].class);
+        if (cached != null) {
+            return Arrays.asList(cached);
+        }
+        return refreshObsList();
+    }
+
+    public List<ObsDto> refreshObsList() {
+        List<ObsDto> data = fetchObsList();
+        if (!data.isEmpty()) {
+            fileCacheService.save(CACHE_OBS, data);
+        }
+        return data;
+    }
+
+    private List<ObsDto> fetchObsList() {
         StringBuilder response = new StringBuilder();
 
         try {
-            // 어제, 오늘, 내일 날짜 계산
-            LocalDate yesterday = today.minusDays(1);
-            LocalDate dayAfterTomorrow = today.plusDays(2); 
-
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
-            String tm1 = yesterday.format(formatter) + "0000";
-            String tm2 = dayAfterTomorrow.format(formatter) + "2359"; 
+            // 현재 시간 기준 -1시간 ~ +12시간 범위 설정
+            LocalDateTime now = LocalDateTime.now();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
+            
+            String tm1 = now.minusHours(1).format(formatter);
+            String tm2 = now.plusHours(12).format(formatter); 
 
             // 1. API 호출 설정
             String urlStr = "https://apihub.kma.go.kr/api/typ01/url/kma_sfctm3.php?tm1=" + tm1 + "&tm2=" + tm2 + "&stn=108&help=0&authKey=KaG2mDn1S7ihtpg59Su46A";
@@ -148,18 +204,33 @@ public class WeatherService {
         try { return Integer.parseInt(s); } catch (Exception e) { return null; }
     }
     
+    // 3. 미세먼지
     public List<DustDto> getDustList() {
+        DustDto[] cached = fileCacheService.load(CACHE_DUST, DustDto[].class);
+        if (cached != null) {
+            return Arrays.asList(cached);
+        }
+        return refreshDustList();
+    }
+
+    public List<DustDto> refreshDustList() {
+        List<DustDto> data = fetchDustList();
+        if (!data.isEmpty()) {
+            fileCacheService.save(CACHE_DUST, data);
+        }
+        return data;
+    }
+
+    private List<DustDto> fetchDustList() {
         StringBuilder response = new StringBuilder();
         
         try {
-            // 어제, 오늘, 내일 날짜 계산
-            LocalDate today = LocalDate.now();
-            LocalDate yesterday = today.minusDays(1);
-            LocalDate dayAfterTomorrow = today.plusDays(2); 
-
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
-            String tm1 = yesterday.format(formatter) + "0000";
-            String tm2 = dayAfterTomorrow.format(formatter) + "0000";
+            // 현재 시간 기준 -1시간 ~ +12시간 범위 설정
+            LocalDateTime now = LocalDateTime.now();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
+            
+            String tm1 = now.minusHours(1).format(formatter);
+            String tm2 = now.plusHours(12).format(formatter); 
 
             // 1. API 호출 설정
             String urlStr = "https://apihub.kma.go.kr/api/typ01/url/kma_pm10.php?tm1=" + tm1 + "&tm2=" + tm2 + "&stn=108&authKey=KaG2mDn1S7ihtpg59Su46A";
@@ -204,7 +275,24 @@ public class WeatherService {
                 .collect(Collectors.toList());
     }
 
+    // 4. 자외선
     public List<UvDto> getUvList() {
+        UvDto[] cached = fileCacheService.load(CACHE_UV, UvDto[].class);
+        if (cached != null) {
+            return Arrays.asList(cached);
+        }
+        return refreshUvList();
+    }
+
+    public List<UvDto> refreshUvList() {
+        List<UvDto> data = fetchUvList();
+        if (!data.isEmpty()) {
+            fileCacheService.save(CACHE_UV, data);
+        }
+        return data;
+    }
+
+    private List<UvDto> fetchUvList() {
         StringBuilder response = new StringBuilder();
         
         try {
@@ -288,6 +376,52 @@ public class WeatherService {
         }
 
         return weatherData;
+    }
+
+    // --- Base Time 계산 로직 ---
+    private String getBaseDate(LocalDateTime now) {
+        // 02:10 이전이면 어제 날짜 사용
+        if (now.getHour() < 2 || (now.getHour() == 2 && now.getMinute() < 10)) {
+            return now.minusDays(1).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        }
+        return now.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+    }
+
+    private String getBaseTime(LocalDateTime now) {
+        // Base Time: 02, 05, 08, 11, 14, 17, 20, 23 (3시간 간격)
+        // API 제공 시간: Base Time + 10분 뒤 (02:10, 05:10...)
+        
+        int hour = now.getHour();
+        int minute = now.getMinute();
+
+        // 02:10 이전이면 전날 23:00
+        if (hour < 2 || (hour == 2 && minute < 10)) {
+            return "2300";
+        }
+
+        // 그 외 시간: (시간 - 2) / 3 * 3 + 2 공식 사용 (가장 가까운 과거 Base Time)
+        // 예: 04시 -> (2/3)*3 + 2 = 2 -> 0200
+        // 예: 05시 15분 -> (3/3)*3 + 2 = 5 -> 0500
+        
+        // 단, 해당 시간의 10분 전이라면 이전 Base Time을 써야 함.
+        // 예: 05:05 -> 아직 05시 데이터 안 나옴 -> 02시 데이터 써야 함.
+        // 따라서 (현재시간 - 10분)을 기준으로 계산하면 편함.
+        
+        LocalDateTime adjustedTime = now.minusMinutes(10);
+        int adjHour = adjustedTime.getHour();
+        
+        int baseHour = ((adjHour - 2) / 3) * 3 + 2;
+        if (baseHour < 2) baseHour = 23; // 02시 이전 케이스는 위에서 걸러지긴 함
+
+        return String.format("%02d00", baseHour);
+    }
+
+    // --- 통합 갱신 메소드 (Scheduler용) ---
+    public void refreshAllWeatherData() {
+        refreshForecastList();
+        refreshObsList();
+        refreshDustList();
+        refreshUvList();
     }
 
 }

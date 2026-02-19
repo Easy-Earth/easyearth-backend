@@ -19,6 +19,9 @@ public class WeatherController {
     @Autowired
     private WeatherService weatherService;
 
+    @Autowired
+    private com.kh.spring.common.scheduler.DataScheduler dataScheduler;
+
     //일기예보 조회
     @Operation(summary = "일기예보 조회")
     @GetMapping("/forecast")
@@ -60,6 +63,15 @@ public class WeatherController {
     @GetMapping("/allData")
     public ResponseEntity<?> getData() {
     	return ResponseEntity.ok(weatherService.getCheckWeather());
+    }
+    
+    // 캐시 강제 갱신
+    @Operation(summary = "날씨/뉴스 캐시 강제 갱신")
+    @GetMapping("/refresh")
+    public ResponseEntity<?> refreshCache() {
+        dataScheduler.scheduleWeatherUpdate();
+        dataScheduler.scheduleNewsUpdate();
+        return ResponseEntity.ok("Cache Refreshed");
     }
 
 }

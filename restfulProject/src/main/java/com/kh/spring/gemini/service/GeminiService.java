@@ -4,9 +4,15 @@ import org.springframework.stereotype.Service;
 import com.google.genai.Client;
 import com.google.genai.types.GenerateContentResponse;
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
 public class GeminiService {
+
+    @Autowired
+    private com.kh.spring.common.service.FileCacheService fileCacheService;
+    
+    private static final String CACHE_SECRETARY = "secretary_advice.json";
 
     public String custom(String question,String prompt) {
     	// API 호출
@@ -19,13 +25,23 @@ public class GeminiService {
                     question+prompt,
                     null);
             return response.text();
-        } catch (Exception e) {
+        } catch (Exception e) { 
             e.printStackTrace();
             return "테스트 실패!";
         }
     }
 
-    public String generateSecretaryAdvice(Map<String, Object> weatherData) {
+    // 캐시된 비서 조언 반환
+    public String getSecretaryAdvice(Map<String, Object> weatherData) {
+        String cached = fileCacheService.load(CACHE_SECRETARY, String.class);
+        if (cached != null && !cached.isEmpty()) {
+            return cached;
+        }
+        return refreshSecretaryAdvice(weatherData);
+    }
+
+    // 비서 조언 갱신 및 저장
+    public String refreshSecretaryAdvice(Map<String, Object> weatherData) {
         // 프롬프트 구성
         StringBuilder prompt = new StringBuilder();
         prompt.append("너는 사용자에게 친근하고 발랄한 '환경 비서'야. 기상 데이터를 분석해서 오늘 지구가 덜 아프게, 그리고 사용자도 건강하게 보낼 수 있는 꿀팁을 줘야 해.\n\n");
@@ -48,10 +64,53 @@ public class GeminiService {
                     "gemma-3-27b-it",
                     prompt.toString(),
                     null);
-            return response.text();
+            
+            String result = response.text();
+            if (result != null && !result.isEmpty()) {
+                fileCacheService.save(CACHE_SECRETARY, result);
+            }
+            return result;
         } catch (Exception e) {
             e.printStackTrace();
             return "죄송해요, 환경 비서가 잠시 휴식 중이에요! 😢 날씨 정보를 다시 확인해 주세요.";
+        }
+    }
+
+    // 카테고리별 뉴스 처리 메소드 (단건 처리)
+    public String getNewsByCategory(String category, String newsText) {
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("You are a helpful assistant.\n");
+        prompt.append("Here are 5 news items about [" + category + "].\n");
+        prompt.append("'''\n" + newsText + "\n'''\n\n");
+        prompt.append("Translate the title and summary into Korean.\n");
+        prompt.append("Keep the original 'Link' and 'Image'. If 'Image' is empty, leave 'imageUrl' empty.\n");
+        prompt.append("Return the result strictly as a **JSON Array**.\n");
+        prompt.append("Example format:\n");
+        prompt.append("[\n");
+        prompt.append("  { \"title\": \"Korean Title\", \"summary\": \"Korean Summary\", \"originalUrl\": \"...\", \"imageUrl\": \"...\" },\n");
+        prompt.append("  ...\n");
+        prompt.append("]\n");
+
+        String apiKey = "AIzaSyAN6T6db86pCX6ZOln1-sqeQ2sbxPLQS8U"; 
+        Client client = Client.builder().apiKey(apiKey).build();
+
+        try {
+            GenerateContentResponse response = client.models.generateContent(
+                    "gemma-3-27b-it", 
+                    prompt.toString(),
+                    null);
+            
+            String responseText = response.text();
+            
+            if (responseText != null) {
+                responseText = responseText.replaceAll("```json", "").replaceAll("```", "").trim();
+            }
+            
+            return responseText;
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "[]"; 
         }
     }
 
