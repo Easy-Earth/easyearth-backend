@@ -15,4 +15,7 @@ public interface QuizMapper {
 
         int updateMemberPoints(@org.apache.ibatis.annotations.Param("userId") int userId,
                         @org.apache.ibatis.annotations.Param("points") int points);
+
+        // 퀴즈 번호로 개별 퀴즈 조회
+        com.kh.spring.quiz.model.vo.Quiz selectQuizByNo(@org.apache.ibatis.annotations.Param("quizNo") int quizNo);
 }
