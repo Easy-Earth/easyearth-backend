@@ -66,8 +66,8 @@ public class InquiriesServiceImpl implements InquiriesService {
 
 	//건의글 상세보기
 	@Override
-	public InquiriesVO selectInquiry(int inquiriesId) {
-		return dao.selectInquiry(sqlSession, inquiriesId);
+	public InquiriesVO inquiriesDetail(int inquiriesId) {
+		return dao.inquiriesDetail(sqlSession, inquiriesId);
 	}
 
 	//건의글 등록
