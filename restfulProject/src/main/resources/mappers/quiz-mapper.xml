@@ -19,25 +19,26 @@
     </select>
 
     <select id="countTodayAttempts" resultType="int">
-        SELECT COUNT(*)
-        FROM QUIZ_HISTORY
-        WHERE MEMBER_ID = #{userId}
-          AND DIFFICULTY = #{difficulty}
-          AND TRUNC(CREATED_AT) = TRUNC(SYSDATE)
+        SELECT COUNT(DISTINCT TRUNC(QH.CREATED_AT))
+        FROM QUIZ_HISTORY QH
+        JOIN QUIZ Q ON QH.QUIZ_NO = Q.QUIZ_NO
+        WHERE QH.MEMBER_ID = #{userId}
+          AND Q.DIFFICULTY = #{difficulty}
+          AND TRUNC(QH.CREATED_AT) = TRUNC(SYSDATE)
     </select>
 
     <insert id="insertQuizHistory">
         INSERT INTO QUIZ_HISTORY (
             HISTORY_ID,
             MEMBER_ID,
-            DIFFICULTY,
-            SCORE,
+            QUIZ_NO,
+            CORRECT_YN,
             CREATED_AT
         ) VALUES (
             SEQ_QUIZ_HISTORY_NO.NEXTVAL,
             #{userId},
-            #{difficulty},
-            #{score},
+            #{quizNo},
+            #{correctYn},
             SYSDATE
         )
     </insert>
@@ -49,5 +50,13 @@
             UPDATED_AT = SYSDATE
         WHERE MEMBER_ID = #{userId}
     </update>
+    <!-- 퀴즈 번호로 개별 퀴즈 조회 -->
+    <select id="selectQuizByNo" resultType="com.kh.spring.quiz.model.vo.Quiz">
+        SELECT QUIZ_NO, DIFFICULTY, POINT, QUIZ_QUESTION,
+               OPTION1, OPTION2, OPTION3, OPTION4,
+               QUIZ_ANSWER, QUIZ_EXPLANATION
+        FROM QUIZ
+        WHERE QUIZ_NO = #{quizNo}
+    </select>
 
 </mapper>

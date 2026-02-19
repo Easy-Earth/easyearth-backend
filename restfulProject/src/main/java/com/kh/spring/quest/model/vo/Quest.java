@@ -17,4 +17,6 @@ public class Quest {
     private int point;
     private String category;
     private Date createdAt;
+    // 오늘 해당 퀘스트 인증 여부
+    private boolean completed;
 }

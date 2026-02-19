@@ -29,11 +29,11 @@ public class AttendanceService {
     @Transactional
     public int checkAttendance(int memberId) {
 
-        // [테스트용 주석 처리 - 하루 1회 제한 로직]
-        // int count = attendanceMapper.countAttendanceToday(memberId);
-        // if (count > 0) {
-        // return -1; // 이미 출석함
-        // }
+        // 1. 오늘 이미 출석했는지 확인 (하루 1회 제한)
+        int count = attendanceMapper.countAttendanceToday(memberId);
+        if (count > 0) {
+            return -1; // 이미 출석함
+        }
 
         // 2. 어제 출석 기록 확인 (연속 출석 판단)
         Attendance lastAttendance = attendanceMapper.findLastAttendanceByUserId(memberId);
@@ -67,11 +67,6 @@ public class AttendanceService {
             points += 500;
         }
 
-        // (참고) 30일 연속 출석 후에는 어떻게?
-        // 요구사항: "연속출석 끊기면 다시 100P 시작" -> 30일 이후에도 안 끊기면 계속 150P?
-        // "30일 한달 연속출석시 획득 가능 총 P = 5000P" -> 이것은 1~30일 합계.
-        // 31일차부터는? 별도 언급 없으므로 6일차 이상 로직(150P) 유지.
-
         // 4. 출석 기록 저장
         Attendance newAttendance = Attendance.builder()
                 .userId(memberId)
@@ -92,10 +87,6 @@ public class AttendanceService {
 
     /**
      * 이번 달 출석 현황 조회
-     * 
-     * @param memberId
-     * @param yearMonth (YYYY-MM)
-     * @return
      */
     public List<Attendance> getAttendanceHistory(int memberId, String yearMonth) {
         Map<String, Object> params = new HashMap<>();
@@ -124,5 +115,9 @@ public class AttendanceService {
         params.put("loginId", loginId);
         params.put("points", points);
         return attendanceMapper.addPointsByLoginIdForTesting(params) > 0;
-    }
-}
+    }}
+
+    
+    
+
+    
