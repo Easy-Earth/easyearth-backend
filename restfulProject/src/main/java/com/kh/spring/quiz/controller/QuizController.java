@@ -15,20 +15,23 @@ public class QuizController {
 
     private final QuizService quizService;
 
-    @Operation(summary = "퀴즈 조회", description = "난이도별 퀴즈를 조회하는 API(Easy,Normal,Hard)")
+    // 난이도별 퀴즈 조회 (userId 필수)
+    @Operation(summary = "퀴즈 조회", description = "난이도별 퀴즈를 조회하는 API(Easy,Normal,Hard). 유저 ID 필요")
     @GetMapping("/{difficulty}")
     public java.util.List<com.kh.spring.quiz.model.vo.Quiz> getQuizByDifficulty(
-            @PathVariable("difficulty") String difficulty) {
-        return quizService.getQuizByDifficulty(difficulty);
+            @PathVariable("difficulty") String difficulty,
+            @RequestParam("userId") int userId) {
+        return quizService.getQuizByDifficulty(difficulty, userId);
     }
 
+    // 퀴즈 풀이 결과 저장
     @Operation(summary = "퀴즈 풀이 결과 저장", description = "퀴즈 1문제 풀이 결과를 저장하고 정답 시 포인트를 지급합니다.")
     @PostMapping("/attempt")
     public ResponseEntity<String> saveQuizAttempt(
-            @RequestParam int userId,
-            @RequestParam int quizNo,
-            @RequestParam boolean isCorrect,
-            @RequestParam int point) {
+            @RequestParam("userId") int userId,
+            @RequestParam("quizNo") int quizNo,
+            @RequestParam("isCorrect") boolean isCorrect,
+            @RequestParam("point") int point) {
         try {
             quizService.saveQuizAttempt(userId, quizNo, isCorrect, point);
             return ResponseEntity.ok("퀴즈 이력이 저장되었습니다.");

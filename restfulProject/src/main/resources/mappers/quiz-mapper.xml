@@ -50,5 +50,13 @@
             UPDATED_AT = SYSDATE
         WHERE MEMBER_ID = #{userId}
     </update>
+    <!-- 퀴즈 번호로 개별 퀴즈 조회 -->
+    <select id="selectQuizByNo" resultType="com.kh.spring.quiz.model.vo.Quiz">
+        SELECT QUIZ_NO, DIFFICULTY, POINT, QUIZ_QUESTION,
+               OPTION1, OPTION2, OPTION3, OPTION4,
+               QUIZ_ANSWER, QUIZ_EXPLANATION
+        FROM QUIZ
+        WHERE QUIZ_NO = #{quizNo}
+    </select>
 
 </mapper>
