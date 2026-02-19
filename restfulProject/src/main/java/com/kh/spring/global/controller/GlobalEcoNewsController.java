@@ -19,19 +19,22 @@ public class GlobalEcoNewsController {
     @Autowired
     private com.kh.spring.global.model.service.GlobalEcoNewsService globalEcoNewsService;
 
-    @Operation(summary = "글로벌 환경 뉴스 조회", description = "캐시된 파일에서 뉴스 데이터를 반환합니다.")
+    // 글로벌 환경 뉴스 조회 (캐시)
+    @Operation(summary = "글로벌 환경 뉴스 조회")
     @GetMapping(value = "/news", produces = "application/json; charset=UTF-8")
     public ResponseEntity<String> getGlobalNews() {
         return ResponseEntity.ok(globalEcoNewsService.getGlobalEcoNews());
     }
 
-    @Operation(summary = "캐시 강제 갱신", description = "디버깅용: 뉴스 데이터를 즉시 갱신합니다.")
+    // 뉴스 캐시 강제 갱신
+    @Operation(summary = "뉴스 캐시 강제 갱신")
     @GetMapping("/refresh")
     public ResponseEntity<String> refreshNews() {
         return ResponseEntity.ok(globalEcoNewsService.refreshGlobalNews());
     }
     
-    @Operation(summary = "캐시 강제 초기화", description = "디버깅용: 뉴스 캐시를 비웁니다 (파일은 유지되나 메모리 캐시 등 삭제 필요시 사용)")
+    // 뉴스 캐시 파일 경로는 로컬에서 관리됨
+    @Operation(summary = "캐시 관리 (로컬)")
     @GetMapping("/clear-cache")
     public ResponseEntity<String> clearCache() {
         // 파일 기반 캐시라 특별히 할 건 없지만, 필요하면 파일 삭제 로직 추가 가능
