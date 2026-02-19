@@ -18,8 +18,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.kh.spring.common.model.vo.PageInfo;
 import com.kh.spring.common.template.Pagination;
-import com.kh.spring.community.model.vo.CommunityPostVO;
-import com.kh.spring.community.model.vo.PostFilesVO;
 import com.kh.spring.inquiries.model.service.InquiriesService;
 import com.kh.spring.inquiries.model.vo.InquiriesListDTO;
 import com.kh.spring.inquiries.model.vo.InquiriesVO;
@@ -50,7 +48,7 @@ public class InquiriesController {
 								           @RequestParam(required = false) String status) {
 		
 		int listCount = 0;
-		int boardLimit = 5;
+		int boardLimit = 10;
 		int pageLimit = size;
 		
 		HashMap<String, Object> map = new HashMap<>();
@@ -88,12 +86,12 @@ public class InquiriesController {
 													+ "memberId : 로그인된 사용자 아이디")
 	@GetMapping("/post/detail/{inquiriesId}")
 	public ResponseEntity<?> inquiriesDetail(@PathVariable int inquiriesId,
-											 @RequestParam int memberId) {
+											 @RequestParam (required = false, defaultValue = "0") int memberId) {
 		
 		int result = service.increaseCount(inquiriesId);
 		
 		if(result > 0) {
-			InquiriesVO inquiry = service.selectInquiry(inquiriesId);
+			InquiriesVO inquiry = service.inquiriesDetail(inquiriesId);
 			
 			if (inquiry != null) {
 
@@ -127,7 +125,7 @@ public class InquiriesController {
 											 @RequestParam String title,
 											 @RequestParam String content,
 											 @RequestParam String isPublic,
-											 @RequestParam String isFaq) {
+											 @RequestParam(required = false, defaultValue = "N") String isFaq) {
 		
 		Map<String, Object> map = new HashMap<>();
 		map.put("memberId", memberId);
@@ -161,7 +159,7 @@ public class InquiriesController {
 											 @RequestParam String title,
 											 @RequestParam String content,
 											 @RequestParam String isPublic,
-											 @RequestParam String isFaq) {
+											 @RequestParam(required = false, defaultValue = "N") String isFaq) {
 		
 		Map<String, Object> map = new HashMap<>();
 		map.put("inquiriesId", inquiriesId);
@@ -264,7 +262,7 @@ public class InquiriesController {
 								 .body("관리자만 답변을 작성할 수 있습니다.");
 		}
 		
-		InquiriesVO inquiry = service.selectInquiry(inquiriesId);
+		InquiriesVO inquiry = service.inquiriesDetail(inquiriesId);
 		
 		// 게시글 자체가 없는 경우 방어 로직
 	    if(inquiry == null) {
