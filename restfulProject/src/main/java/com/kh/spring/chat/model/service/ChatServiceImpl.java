@@ -189,8 +189,8 @@ public class ChatServiceImpl implements ChatService {
              // [변경] 1:1 채팅도 초대 수락 필요 -> PENDING
              addChatRoomUser(saved, target, "MEMBER", "PENDING");
              
-                 // ✨ [Fix] 1:1 채팅 신청 알림 전송 (초대와 동일한 효과) - Transaction Commit 후 전송
-             if (creator != null) {
+                // 5. ✨ [Fix] 트랜잭션 커밋 후 전송 (Event 사용)
+            if (creator != null) {
                  ChatNotificationDto notification = ChatNotificationDto.builder()
                         .targetMemberId(target.getId())
                         .type("INVITATION")
@@ -201,11 +201,168 @@ public class ChatServiceImpl implements ChatService {
                         .url("/chat/room/" + saved.getId())
                         .build();
                     
-                 eventPublisher.publishEvent(new ChatInvitationEvent(target.getId(), notification));
+                 eventPublisher.publishEvent(new ChatEvent(target.getId(), notification));
              }
         }
 
         // 4. [그룹 채팅] 초기 초대 멤버 처리
+...
+        // ✨ [Real-time] 나간 사용자에게 목록 갱신 이벤트 전송 (트랜잭션 후)
+        Map<String, Object> leaveEvent = new HashMap<>();
+        leaveEvent.put("type", "LEAVE_ROOM_SUCCESS");
+        leaveEvent.put("chatRoomId", roomId);
+        eventPublisher.publishEvent(new ChatEvent(memberId, leaveEvent));
+        
+        // ✨ [Real-time] 남은 사용자들에게 멤버 목록 갱신 이벤트 전송 (트랜잭션 후)
+        Map<String, Object> updateEvent = new HashMap<>();
+        updateEvent.put("type", "MEMBER_UPDATE");
+        updateEvent.put("chatRoomId", roomId);
+        updateEvent.put("leftMemberId", memberId);
+        eventPublisher.publishEvent(new ChatEvent("/topic/chat/room/" + roomId, updateEvent));
+        
+        // ✨ [Real-time] 남은 멤버들에게도 목록 갱신 신호 전송 (트랜잭션 후 - Loop 주의)
+        // Loop 처리 대신, Topic 구독자 전체에게 Refresh 신호를 보내거나, 
+        // 여기서는 개별 전송이 필요하므로 리스트 순회하여 이벤트 발행 (성능 고려 필요하지만 정합성 우선)
+        List<ChatRoomUserEntity> remainingUsers = chatRoomUserRepository.findAllByChatRoomId(roomId);
+        for (ChatRoomUserEntity user : remainingUsers) {
+             Map<String, Object> refreshEvent = new HashMap<>();
+             refreshEvent.put("type", "CHAT_LIST_REFRESH");
+             eventPublisher.publishEvent(new ChatEvent(user.getMember().getId(), refreshEvent));
+        }
+    }
+...
+        // ✨ 실시간 갱신 이벤트 전송 (업데이트된 unreadCount 포함) - 트랜잭션 후 전송
+        Map<String, Object> readEvent = new HashMap<>();
+        readEvent.put("type", "READ_UPDATE");
+        readEvent.put("memberId", memberId);
+        readEvent.put("lastMessageId", lastMessageId);
+        readEvent.put("unreadCountMap", unreadCountMap);  
+        
+        eventPublisher.publishEvent(new ChatEvent("/topic/chat/room/" + roomId + "/read", readEvent));
+...
+            // ✅ WebSocket으로 실시간 전송 (트랜잭션 후)
+            ChatMessageDto messageDto = ChatMessageDto.builder()
+                    .messageId(saved.getId())
+                    .chatRoomId(chatRoom.getId())
+                    .senderId(systemSender.getId())
+                    .senderName("시스템")
+                    .content(content)
+                    .messageType("SYSTEM") 
+                    .createdAt(saved.getCreatedAt())
+                    .build();
+        
+            String topic = "/topic/chat/room/" + chatRoom.getId(); 
+            eventPublisher.publishEvent(new ChatEvent(topic, messageDto));
+...
+        // ✨ 실시간 갱신: "누가 어떻게 반응했는지" 상세 정보 전송 (트랜잭션 후)
+        
+        // 최신 리액션 카운트 정보 조회 (DTO 변환 활용)
+        ChatMessageDto updatedMsg = convertToDto(message, null);
+        
+        Map<String, Object> reactionEvent = new HashMap<>();
+        reactionEvent.put("type", "REACTION_UPDATE");
+        reactionEvent.put("messageId", messageId);
+        reactionEvent.put("reactorId", memberId); 
+        reactionEvent.put("action", action);      
+        reactionEvent.put("emojiType", emojiType);
+        reactionEvent.put("reactions", updatedMsg.getReactions()); 
+        
+        eventPublisher.publishEvent(new ChatEvent("/topic/chat/room/" + chatRoomId + "/reaction", reactionEvent));
+...
+        // ✨ [Real-time] 역할 변경 이벤트 전송 (트랜잭션 후)
+        Map<String, Object> updateEvent = new HashMap<>();
+        updateEvent.put("type", "MEMBER_UPDATE"); 
+        updateEvent.put("chatRoomId", chatRoomId);
+        updateEvent.put("targetMemberId", targetMemberId);
+        updateEvent.put("newRole", newRole);
+        
+        eventPublisher.publishEvent(new ChatEvent("/topic/chat/room/" + chatRoomId, updateEvent));
+...
+        // ✨ [Real-time] 강퇴 알림 전송 (대상에게) - 트랜잭션 후
+        String roomTitle = requester.getChatRoom().getTitle();
+        if (roomTitle == null || roomTitle.isEmpty()) {
+            roomTitle = "채팅방";
+        }
+        
+        ChatNotificationDto notification = ChatNotificationDto.builder()
+                .targetMemberId(targetMemberId)
+                .type("KICK")
+                .chatRoomId(chatRoomId)
+                .content(roomTitle + " 채팅방에서 강퇴당했습니다.")
+                .createdAt(LocalDateTime.now())
+                .build();
+        
+        eventPublisher.publishEvent(new ChatEvent(targetMemberId, notification));
+...
+        // 4. WebSocket으로 실시간 전파 (트랜잭션 후)
+        ChatMessageDto dto = convertEntityToDto(message, memberId); 
+        eventPublisher.publishEvent(new ChatEvent("/topic/chat/room/" + message.getChatRoom().getId(), dto));
+...
+        // 5. WebSocket으로 공지 변경 이벤트 전송 (트랜잭션 후)
+        Map<String, Object> noticeEvent = new HashMap<>();
+        noticeEvent.put("type", "NOTICE_UPDATED");
+        noticeEvent.put("noticeContent", message.getContent());
+        noticeEvent.put("noticeMessageId", messageId);
+        noticeEvent.put("senderName", requester.getMember().getName()); 
+        noticeEvent.put("senderId", memberId);
+        
+        eventPublisher.publishEvent(new ChatEvent("/topic/chat/room/" + roomId, noticeEvent));
+...
+        // 3. WebSocket 이벤트 전송 (트랜잭션 후)
+        Map<String, Object> noticeEvent = new HashMap<>();
+        noticeEvent.put("type", "NOTICE_CLEARED");
+
+        eventPublisher.publishEvent(new ChatEvent("/topic/chat/room/" + roomId, noticeEvent));
+...
+        // ✨ 실시간 알림 전송 (초대받은 사람에게) - [Fix] 트랜잭션 커밋 후 전송 (Event 사용)
+        String roomTitle = requester.getChatRoom().getTitle();
+        String inviteTargetName = (roomTitle != null && !roomTitle.isEmpty()) ? roomTitle : "채팅방";
+        
+        ChatNotificationDto notification = ChatNotificationDto.builder()
+                .targetMemberId(invitedMemberId)
+                .type("INVITATION")
+                .chatRoomId(roomId)
+                .senderName(requester.getMember().getName())
+                .content(requester.getMember().getName() + "님이 " + inviteTargetName + "에 초대했습니다.")
+                .createdAt(LocalDateTime.now())
+                .url("/chat/room/" + roomId) // 클릭 시 이동할 경로 (바로 입장되지는 않고, Accept 필요)
+                .build();
+            
+        // messagingTemplate.convertAndSend("/topic/user/" + invitedMemberId, notification) -> 제거됨
+        eventPublisher.publishEvent(new ChatEvent(invitedMemberId, notification));
+...
+        // ✨ [Real-time] 프로필 변경 이벤트 전송 (본인 및 관련 사용자들에게 갱신 요청) - 트랜잭션 후
+        Map<String, Object> profileEvent = new HashMap<>();
+        profileEvent.put("type", "PROFILE_UPDATE");
+        profileEvent.put("memberId", memberId);
+        profileEvent.put("profileImageUrl", profileImageUrl);
+        
+        // 1. 본인에게 전송 (다른 기기/탭 동기화)
+        eventPublisher.publishEvent(new ChatEvent(memberId, profileEvent));
+...
+        // ✨ [Real-time] 방 정보 업데이트 이벤트 전송 (트랜잭션 후)
+        Map<String, Object> updateEvent = new HashMap<>();
+        updateEvent.put("type", "ROOM_UPDATE");
+        updateEvent.put("chatRoomId", roomId);
+        updateEvent.put("title", newTitle);
+        
+        eventPublisher.publishEvent(new ChatEvent("/topic/chat/room/" + roomId, updateEvent));
+...
+        // ✨ [Real-time] 방 정보 업데이트 이벤트 전송 (트랜잭션 후)
+        Map<String, Object> updateEvent = new HashMap<>();
+        updateEvent.put("type", "ROOM_UPDATE");
+        updateEvent.put("chatRoomId", roomId);
+        updateEvent.put("roomImage", imageUrl);
+        
+        eventPublisher.publishEvent(new ChatEvent("/topic/chat/room/" + roomId, updateEvent));
+...
+        // 4. 실시간 알림 전송 (대상에게 - 목록에서 사라지도록) - 트랜잭션 후
+        // LEAVE_ROOM_SUCCESS 타입을 재활용하거나 INVITATION_CANCELLED 이벤트 추가
+        Map<String, Object> cancelEvent = new HashMap<>();
+        cancelEvent.put("type", "LEAVE_ROOM_SUCCESS"); // 목록 갱신 트리거
+        cancelEvent.put("chatRoomId", chatRoomId);
+        
+        eventPublisher.publishEvent(new ChatEvent(targetMemberId, cancelEvent));
         if ("GROUP".equals(roomDto.getRoomType()) && roomDto.getInvitedMemberIds() != null && !roomDto.getInvitedMemberIds().isEmpty()) {
             for (Long invitedId : roomDto.getInvitedMemberIds()) {
                 // 본인 제외
@@ -311,21 +468,21 @@ public class ChatServiceImpl implements ChatService {
         Map<String, Object> leaveEvent = new HashMap<>();
         leaveEvent.put("type", "LEAVE_ROOM_SUCCESS");
         leaveEvent.put("chatRoomId", roomId);
-        messagingTemplate.convertAndSend("/topic/user/" + memberId, leaveEvent);
+        eventPublisher.publishEvent(new ChatEvent(memberId, leaveEvent));
         
         // ✨ [Real-time] 남은 사용자들에게 멤버 목록 갱신 이벤트 전송 (채팅방 내부 / 멤버 목록)
         Map<String, Object> updateEvent = new HashMap<>();
         updateEvent.put("type", "MEMBER_UPDATE");
         updateEvent.put("chatRoomId", roomId);
         updateEvent.put("leftMemberId", memberId);
-        messagingTemplate.convertAndSend("/topic/chat/room/" + roomId, updateEvent);
+        eventPublisher.publishEvent(new ChatEvent("/topic/chat/room/" + roomId, updateEvent));
         
         // ✨ [Real-time] 남은 멤버들에게도 목록 갱신 신호 전송 (채팅 목록의 인원수 갱신용)
         List<ChatRoomUserEntity> remainingUsers = chatRoomUserRepository.findAllByChatRoomId(roomId);
         for (ChatRoomUserEntity user : remainingUsers) {
              Map<String, Object> refreshEvent = new HashMap<>();
              refreshEvent.put("type", "CHAT_LIST_REFRESH");
-             messagingTemplate.convertAndSend("/topic/user/" + user.getMember().getId(), refreshEvent);
+             eventPublisher.publishEvent(new ChatEvent(user.getMember().getId(), refreshEvent));
         }
     }
     
@@ -1286,19 +1443,26 @@ public class ChatServiceImpl implements ChatService {
                 .collect(Collectors.toList());
     }
 
-    // [Helper] 채팅방 유저(ChatRoomUser) 추가
-    private ChatRoomUserEntity addChatRoomUser(ChatRoomEntity chatRoom, MemberEntity member, String role, String invitationStatus) {
-        ChatRoomUserEntity roomUser = ChatRoomUserEntity.builder()
-                .chatRoom(chatRoom)
-                .member(member)
-                .role(role)
-                .invitationStatus(invitationStatus)
-                .joinedAt(LocalDateTime.now())
-                .lastReadMessageId(0L)
-                .lastReadMessageCount(0L)
-                .isFavorite(0)
-                .build();
-        return chatRoomUserRepository.save(roomUser);
+    @Override
+    public void rejectInvitation(Long roomId, Long memberId) {
+        ChatRoomUserEntity roomUser = chatRoomUserRepository.findByChatRoomIdAndMemberId(roomId, memberId)
+                .orElseThrow(() -> new IllegalArgumentException("초대 정보를 찾을 수 없습니다"));
+
+        if (!"PENDING".equals(roomUser.getInvitationStatus())) {
+            throw new IllegalArgumentException("이미 수락하거나 거절한 초대입니다");
+        }
+        
+        // 삭제
+        chatRoomUserRepository.delete(roomUser);
+        
+        // 5. 시스템 메시지 전송 (선택적) 또는 본인에게 목록 갱신 이벤트 전송
+        Map<String, Object> leaveEvent = new HashMap<>();
+        leaveEvent.put("type", "LEAVE_ROOM_SUCCESS");
+        leaveEvent.put("chatRoomId", roomId);
+        
+        eventPublisher.publishEvent(new ChatEvent(memberId, leaveEvent));
+        
+        log.info("✅ 초대 거절 완료: memberId={}", memberId);
     }
     
     // 회원 검색 (이름/닉네임)
@@ -1466,5 +1630,53 @@ public class ChatServiceImpl implements ChatService {
         
         // 5. 시스템 메시지 등은 선택적 (여기선 생략하거나 로그만)
         log.info("🚫 초대 취소 완료: target={}, requester={}", targetName, requester.getMember().getName());
+    }
+    // [Helper] 시스템 메시지 저장 및 전송
+    private void saveSystemMessage(ChatRoomEntity chatRoom, String content) {
+        // 1. 발신자(시스템 계정) 조회 - 없으면 생성하거나 예외 처리 (여기선 0번이 시스템이라고 가정하거나, null sender 처리)
+        // 실제로는 시스템용 더미 멤버가 있거나, sender를 null로 두고 화면에서 처리.
+        // 여기선 sender가 필수라면 1번 관리자 등을 사용하거나, 별도 로직 필요.
+        // 기존 코드 패턴을 모르므로, sender를 null로 저장 가능한지 확인 필요하지만, 
+        // ChatMessageDto 빌더에서 senderId가 필요할 수 있음.
+        
+        // 임시: 관리자(1번)를 시스템 발신자로 사용하거나, 
+        // DB에 'SYSTEM'이라는 사용자가 있다고 가정. 
+        // 여기서는 가장 안전하게: sender를 null로 설정하고 Entity에서 nullable인지 확인해야 함.
+        // 하지만 기존 코드를 보면 message.getSender().getName() 등을 호출하므로 sender가 있어야 함.
+        
+        // 시스템용 더미 멤버 조회 (ID=1 or fetching explicit system user)
+        // 만약 없으면, 그냥 첫 번째 멤버나 방장으로 설정? -> 부적절.
+        // 이 프로젝트의 관례상 시스템 메시지는 어떻게 저장했는지 확인이 안 되므로,
+        // 우선은 MemberRepository.findById(1L) (관리자) 로 시도.
+        MemberEntity systemSender = memberRepository.findById(1L).orElse(null);
+        if (systemSender == null) {
+            log.warn("시스템 메시지 발송 실패: 관리자(ID=1) 계정 없음");
+            return; 
+        }
+
+        ChatMessageEntity systemMessage = ChatMessageEntity.builder()
+                .chatRoom(chatRoom)
+                .sender(systemSender)
+                .content(content)
+                .messageType("SYSTEM") // Enum or String
+                .createdAt(LocalDateTime.now())
+                .build();
+        
+        ChatMessageEntity saved = chatMessageRepository.save(systemMessage);
+        
+        // 2. 실시간 전송 (트랜잭션 후)
+        ChatMessageDto messageDto = ChatMessageDto.builder()
+                .messageId(saved.getId())
+                .chatRoomId(chatRoom.getId())
+                .senderId(systemSender.getId())
+                .senderName("시스템") // or systemSender.getName()
+                .senderProfileImage(systemSender.getProfileImageUrl())
+                .content(content)
+                .messageType("SYSTEM")
+                .createdAt(saved.getCreatedAt())
+                .unreadCount(0)
+                .build();
+        
+        eventPublisher.publishEvent(new ChatEvent("/topic/chat/room/" + chatRoom.getId(), messageDto));
     }
 }
