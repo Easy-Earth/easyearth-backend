@@ -53,8 +53,8 @@ public class GeminiController {
 
         System.out.println(weatherData);
 
-        // 2. Gemini에게 조언 요청
-        String advice = geminiService.generateSecretaryAdvice(weatherData);
+        // 2. Gemini에게 조언 요청 (캐시 적용)
+        String advice = geminiService.getSecretaryAdvice(weatherData);
 
         // 3. 응답 반환
         Map<String, String> response = new HashMap<>();
