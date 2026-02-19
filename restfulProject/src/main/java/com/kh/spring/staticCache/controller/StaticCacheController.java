@@ -22,12 +22,21 @@ public class StaticCacheController {
     public StaticCacheService service;
 
     @Operation(summary = "개인 효과" , description = "개인 효과")
-    @GetMapping("/effects/personal")
+    @GetMapping("/effects/personal/{memberId}")
     public ResponseEntity<?> environmentEffectPersonal(@PathVariable int memberId) {
-        StaticCacheVO vo = new StaticCacheVO();
-        vo.setMemberId(memberId);
-        int result = service.environmentEffectPersonal(vo);
+
+        StaticCacheVO vo = service.environmentEffectPersonal(memberId);
+        if (vo != null) {
+            vo.setMemberId(memberId);
+        } else {
+            vo = StaticCacheVO.builder().memberId(memberId).co2(0).tree(0).build();
+        }
         return ResponseEntity.ok(vo);
     }
-
+    @Operation(summary = "전체 효과", description = "서비스 전체 사용자의 누적 효과")
+    @GetMapping("/effects/global")
+    public ResponseEntity<?> environmentEffectGlobal() {
+        StaticCacheVO globalVo = service.environmentEffectGlobal();
+        return ResponseEntity.ok(globalVo);
+    }
 }

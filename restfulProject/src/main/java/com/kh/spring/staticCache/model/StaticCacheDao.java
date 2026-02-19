@@ -6,7 +6,11 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class StaticCacheDao {
 
-    public int environmentEffectPersonal(SqlSessionTemplate sqlSession, int memberId) {
-        return sqlSession.selectOne("staticCacheMapper.reportListsCount", memberId);
+    public StaticCacheVO environmentEffectPersonal(SqlSessionTemplate sqlSession, int memberId) {
+        return sqlSession.selectOne("staticCacheMapper.environmentEffectPersonal", memberId);
+    }
+
+    public StaticCacheVO environmentEffectGlobal(SqlSessionTemplate sqlSession) {
+        return sqlSession.selectOne("staticCacheMapper.environmentEffectGlobal");
     }
 }
