@@ -31,7 +31,13 @@ public class InquiriesDao {
 
 	//건의글 목록 조회
 	public ArrayList<InquiriesVO> inquiriesList(SqlSessionTemplate sqlSession, PageInfo pi) {
-		return (ArrayList)sqlSession.selectList("inquiriesMapper.inquiriesList");
+		
+		int limit = pi.getBoardLimit();
+		int offset = (pi.getCurrentPage() - 1) * limit;
+		
+		RowBounds rowBounds = new RowBounds(offset, limit);
+		
+		return (ArrayList)sqlSession.selectList("inquiriesMapper.inquiriesList", null, rowBounds);
 	}
 
 	//건의글 검색 조회
@@ -62,8 +68,8 @@ public class InquiriesDao {
 	}
 
 	//건의글 상세보기
-	public InquiriesVO selectInquiry(SqlSessionTemplate sqlSession, int inquiriesId) {
-		return sqlSession.selectOne("inquiriesMapper.selectInquiry", inquiriesId);
+	public InquiriesVO inquiriesDetail(SqlSessionTemplate sqlSession, int inquiriesId) {
+		return sqlSession.selectOne("inquiriesMapper.inquiriesDetail", inquiriesId);
 	}
 
 	//건의글 등록

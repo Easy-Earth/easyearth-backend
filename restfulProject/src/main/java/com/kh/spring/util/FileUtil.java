@@ -15,6 +15,10 @@ public class FileUtil {
 	@Value("${file.upload.path}")
 	private String savePath;
 	
+	public String saveFile (MultipartFile uploadFile) throws Exception{
+		return saveFile(uploadFile,null);
+	}
+	
 	public String saveFile(MultipartFile uploadFile, String subFolder) throws Exception {
 		
 		//원본 파일명

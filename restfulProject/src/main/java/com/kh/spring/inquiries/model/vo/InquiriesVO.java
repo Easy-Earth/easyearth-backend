@@ -39,4 +39,6 @@ public class InquiriesVO {
 	private Date resolvedAt;
 	private int viewCount;
 	private String isFaq;
+	
+	private String name;   //사용자 이름
 }
