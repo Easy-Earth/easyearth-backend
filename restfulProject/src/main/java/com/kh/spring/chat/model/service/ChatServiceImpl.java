@@ -18,6 +18,7 @@ import com.kh.spring.chat.model.dto.ChatMessageDto;
 import com.kh.spring.chat.model.dto.ChatNotificationDto;
 import com.kh.spring.chat.model.dto.ChatRoomDto;
 import com.kh.spring.chat.model.dto.ChatMemberDto;
+import com.kh.spring.chat.event.ChatInvitationEvent;
 import com.kh.spring.chat.model.repository.ChatMessageRepository;
 import com.kh.spring.chat.model.repository.ChatRoomRepository;
 import com.kh.spring.chat.model.repository.ChatRoomUserRepository;
@@ -188,7 +189,7 @@ public class ChatServiceImpl implements ChatService {
              // [변경] 1:1 채팅도 초대 수락 필요 -> PENDING
              addChatRoomUser(saved, target, "MEMBER", "PENDING");
              
-             // ✨ [Fix] 1:1 채팅 신청 알림 전송 (초대와 동일한 효과)
+                 // ✨ [Fix] 1:1 채팅 신청 알림 전송 (초대와 동일한 효과) - Transaction Commit 후 전송
              if (creator != null) {
                  ChatNotificationDto notification = ChatNotificationDto.builder()
                         .targetMemberId(target.getId())
@@ -200,7 +201,7 @@ public class ChatServiceImpl implements ChatService {
                         .url("/chat/room/" + saved.getId())
                         .build();
                     
-                 messagingTemplate.convertAndSend("/topic/user/" + target.getId(), notification);
+                 eventPublisher.publishEvent(new ChatInvitationEvent(target.getId(), notification));
              }
         }
 
@@ -792,7 +793,7 @@ public class ChatServiceImpl implements ChatService {
         List<ChatRoomUserEntity> users = chatRoomUserRepository.findAllByChatRoomId(savedMessage.getChatRoomId());
         
         // 미리 알림 DTO 리스트 생성 (비동기 스레드로 엔티티를 넘기지 않음)
-        List<com.kh.spring.chat.model.dto.ChatNotificationDto> notifications = users.stream()
+        List<ChatNotificationDto> notifications = users.stream()
             .filter(user -> !user.getMember().getId().equals(savedMessage.getSenderId())) // 본인 제외
             .map(user -> {
                 // 채팅방 이름 가져오기 (여기서는 트랜잭션 안이므로 Lazy Loading 가능)
@@ -801,7 +802,7 @@ public class ChatServiceImpl implements ChatService {
                     roomTitle = "채팅방";
                 }
                 
-                return com.kh.spring.chat.model.dto.ChatNotificationDto.builder()
+                return ChatNotificationDto.builder()
                     .targetMemberId(user.getMember().getId())
                     .type("CHAT")
                     .chatRoomId(savedMessage.getChatRoomId())
@@ -819,7 +820,7 @@ public class ChatServiceImpl implements ChatService {
         // 실제 전송은 비동기로 처리 (Network I/O 분리)
         java.util.concurrent.CompletableFuture.runAsync(() -> {
             try {
-                for (com.kh.spring.chat.model.dto.ChatNotificationDto notification : notifications) {
+                for (ChatNotificationDto notification : notifications) {
                     messagingTemplate.convertAndSend("/topic/user/" + notification.getTargetMemberId(), notification);
                 }
             } catch (Exception e) {
@@ -1168,7 +1169,7 @@ public class ChatServiceImpl implements ChatService {
         // 5. PENDING 상태로 참여자 추가 (공통 메서드 사용)
         addChatRoomUser(requester.getChatRoom(), invitedMember, "MEMBER", "PENDING");
         
-        // ✨ 실시간 알림 전송 (초대받은 사람에게) - [Fix] 트랜잭션 커밋 후 전송을 위해 이벤트 발행
+        // ✨ 실시간 알림 전송 (초대받은 사람에게) - [Fix] 트랜잭션 커밋 후 전송 (Event 사용)
         String roomTitle = requester.getChatRoom().getTitle();
         String inviteTargetName = (roomTitle != null && !roomTitle.isEmpty()) ? roomTitle : "채팅방";
         
@@ -1182,8 +1183,7 @@ public class ChatServiceImpl implements ChatService {
                 .url("/chat/room/" + roomId) // 클릭 시 이동할 경로 (바로 입장되지는 않고, Accept 필요)
                 .build();
             
-        // messagingTemplate.convertAndSend("/topic/user/" + invitedMemberId, notification);
-        eventPublisher.publishEvent(new com.kh.spring.chat.event.ChatInvitationEvent(invitedMemberId, notification));
+        eventPublisher.publishEvent(new ChatInvitationEvent(invitedMemberId, notification));
         
         log.info("✅ 초대 완료 (Event Published): invitedMemberId={}, status=PENDING", invitedMemberId);
         
