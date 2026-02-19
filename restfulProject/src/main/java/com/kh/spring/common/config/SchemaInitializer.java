@@ -53,5 +53,23 @@ public class SchemaInitializer implements CommandLineRunner {
             log.info("SEQ_ATTENDANCE_ID created.");
         } catch (Exception e) {
         }
+
+        // 포인트 정책 업데이트 (Requested by User)
+        try {
+            // 1. 퀘스트 포인트 일괄 100으로 변경
+            int questRows = jdbcTemplate.update("UPDATE QUEST SET POINT = 100");
+            log.info("🎉 Updated Quest Points: {} rows changed to 100pt.", questRows);
+
+            // 2. 퀴즈 포인트 난이도별 변경 (Easy=100, Normal=200, Hard=300)
+            int easyRows = jdbcTemplate.update("UPDATE QUIZ SET POINT = 100 WHERE DIFFICULTY = 'Easy'");
+            int normalRows = jdbcTemplate.update("UPDATE QUIZ SET POINT = 200 WHERE DIFFICULTY = 'Normal'");
+            int hardRows = jdbcTemplate.update("UPDATE QUIZ SET POINT = 300 WHERE DIFFICULTY = 'Hard'");
+
+            log.info("🎉 Updated Quiz Points: Easy={}, Normal={}, Hard={} rows updated.", easyRows, normalRows,
+                    hardRows);
+
+        } catch (Exception e) {
+            log.error("⚠️ Failed to update points policy (Table might not exist yet): {}", e.getMessage());
+        }
     }
 }

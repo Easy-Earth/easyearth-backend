@@ -86,4 +86,15 @@
           AND TRUNC(CREATED_AT) = TRUNC(SYSDATE)
     </select>
 
+    <!-- 오늘의 미해결 퀴즈 개수 조회 -->
+    <select id="countPendingQuizzes" resultType="int">
+        SELECT COUNT(*)
+        FROM INTEGRATED_HISTORY
+        WHERE MEMBER_ID = #{memberId}
+          AND ACTIVITY_TYPE = #{activityType}
+          AND STATUS = 'P'
+          AND TRUNC(CREATED_AT) = TRUNC(SYSDATE)
+    </select>
+
+
 </mapper>

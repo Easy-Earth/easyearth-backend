@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/quiz")
 @RequiredArgsConstructor
@@ -22,6 +24,13 @@ public class QuizController {
             @PathVariable("difficulty") String difficulty,
             @RequestParam("userId") int userId) {
         return quizService.getQuizByDifficulty(difficulty, userId);
+    }
+
+    // 퀴즈 진행 현황 조회 (버튼 활성화/비활성화용)
+    @Operation(summary = "퀴즈 진행 현황 조회", description = "오늘 난이도별 퀴즈 풀이 가능 여부를 반환합니다.")
+    @GetMapping("/status")
+    public ResponseEntity<Map<String, Boolean>> getQuizStatus(@RequestParam("userId") int userId) {
+        return ResponseEntity.ok(quizService.getDailyQuizStatus(userId));
     }
 
     // 퀴즈 풀이 결과 저장

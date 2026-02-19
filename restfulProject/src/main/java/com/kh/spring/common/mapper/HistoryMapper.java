@@ -34,4 +34,7 @@ public interface HistoryMapper {
 
     // 퀘스트 완료 여부 확인
     int checkQuestCompleted(@Param("memberId") int memberId, @Param("questNo") int questNo);
+
+    // 오늘의 미해결 퀴즈 개수 조회
+    int countPendingQuizzes(@Param("memberId") int memberId, @Param("activityType") String activityType);
 }
