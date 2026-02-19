@@ -7,11 +7,21 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class ChatWebConfig implements WebMvcConfigurer {
     
+    @org.springframework.beans.factory.annotation.Value("${file.upload.path}")
+    private String uploadPath;
+
     //채팅 전용 WebMvcConfigurer
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // 채팅 멀티미디어 파일 접근 (로컬 저장소 연결)
+        // use java.nio.file.Paths to get URI (Handles Windows/Mac/Linux separators automatically)
+        String path = java.nio.file.Paths.get(uploadPath, "chat").toUri().toString();
+        
+        // Resource locations must end with a slash
+        if (!path.endsWith("/")) {
+            path += "/";
+        }
+        
         registry.addResourceHandler("/chat/file/**")
-                .addResourceLocations("file:///C:/uploadFiles/chat/");
+                .addResourceLocations(path);
     }
 }
