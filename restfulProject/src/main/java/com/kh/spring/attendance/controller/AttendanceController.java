@@ -25,13 +25,9 @@ public class AttendanceController {
 
     private final AttendanceService attendanceService;
 
-    /**
-     * 출석 체크 API
-     * POST /attendance/check
-     * param: userId (로그인 구현 시 세션/토큰에서 가져와야 하지만, 일단 파라미터로 받음)
-     */
+    // 출석 체크 API
     @PostMapping("/check")
-    public ResponseEntity<Map<String, Object>> checkAttendance(@RequestParam int userId) {
+    public ResponseEntity<Map<String, Object>> checkAttendance(@RequestParam("userId") int userId) {
         Map<String, Object> response = new HashMap<>();
         try {
             int earnedPoints = attendanceService.checkAttendance(userId);
@@ -53,15 +49,11 @@ public class AttendanceController {
         }
     }
 
-    /**
-     * 출석 내역 조회 API (캘린더용)
-     * GET /attendance/list
-     * param: userId, yearMonth(YYYY-MM)
-     */
+    // 출석 내역 조회 API (캘린더용)
     @GetMapping("/list")
     public ResponseEntity<List<Attendance>> getAttendanceList(
-            @RequestParam int userId,
-            @RequestParam(required = false) String yearMonth) {
+            @RequestParam("userId") int userId,
+            @RequestParam(value = "yearMonth", required = false) String yearMonth) {
 
         if (yearMonth == null) {
             yearMonth = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM"));
@@ -71,22 +63,16 @@ public class AttendanceController {
         return ResponseEntity.ok(list);
     }
 
-    /**
-     * [테스트 전용] 포인트 강제 지급 API
-     * POST /attendance/grant-points
-     */
+    // [테스트 전용] 포인트 강제 지급 API
     @PostMapping("/grant-points")
-    public ResponseEntity<String> grantPoints(@RequestParam int userId, @RequestParam int points) {
+    public ResponseEntity<String> grantPoints(@RequestParam("userId") int userId, @RequestParam("points") int points) {
         boolean success = attendanceService.grantAdminPoints(userId, points);
         return success ? ResponseEntity.ok("포인트 획득 성공 (총 " + points + "P)") : ResponseEntity.badRequest().body("포인트 획득 실패");
     }
 
-    /**
-     * [테스트 전용] 로그인 아이디로 포인트 강제 지급 API
-     * POST /attendance/grant-points-by-loginid
-     */
+    // [테스트 전용] 로그인 아이디로 포인트 강제 지급 API
     @PostMapping("/grant-points-by-loginid")
-    public ResponseEntity<String> grantPointsByLoginId(@RequestParam String loginId, @RequestParam int points) {
+    public ResponseEntity<String> grantPointsByLoginId(@RequestParam("loginId") String loginId, @RequestParam("points") int points) {
         boolean success = attendanceService.grantAdminPointsByLoginId(loginId, points);
         return success ? ResponseEntity.ok("아이디 [" + loginId + "]님에게 포인트 지급 성공 (총 " + points + "P)") : ResponseEntity.badRequest().body("포인트 지급 실패");
     }

@@ -25,24 +25,19 @@ public class QuestController {
 
     private final QuestService questService;
 
-    /**
-     * 오늘의 데일리 퀘스트 목록 조회
-     * GET /api/quest/daily
-     */
+    // 오늘의 데일리 퀘스트 목록 조회 (userId로 완료 여부 포함)
     @GetMapping("/daily")
-    public ResponseEntity<List<Quest>> getDailyQuests() {
-        List<Quest> list = questService.getDailyQuests();
+    public ResponseEntity<List<Quest>> getDailyQuests(
+            @RequestParam(value = "userId", defaultValue = "0") int userId) {
+        List<Quest> list = questService.getDailyQuests(userId);
         return ResponseEntity.ok(list);
     }
 
-    /**
-     * 퀘스트 인증 (사진 업로드)
-     * POST /api/quest/certify/{questNo}
-     */
+    // 퀘스트 인증 (사진 업로드)
     @PostMapping("/certify/{questNo}")
     public ResponseEntity<String> certifyQuest(
-            @PathVariable int questNo,
-            @RequestParam int userId,
+            @PathVariable("questNo") int questNo,
+            @RequestParam("userId") int userId,
             @RequestParam("file") MultipartFile file) {
 
         try {
@@ -52,6 +47,9 @@ public class QuestController {
 
             questService.certifyQuest(userId, questNo, file);
             return ResponseEntity.ok("인증이 완료되었습니다! 포인트가 지급되었습니다.");
+        } catch (RuntimeException e) {
+            // 중복 인증 등의 에러를 400으로 반환
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             log.error("Quest Certify Error", e);
             return ResponseEntity.internalServerError().body("인증 처리 중 오류가 발생했습니다.");
