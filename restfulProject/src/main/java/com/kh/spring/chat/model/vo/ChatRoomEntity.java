@@ -42,7 +42,7 @@ public class ChatRoomEntity {
     private String roomType;
 
     @Column(name = "ROOM_IMAGE")
-    private String roomImage; // ✨ [New] 채팅방 이미지 URL
+    private String roomImage; // 채팅방 이미지 URL
 
     @Lob
     @Column(name = "LAST_MESSAGE_CONTENT")
@@ -52,7 +52,7 @@ public class ChatRoomEntity {
     private LocalDateTime lastMessageAt;
 
     @Column(name = "LAST_MESSAGE_TYPE")
-    private String lastMessageType; // ✨ [New] 마지막 메시지 타입 추가
+    private String lastMessageType; // 마지막 메시지 타입 추가
 
     @lombok.Builder.Default
     @Column(name = "TOTAL_MESSAGE_COUNT", columnDefinition = "NUMBER DEFAULT 0")
@@ -85,7 +85,7 @@ public class ChatRoomEntity {
     public void updateLastMessage(String content, LocalDateTime at, String messageType) {
         this.lastMessageContent = content;
         this.lastMessageAt = at;
-        this.lastMessageType = messageType; // ✨ 타입 업데이트
+        this.lastMessageType = messageType; // 타입 업데이트
         this.totalMessageCount = (this.totalMessageCount == null ? 0 : this.totalMessageCount) + 1;
     }
     
@@ -105,7 +105,7 @@ public class ChatRoomEntity {
         this.title = title;
     }
 
-    public void setRoomImage(String roomImage) { // ✨ [New] 이미지 변경 편의 메서드
+    public void setRoomImage(String roomImage) { // 이미지 변경 편의 메서드
         this.roomImage = roomImage;
     }
 }

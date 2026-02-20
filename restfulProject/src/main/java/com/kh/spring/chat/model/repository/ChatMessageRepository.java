@@ -12,7 +12,10 @@ import com.kh.spring.chat.model.vo.ChatMessageEntity;
 
 public interface ChatMessageRepository extends JpaRepository<ChatMessageEntity, Long> {
 
-    // 1. 특정 방, 특정 메시지 ID 이후의 메시지 개수 카운트 (안 읽은 메시지 수)
+    // 채팅방의 전체 메시지 수 조회
+    long countByChatRoomId(Long chatRoomId);
+
+    // 특정 메시지 ID보다 큰 메시지 수 조회 (안 읽은 메시지 수 계산용)
     long countByChatRoomIdAndIdGreaterThan(Long chatRoomId, Long lastReadMessageId);
 
     // 2. 무한 스크롤(커서 기반): 특정 메시지(cursorId)보다 이전에 작성된 메시지를 가져옴

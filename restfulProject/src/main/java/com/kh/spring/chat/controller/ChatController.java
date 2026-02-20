@@ -86,7 +86,7 @@ public class ChatController {
         } catch (IllegalArgumentException e) {
             log.error("메시지 전송 실패 (유효성 검증): {}", e.getMessage());
             
-            // ✨ 에러 메시지 전송 (사용자에게 알림)
+            // 에러 메시지 전송 (사용자에게 알림)
             ChatMessageDto errorMsg = ChatMessageDto.builder()
                     .messageType("ERROR") // [Fix] type -> messageType
                     .content(e.getMessage())
@@ -146,11 +146,10 @@ public class ChatController {
         return ResponseEntity.ok(chatService.createChatRoom(roomDto));
     }
 
-    // 채팅방 상세 정보 조회
     @Operation(summary = "채팅방 상세/입장", description = "특정 채팅방의 정보를 조회합니다.")
     @GetMapping("/room/{roomId}")
-    public ResponseEntity<ChatRoomDto> getChatRoom(@PathVariable Long roomId) {
-        return ResponseEntity.ok(chatService.selectChatRoom(roomId));
+    public ResponseEntity<ChatRoomDto> getChatRoom(@PathVariable Long roomId, @RequestParam(required = false) Long memberId) {
+        return ResponseEntity.ok(chatService.selectChatRoom(roomId, memberId));
     }
     
     // 채팅방 메시지 내역 조회
@@ -159,8 +158,9 @@ public class ChatController {
     public ResponseEntity<List<ChatMessageDto>> getMessageList(
             @PathVariable Long roomId, 
             @RequestParam(required = false) Long cursorId,
-            @RequestParam(required = false) Long memberId) {
-        return ResponseEntity.ok(chatService.selectMessageList(roomId, cursorId, memberId));
+            @RequestParam(required = false) Long memberId,
+            @RequestParam(defaultValue = "30") int limit) {
+        return ResponseEntity.ok(chatService.selectMessageList(roomId, cursorId, memberId, limit));
     }
     
     // 메시지 읽음 처리 (마지막 읽은 ID 갱신)
