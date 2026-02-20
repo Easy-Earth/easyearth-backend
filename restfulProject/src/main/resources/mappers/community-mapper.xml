@@ -33,16 +33,17 @@
 	<!-- 검색된 게시글 개수 -->
 	<select id="searchListCount" resultType="_int">
 		SELECT COUNT(*)
-		FROM COMMUNITY_POST
+		FROM COMMUNITY_POST P
+		JOIN MEMBER M ON P.MEMBER_ID = M.MEMBER_ID
 		<choose>
 			<when test="condition == 'title'">
-				WHERE TITLE LIKE '%' || #{keyword} || '%'
+				WHERE P.TITLE LIKE '%' || UPPER(#{keyword}) || '%'
 			</when>
 			<when test="condition == 'writer'">
-				WHERE MEMBER_ID = #{keyword}
+				WHERE M.NAME = UPPER(#{keyword})
 			</when>
 			<when test="condition =='contetn'">
-				WHERE CONTENT LIKE '%' || #{keyword} || '%'
+				WHERE P.CONTENT LIKE '%' || UPPER(#{keyword}) || '%'
 			</when>
 		</choose>
 	</select>
@@ -74,42 +75,44 @@
 	
 	<!-- 게시글 검색 조회 -->
 	<select id="searchList" resultType="CommunityPostVO" parameterType="hashmap">
-		SELECT POST_ID
- 			  ,MEMBER_ID
- 			  ,TITLE
-			  ,VIEW_COUNT
-			  ,LIKE_COUNT
-			  ,COMMENT_COUNT
-			  ,CREATED_AT
- 			  ,CATEGORY
-		FROM COMMUNITY_POST
+		SELECT P.POST_ID
+ 			  ,M.NAME AS NAME
+ 			  ,P.TITLE
+			  ,P.VIEW_COUNT
+			  ,P.LIKE_COUNT
+			  ,P.COMMENT_COUNT
+			  ,P.UPDATED_AT
+ 			  ,P.CATEGORY
+		FROM COMMUNITY_POST P
+		JOIN MEMBER M ON P.MEMBER_ID = M.MEMBER_ID
 		<choose>
 			<when test="condition == 'title'">
-				WHERE TITLE LIKE '%' || #{keyword} || '%'
+				WHERE P.TITLE LIKE '%' || UPPER(#{keyword}) || '%'
 			</when>
 			<when test="condition == 'writer'">
-				WHERE MEMBER_ID = #{keyword}
+				WHERE M.NAME = UPPER(#{keyword})
 			</when>
 			<otherwise>
-				WHERE CONTENT LIKE '%' || #{keyword} || '%'
+				WHERE P.CONTENT LIKE '%' || UPPER(#{keyword}) || '%'
 			</otherwise>
 		</choose>
-		ORDER BY UPDATED_AT DESC
+		ORDER BY P.UPDATED_AT DESC
 	</select>
 	
 	<!-- 게시글 필터링 조회 -->
 	<select id="filterList" resultType="CommunityPostVO" parameterType="hashmap">
-		SELECT POST_ID
- 			  ,MEMBER_ID
- 			  ,TITLE
-			  ,VIEW_COUNT
-			  ,LIKE_COUNT
-			  ,COMMENT_COUNT
-			  ,CREATED_AT
- 			  ,CATEGORY
-		FROM COMMUNITY_POST
-		WHERE CATEGORY = #{category}
-		ORDER BY UPDATED_AT DESC
+		SELECT P.POST_ID
+ 			  ,M.NAME AS NAME
+ 			  ,P.TITLE
+			  ,P.VIEW_COUNT
+			  ,P.LIKE_COUNT
+			  ,P.COMMENT_COUNT
+			  ,P.UPDATED_AT
+ 			  ,P.CATEGORY
+		FROM COMMUNITY_POST P
+		JOIN MEMBER M ON P.MEMBER_ID = M.MEMBER_ID
+		WHERE P.CATEGORY = #{category}
+		ORDER BY P.UPDATED_AT DESC
 	</select>
 	
  	<!-- 게시글 상세보기 -->

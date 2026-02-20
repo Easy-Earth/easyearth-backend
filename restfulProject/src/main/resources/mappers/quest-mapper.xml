@@ -56,5 +56,14 @@
             UPDATED_AT = SYSDATE
         WHERE MEMBER_ID = #{userId}
     </update>
+    <!-- 오늘 특정 퀘스트 인증 여부 확인 -->
+    <select id="countTodayQuestByNo" resultType="int">
+        SELECT COUNT(*)
+        FROM QUEST_HISTORY
+        WHERE MEMBER_ID = #{userId}
+          AND QUEST_NO = #{questNo}
+          AND TRUNC(CREATED_AT) = TRUNC(SYSDATE)
+    </select>
 
 </mapper>
+

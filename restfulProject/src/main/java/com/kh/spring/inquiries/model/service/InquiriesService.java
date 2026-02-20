@@ -31,7 +31,7 @@ public interface InquiriesService {
 	int increaseCount(int inquiriesId);
 
 	//건의글 상세보기
-	InquiriesVO selectInquiry(int inquiriesId);
+	InquiriesVO inquiriesDetail(int inquiriesId);
 
 	//건의글 등록
 	int inquiriesInsert(Map<String, Object> map);

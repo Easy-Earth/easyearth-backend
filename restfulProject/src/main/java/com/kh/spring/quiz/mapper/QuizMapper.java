@@ -10,9 +10,12 @@ public interface QuizMapper {
                         @org.apache.ibatis.annotations.Param("difficulty") String difficulty);
 
         int insertQuizHistory(@org.apache.ibatis.annotations.Param("userId") int userId,
-                        @org.apache.ibatis.annotations.Param("difficulty") String difficulty,
-                        @org.apache.ibatis.annotations.Param("score") int score);
+                        @org.apache.ibatis.annotations.Param("quizNo") int quizNo,
+                        @org.apache.ibatis.annotations.Param("correctYn") String correctYn);
 
         int updateMemberPoints(@org.apache.ibatis.annotations.Param("userId") int userId,
                         @org.apache.ibatis.annotations.Param("points") int points);
+
+        // 퀴즈 번호로 개별 퀴즈 조회
+        com.kh.spring.quiz.model.vo.Quiz selectQuizByNo(@org.apache.ibatis.annotations.Param("quizNo") int quizNo);
 }
