@@ -39,6 +39,7 @@ public class ReportsVO {
 	private int targetMemberId;
 	private int reviewId;
 	
-	
+	private String memberName;      // 신고자 이름
+	private String targetMemberName;   // 신고 대상 이름
 }
 

@@ -14,16 +14,18 @@
 	<!-- 검색된 신고글 개수 -->
 	<select id="searchReportsCount" parameterType="hashmap" resultType="_int">
 		SELECT COUNT(*)
-		FROM REPORTS
+		FROM REPORTS R
+		JOIN MEMBER M1 ON R.MEMBER_ID = M1.MEMBER_ID
+    	JOIN MEMBER M2 ON R.TARGET_MEMBER_ID = M2.MEMBER_ID
 		<choose>
 			<when test="condition == 'memberId'">
-				WHERE MEMBER_ID = #{keyword}
+				WHERE UPPER(M1.NAME) = UPPER(#{keyword})
 			</when>
 			<when test="condition == 'targetMemberId'">
-				WHERE TARGET_MEMBER_ID = #{keyword}
+				WHERE UPPER(M2.NAME) = UPPER(#{keyword})
 			</when>
 			<otherwise>
-				WHERE DETAIL LIKE '%' || #{keyword} || '%'
+				WHERE UPPER(R.DETAIL) LIKE '%' || UPPER(#{keyword}) || '%'
 			</otherwise>
 		</choose>
 	</select>
@@ -36,6 +38,9 @@
 	        <if test="type">
 	            AND TYPE = #{type}
 	        </if>
+	        <if test="reason">
+	            AND REASON = #{reason}
+	        </if>
 	        <if test="status">
 	            AND STATUS = #{status}
 	        </if>
@@ -44,109 +49,157 @@
 	
 	<!-- 신고글 목록 조회 -->
 	<select id="reportsList" resultType="ReportsVO">
-		SELECT REPORTS_ID
-			  ,MEMBER_ID
-			  ,TARGET_MEMBER_ID
-			  ,POST_ID
-			  ,REPLY_ID
-			  ,REVIEW_ID
-			  ,TYPE
-			  ,REASON
-			  ,STATUS
-			  ,CREATED_AT
-			  ,RESOLVED_AT
-		FROM REPORTS
-		ORDER BY CREATED_AT DESC
+		SELECT R.REPORTS_ID
+			  ,R.POST_ID
+			  ,R.REPLY_ID
+			  ,R.REVIEW_ID
+			  ,R.TYPE
+			  ,R.REASON
+			  ,R.DETAIL
+			  ,R.STATUS
+			  ,R.CREATED_AT
+			  ,R.RESOLVED_AT
+  			  ,M1.NAME AS MEMBER_NAME
+			  ,M2.NAME AS TARGET_MEMBER_NAME
+		FROM REPORTS R
+		JOIN MEMBER M1 ON R.MEMBER_ID = M1.MEMBER_ID
+    	JOIN MEMBER M2 ON R.TARGET_MEMBER_ID = M2.MEMBER_ID
+		ORDER BY R.CREATED_AT DESC
 	</select>
 	
 	<!-- 신고글 검색 조회 -->
 	<select id="searchReportsList" parameterType="hashmap" resultType="ReportsVO">
-		SELECT REPORTS_ID
-			  ,MEMBER_ID
-			  ,TARGET_MEMBER_ID
-			  ,POST_ID
-			  ,REPLY_ID
-			  ,REVIEW_ID
-			  ,TYPE
-			  ,REASON
-			  ,STATUS
-			  ,CREATED_AT
-			  ,RESOLVED_AT
-		FROM REPORTS
+		SELECT R.REPORTS_ID
+			  ,R.POST_ID
+			  ,R.REPLY_ID
+			  ,R.REVIEW_ID
+			  ,R.TYPE
+			  ,R.REASON
+			  ,R.DETAIL
+			  ,R.STATUS
+			  ,R.CREATED_AT
+			  ,R.RESOLVED_AT
+  			  ,M1.NAME AS MEMBER_NAME
+			  ,M2.NAME AS TARGET_MEMBER_NAME
+		FROM REPORTS R
+		JOIN MEMBER M1 ON R.MEMBER_ID = M1.MEMBER_ID
+    	JOIN MEMBER M2 ON R.TARGET_MEMBER_ID = M2.MEMBER_ID
 		<choose>
 			<when test="condition == 'memberId'">
-				WHERE MEMBER_ID = #{keyword}
+				WHERE MEMBER_NAME = UPPER(#{keyword})
 			</when>
 			<when test="condition == 'targetMemberId'">
-				WHERE TARGET_MEMBER_ID = #{keyword}
+				WHERE TARGET_MEMBER_NAME = UPPER(#{keyword})
 			</when>
 			<otherwise>
-				WHERE DETAIL LIKE '%' || #{keyword} || '%'
+				WHERE R.DETAIL LIKE '%' || UPPER(#{keyword}) || '%'
 			</otherwise>
 		</choose>
-		ORDER BY CREATED_AT DESC
+		ORDER BY R.CREATED_AT DESC
 	</select>
 	
 	<!-- 신고글 필터링 조회 -->
 	<select id="filterReportsList" parameterType="hashmap" resultType="ReportsVO">
-		SELECT REPORTS_ID
-			  ,MEMBER_ID
-			  ,TARGET_MEMBER_ID
-			  ,POST_ID
-			  ,REPLY_ID
-			  ,REVIEW_ID
-			  ,TYPE
-			  ,REASON
-			  ,STATUS
-			  ,CREATED_AT
-			  ,RESOLVED_AT
-		FROM REPORTS
+		SELECT R.REPORTS_ID
+			  ,R.POST_ID
+			  ,R.REPLY_ID
+			  ,R.REVIEW_ID
+			  ,R.TYPE
+			  ,R.REASON
+			  ,R.DETAIL
+			  ,R.STATUS
+			  ,R.CREATED_AT
+			  ,R.RESOLVED_AT
+  			  ,M1.NAME AS MEMBER_NAME
+			  ,M2.NAME AS TARGET_MEMBER_NAME
+		FROM REPORTS R
+		JOIN MEMBER M1 ON R.MEMBER_ID = M1.MEMBER_ID
+    	JOIN MEMBER M2 ON R.TARGET_MEMBER_ID = M2.MEMBER_ID
 		<where>
 	        <if test="type">
-	            AND TYPE = #{type}
+	            AND R.TYPE = #{type}
+	        </if>
+	        <if test="reason">
+	            AND R.REASON = #{reason}
 	        </if>
 	        <if test="status">
-	            AND STATUS = #{status}
+	            AND R.STATUS = #{status}
 	        </if>
 	    </where>
-    	ORDER BY CREATED_AT DESC
+    	ORDER BY R.CREATED_AT DESC
 	</select>
+	
+	<!-- 신고글 상세보기 -->
+	<select id="reportsDetail" resultType="ReportsVO">
+	    SELECT R.REPORTS_ID
+	          ,R.MEMBER_ID
+	          ,R.TARGET_MEMBER_ID
+	          ,R.POST_ID
+	          ,R.REPLY_ID
+	          ,R.REVIEW_ID
+	          ,R.TYPE
+	          ,R.REASON
+	          ,R.DETAIL
+	          ,R.STATUS
+	          ,R.CREATED_AT
+	          ,R.RESOLVED_AT
+	          ,M1.NAME AS MEMBER_NAME
+	          ,M2.NAME AS TARGET_MEMBER_NAME
+			  ,CASE 
+              	WHEN R.TYPE = 'REPLY' THEN (SELECT POST_ID FROM COMMUNITY_REPLY WHERE REPLY_ID = R.REPLY_ID)
+              	ELSE R.POST_ID 
+          	   END AS PARENT_ID
+	    FROM REPORTS R
+	    JOIN MEMBER M1 ON R.MEMBER_ID = M1.MEMBER_ID
+	    JOIN MEMBER M2 ON R.TARGET_MEMBER_ID = M2.MEMBER_ID
+	    WHERE R.REPORTS_ID = #{reportsId}
+	</select>
+		
 	
 	<!-- 신고 등록 -->
 	<insert id="reportsInsert" parameterType="map">
-		INSERT INTO REPORTS (
-			REPORTS_ID
-			,MEMBER_ID
-			,TARGET_MEMBER_ID
-			,TYPE
-			,POST_ID
-			,REPLY_ID
-			,REVIEW_ID
-			,REASON
-			,DETAIL
-		) VALUES (
-			REPORTS_ID_SEQ.NEXTVAL
-			,#{memberId}
-			,#{targetMemberId}
-			,#{type}
-			,<choose>
-	            <when test="postId == 0">NULL</when>
-	            <otherwise>#{postId}</otherwise>
+	    INSERT INTO REPORTS (
+	        REPORTS_ID
+	        ,MEMBER_ID
+	        ,TARGET_MEMBER_ID
+	        ,TYPE
+	        ,POST_ID
+	        ,REPLY_ID
+	        ,REVIEW_ID
+	        ,REASON
+	        ,DETAIL
+	    ) VALUES (
+	        REPORTS_ID_SEQ.NEXTVAL
+	        ,#{memberId}
+	        ,#{targetMemberId}
+	        ,#{type}
+	        ,<choose>
+	            <when test="type == 'REPLY'">
+	                (SELECT POST_ID FROM COMMUNITY_REPLY WHERE REPLY_ID = #{replyId})
+	            </when>
+	            <when test="type == 'REVIEW'">
+	                (SELECT PRODUCT_ID FROM SHOP_REVIEW WHERE REVIEW_ID = #{reviewId})
+	            </when>
+	            <when test="postId != null and postId != 0">
+	                #{postId}
+	            </when>
+	            <otherwise>NULL</otherwise>
 	        </choose>,
 	        <choose>
-	            <when test="replyId == 0">NULL</when>
+	            <when test="replyId == null or replyId == 0">NULL</when>
 	            <otherwise>#{replyId}</otherwise>
 	        </choose>,
 	        <choose>
-	            <when test="reviewId == 0">NULL</when>
+	            <when test="reviewId == null or reviewId == 0">NULL</when>
 	            <otherwise>#{reviewId}</otherwise>
 	        </choose>
-			,#{reason}
-			,#{detail}
-		)
+	        ,#{reason}
+	        ,#{detail}
+	    )
 	</insert>
  	
- 	<!-- 신고 수정 -->
+ 	<!--
+ 	신고 수정
  	<update id="reportsUpdate" parameterType="ReportsVO">
  		UPDATE REPORTS
  		SET REASON = #{reason}
@@ -156,24 +209,25 @@
  		AND STATUS IS NULL
  	</update>
  	
- 	<!-- 신고 삭제 -->
+ 	신고 삭제
  	<delete id="reportsDelete" parameterType="_int">
  		DELETE FROM REPORTS
  		WHERE REPORTS_ID = #{reportsId}
  		AND MEMBER_ID = #{memberId}
  		AND STATUS IS NULL
  	</delete>
+ 	-->
  	
  	<!-- 신고글 상태 처리 - 관리자 권한 -->
  	<update id="reportsStatus">
  		UPDATE REPORTS 
 	    SET STATUS = #{status}, 
 	    <choose>
-            <when test="status == 'RESOLVED'">
-                RESOLVED_AT = SYSDATE
+            <when test="status == 'RECEIVED'">
+                RESOLVED_AT = NULL
             </when>
             <otherwise>
-                RESOLVED_AT = NULL
+                RESOLVED_AT = SYSDATE
             </otherwise>
         </choose>
 	    WHERE REPORTS_ID = #{reportsId}
@@ -186,13 +240,13 @@
 	    WHERE STATUS = 'RESOLVED'
         AND TYPE = #{type}
 	    <choose>
-	        <when test="type == 'POST'">
+	        <when test='type == "POST"'>
 	            AND POST_ID = #{postId}
 	        </when>
-	        <when test="type == 'REPLY'">
+	        <when test='type == "REPLY"'>
 	            AND REPLY_ID = #{replyId}
 	        </when>
-	        <when test="type == 'REVIEW'">
+	        <when test='type == "REVIEW"'>
 	            AND REVIEW_ID = #{reviewId}
 	        </when>
     	</choose>
@@ -201,13 +255,13 @@
 	<!-- 10회 이상 신고 - status : B 처리  -->
 	<update id="reportsBlind">
 		<choose>
-	        <when test="type == 'POST'">
+	        <when test='type == "POST"'>
 	            UPDATE COMMUNITY_POST SET STATUS = 'B' WHERE POST_ID = #{postId}
 	        </when>
-	        <when test="type == 'REPLY'">
+	        <when test='type == "REPLY"'>
 	            UPDATE COMMUNITY_REPLY SET STATUS = 'B' WHERE REPLY_ID = #{replyId}
 	        </when>
-	        <when test="type == 'REVIEW'">
+	        <when test='type == "REVIEW"'>
 	            UPDATE ECO_SHOP_REVIEW SET STATUS = 'B' WHERE ESR_ID = #{reviewId}
 	        </when> 
 	    </choose>

@@ -100,12 +100,22 @@ public class CommunityController {
     	
     	try {
     		
+    		CommunityPostVO cp = service.communityDetail(postId);
+            
+            if(cp == null) {
+                return ResponseEntity.status(404)
+                    .body("게시글을 찾을 수 없습니다.");
+            }
+            
+            // 블라인드 처리된 게시글 체크
+            if(cp.getStatus().equals("B")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("누적 신고로 인해 블라인드 처리된 게시글입니다.");
+            }
+    		
     		int result = service.increaseViewCount(postId);
         	
         	if(result > 0) {
-        		
-        		//게시글 텍스트 정보
-        		CommunityPostVO cp = service.communityDetail(postId);
         		
         		//게시글 첨부파일 정보
         		ArrayList<PostFilesVO> fileList = service.selectFilesByPostIds(postId);
@@ -122,10 +132,10 @@ public class CommunityController {
         							 .body("게시글을 찾을 수 없습니다.");
         	}
     	}catch (Exception e) {
+    		e.printStackTrace();
     		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
     							 .body("조회 중 오류 발생");
     	}
-    	
     }
     
     //게시글 등록

@@ -47,4 +47,6 @@ public interface ReportsService {
 
 
     int reportsCheck(int memberId, int targetMemberId, int postId, int replyId, int reviewId);
+
+
 }

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.kh.spring.common.model.vo.PageInfo;
+import com.kh.spring.global.controller.GlobalEcoNewsController;
 import com.kh.spring.report.model.dao.ReportsDao;
 import com.kh.spring.report.model.vo.ReportsVO;
 
@@ -18,11 +19,17 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class ReportsServiceImpl implements ReportsService{
 
+    private final GlobalEcoNewsController globalEcoNewsController;
+
 	@Autowired
 	private ReportsDao dao;
 	
 	@Autowired
 	private SqlSessionTemplate sqlSession;
+
+    ReportsServiceImpl(GlobalEcoNewsController globalEcoNewsController) {
+        this.globalEcoNewsController = globalEcoNewsController;
+    }
 
 	//신고글 전체 개수
 	@Override
@@ -71,7 +78,15 @@ public class ReportsServiceImpl implements ReportsService{
 	@Override
 	public int reportsInsert(Map<String, Object> map) {
 		
-		return dao.reportsInsert(sqlSession, map);
+		//신고 등록
+		int result = dao.reportsInsert(sqlSession, map);
+		
+		//자동 블라인드 처리
+		if (result > 0) {
+			int blindResult = reportsBlind(map);
+		}
+		
+		return result;
 	}
 
 	//신고 수정
@@ -87,24 +102,45 @@ public class ReportsServiceImpl implements ReportsService{
 	}
 
 	//신고글 상태 처리 - 관리자 권한
+	@Transactional
 	@Override
 	public int reportsStatus(int reportsId, String status) {
-		return dao.reportsStatus(sqlSession, reportsId, status);
+		
+		int result = dao.reportsStatus(sqlSession, reportsId, status);
+	    
+	    // 처리완료로 변경한 경우에만 블라인드 체크
+	    if(result > 0 && "RESOLVED".equals(status)) {
+	        // 해당 신고의 정보 조회
+	        ReportsVO report = dao.reportsDetail(sqlSession, reportsId);
+	        
+	        // Map 생성
+	        Map<String, Object> map = new HashMap<>();
+	        map.put("type", report.getType());
+	        map.put("postId", report.getPostId());
+	        map.put("replyId", report.getReplyId());
+	        map.put("reviewId", report.getReviewId());
+	        
+	        // 블라인드 체크
+	        reportsBlind(map);
+	    }
+	    
+	    return result;
 	}
 
 	//누적 신고 10회 블라인드 처리 
 	@Override
 	@Transactional
 	public int reportsBlind(Map<String, Object> map) {
-		
-		// 1. MyBatis를 거치지 않고 Map에 뭐가 들었는지 강제로 다 까보기
-	    System.err.println("=== [자바 데이터 체크] ===");
-	    map.forEach((key, value) -> System.err.println(key + " : " + value + " (타입: " + value.getClass().getSimpleName() + ")"));
-		
 		int resolvedCount = dao.selectResolvedCount(sqlSession, map);
 		
-		if(resolvedCount >= 10) {
-			return dao.reportsBlind(sqlSession, map);
+//		if(resolvedCount >= 10) {
+//			return dao.reportsBlind(sqlSession, map);
+//		}
+		
+		// 테스트용 -- 누적 신고 수 2회
+		if (resolvedCount >= 2) {
+			int updateResult = dao.reportsBlind(sqlSession, map);
+			return updateResult;
 		}
 		return 0;
 	}
