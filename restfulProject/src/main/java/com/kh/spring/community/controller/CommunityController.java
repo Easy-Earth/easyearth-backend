@@ -147,7 +147,6 @@ public class CommunityController {
 							+ "uploadFile : 업로드 할 첨부파일")
     @PostMapping(value = "/post/insert", consumes = MediaType.MULTIPART_FORM_DATA_VALUE) // 1. 미디어 타입 명시
     public ResponseEntity<?> communityInsert(
-    		HttpSession session,
  		    @RequestParam("memberId") int memberId,
  		    @RequestParam("title") String title,
  		    @RequestParam("content") String content,
@@ -156,7 +155,7 @@ public class CommunityController {
      
     ) {
     	try {
-    		
+			System.out.println("insert");
     		//카테고리 정보 체크
     		if(category == null || category.isEmpty()) {
     			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
