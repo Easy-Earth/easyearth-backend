@@ -756,6 +756,28 @@ public class ChatServiceImpl implements ChatService {
         readEvent.put("unreadCountMap", unreadCountMap);  // 메시지별 업데이트된 unreadCount
         
         eventPublisher.publishEvent(new ChatEvent("/topic/chat/room/" + roomId + "/read", readEvent));
+        
+        // 읽은 사용자 개인 채널로 목록 갱신 신호 전송 (unreadCount 즉시 반영)
+        Map<String, Object> listRefreshEvent = new HashMap<>();
+        listRefreshEvent.put("type", "CHAT_LIST_REFRESH");
+        listRefreshEvent.put("chatRoomId", roomId);
+        eventPublisher.publishEvent(new ChatEvent(memberId, listRefreshEvent));
+        
+        // 방의 다른 멤버들(주로 발신자)에게 개인 채널로도 READ_UPDATE 전송
+        // → 발신자가 방 밖에 있어도 메시지 옆 unreadCount(1)를 즉시 갱신하기 위함
+        for (ChatRoomUserEntity user : allUsers) {
+            Long userId = user.getMember().getId();
+            if (!userId.equals(memberId)) { // 읽은 사람(수신자) 제외, 나머지(발신자 등)에게 전송
+                Map<String, Object> personalReadEvent = new HashMap<>();
+                personalReadEvent.put("type", "READ_UPDATE");
+                personalReadEvent.put("memberId", memberId);
+                personalReadEvent.put("lastMessageId", lastMessageId);
+                personalReadEvent.put("chatRoomId", roomId);
+                personalReadEvent.put("unreadCountMap", unreadCountMap);
+                eventPublisher.publishEvent(new ChatEvent(userId, personalReadEvent));
+            }
+        }
+        
         log.debug("읽음 상태 실시간 이벤트 전송: roomId={}, memberId={}, lastMessageId={}, affectedMessages={}", 
                 roomId, memberId, lastMessageId, affectedMessages.size());
     }
@@ -1061,15 +1083,23 @@ public class ChatServiceImpl implements ChatService {
     // ===================================
     
     @Override
-    public void softDeleteMessage(Long messageId, Long memberId) {
+    public void softDeleteMessage(Long messageId, Long memberId, Long requesterId) {
         // 1. 메시지 조회
         ChatMessageEntity message = chatMessageRepository.findById(messageId)
             .orElseThrow(() -> new IllegalArgumentException("메시지를 찾을 수 없습니다"));
         
-        // 2. [보안] 작성자 본인 확인 (Objects.equals로 안전하게 비교)
-        if (!java.util.Objects.equals(message.getSender().getId(), memberId)) {
+        // 2. [보안] 작성자 본인 또는 방장 확인
+        boolean isSender = java.util.Objects.equals(message.getSender().getId(), memberId);
+        boolean isRoomOwner = false;
+        if (requesterId != null) {
+            ChatRoomUserEntity requester = chatRoomUserRepository
+                .findByChatRoomIdAndMemberId(message.getChatRoom().getId(), requesterId)
+                .orElse(null);
+            isRoomOwner = requester != null && "OWNER".equals(requester.getRole());
+        }
+        if (!isSender && !isRoomOwner) {
             log.error("삭제 권한 없음: senderId={}, requesterId={}", message.getSender().getId(), memberId);
-            throw new IllegalArgumentException("자신의 메시지만 삭제할 수 있습니다");
+            throw new IllegalArgumentException("삭제 권한이 없습니다");
         }
         
         // 3. Soft Delete: content 및 messageType 변경
@@ -1390,6 +1420,15 @@ public class ChatServiceImpl implements ChatService {
         
         eventPublisher.publishEvent(new ChatEvent("/topic/chat/room/" + roomId, updateEvent));
         
+        // 모든 참여자에게 목록 갱신 신호 전송 (개인 채널)
+        List<ChatRoomUserEntity> roomUsers = chatRoomUserRepository.findAllByChatRoomId(roomId);
+        for (ChatRoomUserEntity user : roomUsers) {
+             Map<String, Object> refreshEvent = new HashMap<>();
+             refreshEvent.put("type", "CHAT_LIST_REFRESH");
+             refreshEvent.put("chatRoomId", roomId);
+             eventPublisher.publishEvent(new ChatEvent(user.getMember().getId(), refreshEvent));
+        }
+        
         log.info("✅ [방 이름 변경 완료] roomId: {}", roomId);
     }
 
@@ -1423,6 +1462,15 @@ public class ChatServiceImpl implements ChatService {
         updateEvent.put("roomImage", imageUrl);
         
         eventPublisher.publishEvent(new ChatEvent("/topic/chat/room/" + roomId, updateEvent));
+        
+        // 모든 참여자에게 목록 갱신 신호 전송 (개인 채널)
+        List<ChatRoomUserEntity> roomUsers = chatRoomUserRepository.findAllByChatRoomId(roomId);
+        for (ChatRoomUserEntity user : roomUsers) {
+             Map<String, Object> refreshEvent = new HashMap<>();
+             refreshEvent.put("type", "CHAT_LIST_REFRESH");
+             refreshEvent.put("chatRoomId", roomId);
+             eventPublisher.publishEvent(new ChatEvent(user.getMember().getId(), refreshEvent));
+        }
         
         log.info("✅ [방 이미지 변경 완료] roomId: {}", roomId);
     }

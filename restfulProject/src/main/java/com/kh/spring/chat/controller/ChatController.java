@@ -308,12 +308,13 @@ public class ChatController {
     // ===================================
     
     // 메시지 삭제 (Soft Delete)
-    @Operation(summary = "메시지 삭제", description = "작성자가 자신의 메시지를 삭제합니다. (Soft Delete)")
+    @Operation(summary = "메시지 삭제", description = "작성자 또는 방장이 메시지를 삭제합니다. (Soft Delete)")
     @PutMapping("/message/{messageId}/delete")
     public ResponseEntity<Void> deleteMessage(
             @PathVariable Long messageId, 
-            @RequestParam Long memberId) {
-        chatService.softDeleteMessage(messageId, memberId);
+            @RequestParam Long memberId,
+            @RequestParam(required = false) Long requesterId) {
+        chatService.softDeleteMessage(messageId, memberId, requesterId);
         return ResponseEntity.ok().build();
     }
     

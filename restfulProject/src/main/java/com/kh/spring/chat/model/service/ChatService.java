@@ -41,8 +41,8 @@ public interface ChatService {
     // 멤버 강퇴
     void kickMember(Long chatRoomId, Long targetMemberId, Long requesterId);
     
-    // 메시지 삭제 (Soft Delete)
-    void softDeleteMessage(Long messageId, Long memberId);
+    // 메시지 삭제 (Soft Delete) — requesterId: 방장 권한 삭제 시 전달
+    void softDeleteMessage(Long messageId, Long memberId, Long requesterId);
     
     // 채팅방 공지 관리 (설정/해제)
     void setNotice(Long roomId, Long memberId, Long messageId);
