@@ -98,8 +98,7 @@ public class CommunityController {
     @GetMapping("/post/detail/{postId}")
     public ResponseEntity<?> communityDetail(@PathVariable int postId) {
     	
-    	try {
-    		
+    	try {		
     		CommunityPostVO cp = service.communityDetail(postId);
             
             if(cp == null) {
@@ -112,7 +111,7 @@ public class CommunityController {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body("누적 신고로 인해 블라인드 처리된 게시글입니다.");
             }
-    		
+        
     		int result = service.increaseViewCount(postId);
         	
         	if(result > 0) {
@@ -147,7 +146,6 @@ public class CommunityController {
 							+ "uploadFile : 업로드 할 첨부파일")
     @PostMapping(value = "/post/insert", consumes = MediaType.MULTIPART_FORM_DATA_VALUE) // 1. 미디어 타입 명시
     public ResponseEntity<?> communityInsert(
-    		HttpSession session,
  		    @RequestParam("memberId") int memberId,
  		    @RequestParam("title") String title,
  		    @RequestParam("content") String content,
@@ -156,7 +154,7 @@ public class CommunityController {
      
     ) {
     	try {
-    		
+			System.out.println("insert");
     		//카테고리 정보 체크
     		if(category == null || category.isEmpty()) {
     			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
