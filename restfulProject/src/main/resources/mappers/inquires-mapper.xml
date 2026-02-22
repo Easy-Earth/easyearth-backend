@@ -16,17 +16,23 @@
 		SELECT COUNT(*)
 		FROM INQUIRIES I
 		JOIN MEMBER M ON I.MEMBER_ID = M.MEMBER_ID
-		<choose>
-			<when test="condition == 'title'">
-				WHERE UPPER(I.TITLE) LIKE '%' || UPPER(#{keyword}) || '%'
-			</when>
-			<when test="condition == 'writer'">
-				WHERE UPPER(M.NAME) = UPPER(#{keyword})
-			</when>
-			<when test="condition == 'content'">
-				WHERE UPPER(I.CONTENT) LIKE '%' || UPPER(#{keyword}) || '%'
-			</when>
-		</choose>
+		<where>
+			<choose>
+				<when test="condition == 'title'">
+					AND UPPER(I.TITLE) LIKE '%' || UPPER(#{keyword}) || '%'
+				</when>
+				<when test="condition == 'writer'">
+					AND UPPER(M.NAME) = UPPER(#{keyword})
+				</when>
+				<when test="condition == 'content'">
+					AND UPPER(I.CONTENT) LIKE '%' || UPPER(#{keyword}) || '%'
+				</when>
+			</choose>
+			
+			<if test="status != null and status != ''">
+	            AND I.STATUS = #{status}
+	        </if>
+		</where>
 	</select>
 
 	<!-- 필터링된 건의글 개수 -->
@@ -39,6 +45,7 @@
 	<!-- 건의글 목록 조회 -->
 	<select id="inquiriesList" resultType="InquiriesVO">
 		SELECT I.INQUIRIES_ID
+			  ,I.MEMBER_ID
 			  ,M.NAME AS NAME
 			  ,I.TITLE
 			  ,I.CONTENT
@@ -69,17 +76,23 @@
 			  ,I.IS_FAQ
 		FROM INQUIRIES I
 		JOIN MEMBER M ON I.MEMBER_ID = M.MEMBER_ID
-		<choose>
-			<when test="condition == 'title'">
-				WHERE UPPER(I.TITLE) LIKE '%' || UPPER(#{keyword}) || '%'
-			</when>
-			<when test="condition == 'writer'">
-				WHERE UPPER(M.NAME) = UPPER(#{keyword})
-			</when>
-			<when test="condition == 'content'">
-				WHERE UPPER(I.CONTENT) LIKE '%' || UPPER(#{keyword}) || '%'
-			</when>
-		</choose>
+		<where>
+			<choose>
+				<when test="condition == 'title'">
+					AND UPPER(I.TITLE) LIKE '%' || UPPER(#{keyword}) || '%'
+				</when>
+				<when test="condition == 'writer'">
+					AND UPPER(M.NAME) = UPPER(#{keyword})
+				</when>
+				<when test="condition == 'content'">
+					AND UPPER(I.CONTENT) LIKE '%' || UPPER(#{keyword}) || '%'
+				</when>
+			</choose>
+			
+			<if test="status != null and status != ''">
+	            AND I.STATUS = #{status}
+	        </if>
+		</where>
 		ORDER BY I.IS_FAQ DESC
 				,I.UPDATED_AT DESC
 	</select>

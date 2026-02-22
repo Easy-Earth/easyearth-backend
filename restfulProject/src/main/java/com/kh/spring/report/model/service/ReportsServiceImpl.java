@@ -19,17 +19,11 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class ReportsServiceImpl implements ReportsService{
 
-    private final GlobalEcoNewsController globalEcoNewsController;
-
 	@Autowired
 	private ReportsDao dao;
 	
 	@Autowired
 	private SqlSessionTemplate sqlSession;
-
-    ReportsServiceImpl(GlobalEcoNewsController globalEcoNewsController) {
-        this.globalEcoNewsController = globalEcoNewsController;
-    }
 
 	//신고글 전체 개수
 	@Override
@@ -39,13 +33,13 @@ public class ReportsServiceImpl implements ReportsService{
 
 	//검색된 신고글 개수
 	@Override
-	public int searchReportsCount(HashMap<String, String> map) {
+	public int searchReportsCount(HashMap<String, Object> map) {
 		return dao.searchReportsCount(sqlSession, map);
 	}
 
 	//필터링된 신고글 개수
 	@Override
-	public int filterReportsCount(HashMap<String, String> map) {
+	public int filterReportsCount(HashMap<String, Object> map) {
 		return dao.filterReportsCount(sqlSession, map);
 	}
 
@@ -57,13 +51,13 @@ public class ReportsServiceImpl implements ReportsService{
 
 	//신고글 검색 조회
 	@Override
-	public ArrayList<ReportsVO> searchReportsList(HashMap<String, String> map, PageInfo pi) {
+	public ArrayList<ReportsVO> searchReportsList(HashMap<String, Object> map, PageInfo pi) {
 		return dao.searchReportsList(sqlSession, map, pi);
 	}
 
 	//신고글 필터링 조회
 	@Override
-	public ArrayList<ReportsVO> filterReportsList(HashMap<String, String> map, PageInfo pi) {
+	public ArrayList<ReportsVO> filterReportsList(HashMap<String, Object> map, PageInfo pi) {
 		return dao.filterReportsList(sqlSession, map, pi);
 	}
 	

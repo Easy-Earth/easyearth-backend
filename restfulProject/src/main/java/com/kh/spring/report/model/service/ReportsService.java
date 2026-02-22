@@ -13,19 +13,19 @@ public interface ReportsService {
 	int reportListsCount();
 	
 	//검색된 신고글 개수
-	int searchReportsCount(HashMap<String, String> map);
+	int searchReportsCount(HashMap<String, Object> map);
 
 	//필터링된 신고글 개수
-	int filterReportsCount(HashMap<String, String> map);
+	int filterReportsCount(HashMap<String, Object> map);
 	
 	//신고글 목록 조회
 	ArrayList<ReportsVO> reportsList(PageInfo pi);
 
 	//신고글 검색 조회
-	ArrayList<ReportsVO> searchReportsList(HashMap<String, String> map, PageInfo pi);
+	ArrayList<ReportsVO> searchReportsList(HashMap<String, Object> map, PageInfo pi);
 
 	//신고글 필터링 조회
-	ArrayList<ReportsVO> filterReportsList(HashMap<String, String> map, PageInfo pi);
+	ArrayList<ReportsVO> filterReportsList(HashMap<String, Object> map, PageInfo pi);
 	
 	//신고글 상세보기
 	ReportsVO reportsDetail(int reportsId);

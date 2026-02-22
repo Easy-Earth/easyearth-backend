@@ -20,12 +20,12 @@ public class ReportsDao {
 	}
 
 	//검색된 신고글 개수
-	public int searchReportsCount(SqlSessionTemplate sqlSession, HashMap<String, String> map) {
+	public int searchReportsCount(SqlSessionTemplate sqlSession, HashMap<String, Object> map) {
 		return sqlSession.selectOne("reportsMapper.searchReportsCount", map);
 	}
 
 	//필터링된 신고글 개수
-	public int filterReportsCount(SqlSessionTemplate sqlSession, HashMap<String, String> map) {
+	public int filterReportsCount(SqlSessionTemplate sqlSession, HashMap<String, Object> map) {
 		return sqlSession.selectOne("reportsMapper.filterReportsCount", map);
 	}
 
@@ -41,7 +41,7 @@ public class ReportsDao {
 	}
 
 	//신고글 검색 조회
-	public ArrayList<ReportsVO> searchReportsList(SqlSessionTemplate sqlSession, HashMap<String, String> map,
+	public ArrayList<ReportsVO> searchReportsList(SqlSessionTemplate sqlSession, HashMap<String, Object> map,
 			PageInfo pi) {
 		
 		int limit = pi.getBoardLimit();
@@ -53,7 +53,7 @@ public class ReportsDao {
 	}
 
 	//신고글 필터링 조회
-	public ArrayList<ReportsVO> filterReportsList(SqlSessionTemplate sqlSession, HashMap<String, String> map,
+	public ArrayList<ReportsVO> filterReportsList(SqlSessionTemplate sqlSession, HashMap<String, Object> map,
 			PageInfo pi) {
 
 		int limit = pi.getBoardLimit();
