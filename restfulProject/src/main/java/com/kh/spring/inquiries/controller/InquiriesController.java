@@ -88,29 +88,24 @@ public class InquiriesController {
 	public ResponseEntity<?> inquiriesDetail(@PathVariable int inquiriesId,
 											 @RequestParam (required = false, defaultValue = "0") int memberId) {
 		
-		int result = service.increaseCount(inquiriesId);
+		service.increaseCount(inquiriesId);
 		
-		if(result > 0) {
-			InquiriesVO inquiry = service.inquiriesDetail(inquiriesId);
-			
-			if (inquiry != null) {
-
-				String isPublic = inquiry.getIsPublic();
-				
-				if(isPublic.equals("N")) {
-					if(memberId != 1 && inquiry.getMemberId() != memberId) {
-						return ResponseEntity.status(HttpStatus.FORBIDDEN)
-											 .body("비공개 건의글은 작성자와 관리자만 확인할 수 있습니다.");
-					}
-				}
-				return ResponseEntity.ok(inquiry);
-			}else {
-				return ResponseEntity.status(HttpStatus.NOT_FOUND)
-									 .body("존재하지 않는 건의글입니다.");
-			}
-		}
-		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-							 .body("건의글 조회 중 오류 발생");
+		InquiriesVO inquiry = service.inquiriesDetail(inquiriesId);
+		
+	    if (inquiry != null) {
+	        String isPublic = inquiry.getIsPublic();
+	        
+	        if(isPublic.equals("N")) {
+	            if(memberId != 1 && inquiry.getMemberId() != memberId) {
+	                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+	                                     .body("비공개 건의글은 작성자와 관리자만 확인할 수 있습니다.");
+	            }
+	        }
+	        return ResponseEntity.ok(inquiry);
+	    } else {
+	        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	                             .body("존재하지 않는 건의글입니다.");
+	    }
 	}
 	
 	//건의글 등록

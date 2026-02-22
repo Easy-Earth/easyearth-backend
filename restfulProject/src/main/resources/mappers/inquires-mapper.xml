@@ -39,6 +39,7 @@
 	<!-- 건의글 목록 조회 -->
 	<select id="inquiriesList" resultType="InquiriesVO">
 		SELECT I.INQUIRIES_ID
+			  ,I.MEMBER_ID
 			  ,M.NAME AS NAME
 			  ,I.TITLE
 			  ,I.CONTENT

@@ -67,6 +67,7 @@ public class ReportsController {
 		if (keyword != null && !keyword.isEmpty()) {
 			map.put("condition", condition);
 			map.put("keyword", keyword);
+			map.put("status", status);
 			listCount = service.searchReportsCount(map);  //검색된 개수
 		}else if ((type != null && !type.isEmpty()) || 
 					(reason != null && !reason.isEmpty()) ||

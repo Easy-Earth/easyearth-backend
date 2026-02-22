@@ -13,21 +13,28 @@
 	
 	<!-- 검색된 신고글 개수 -->
 	<select id="searchReportsCount" parameterType="hashmap" resultType="_int">
-		SELECT COUNT(*)
-		FROM REPORTS R
-		JOIN MEMBER M1 ON R.MEMBER_ID = M1.MEMBER_ID
-    	JOIN MEMBER M2 ON R.TARGET_MEMBER_ID = M2.MEMBER_ID
-		<choose>
-			<when test="condition == 'memberId'">
-				WHERE UPPER(M1.NAME) = UPPER(#{keyword})
-			</when>
-			<when test="condition == 'targetMemberId'">
-				WHERE UPPER(M2.NAME) = UPPER(#{keyword})
-			</when>
-			<otherwise>
-				WHERE UPPER(R.DETAIL) LIKE '%' || UPPER(#{keyword}) || '%'
-			</otherwise>
-		</choose>
+	    SELECT COUNT(*)
+	    FROM REPORTS R
+	    JOIN MEMBER M1 ON R.MEMBER_ID = M1.MEMBER_ID
+	    JOIN MEMBER M2 ON R.TARGET_MEMBER_ID = M2.MEMBER_ID
+	    <where>
+	        <if test="keyword != null and keyword != ''">
+	            <choose>
+	                <when test="condition == 'memberId'">
+	                    AND UPPER(M1.NAME) = UPPER(#{keyword})
+	                </when>
+	                <when test="condition == 'targetMemberId'">
+	                    AND UPPER(M2.NAME) = UPPER(#{keyword})
+	                </when>
+	                <when test="condition == 'detail'">
+	                    AND UPPER(R.DETAIL) LIKE '%' || UPPER(#{keyword}) || '%'
+	                </when>
+	            </choose>
+	        </if>
+	        <if test="status != null and status != ''">
+	            AND R.STATUS = #{status}
+	        </if>
+	    </where>
 	</select>
 	
 	<!-- 필터링된 신고글 개수 -->
@@ -69,33 +76,40 @@
 	
 	<!-- 신고글 검색 조회 -->
 	<select id="searchReportsList" parameterType="hashmap" resultType="ReportsVO">
-		SELECT R.REPORTS_ID
-			  ,R.POST_ID
-			  ,R.REPLY_ID
-			  ,R.REVIEW_ID
-			  ,R.TYPE
-			  ,R.REASON
-			  ,R.DETAIL
-			  ,R.STATUS
-			  ,R.CREATED_AT
-			  ,R.RESOLVED_AT
-  			  ,M1.NAME AS MEMBER_NAME
-			  ,M2.NAME AS TARGET_MEMBER_NAME
-		FROM REPORTS R
-		JOIN MEMBER M1 ON R.MEMBER_ID = M1.MEMBER_ID
-    	JOIN MEMBER M2 ON R.TARGET_MEMBER_ID = M2.MEMBER_ID
-		<choose>
-			<when test="condition == 'memberId'">
-				WHERE UPPER(M1.NAME) = UPPER(#{keyword})
-			</when>
-			<when test="condition == 'targetMemberId'">
-				WHERE UPPER(M2.NAME) = UPPER(#{keyword})
-			</when>
-			<otherwise>
-				WHERE UPPER(R.DETAIL) LIKE '%' || UPPER(#{keyword}) || '%'
-			</otherwise>
-		</choose>
-		ORDER BY R.CREATED_AT DESC
+	    SELECT R.REPORTS_ID
+	          ,R.POST_ID
+	          ,R.REPLY_ID
+	          ,R.REVIEW_ID
+	          ,R.TYPE
+	          ,R.REASON
+	          ,R.DETAIL
+	          ,R.STATUS
+	          ,R.CREATED_AT
+	          ,R.RESOLVED_AT
+	          ,M1.NAME AS MEMBER_NAME
+	          ,M2.NAME AS TARGET_MEMBER_NAME
+	    FROM REPORTS R
+	    JOIN MEMBER M1 ON R.MEMBER_ID = M1.MEMBER_ID
+	    JOIN MEMBER M2 ON R.TARGET_MEMBER_ID = M2.MEMBER_ID
+	    <where>
+	        <if test="keyword != null and keyword != ''">
+	            <choose>
+	                <when test="condition == 'memberId'">
+	                    AND UPPER(M1.NAME) = UPPER(#{keyword})
+	                </when>
+	                <when test="condition == 'targetMemberId'">
+	                    AND UPPER(M2.NAME) = UPPER(#{keyword})
+	                </when>
+	                <when test="condition == 'detail'">
+	                    AND UPPER(R.DETAIL) LIKE '%' || UPPER(#{keyword}) || '%'
+	                </when>
+	            </choose>
+	        </if>
+	        <if test="status != null and status != ''">
+	            AND R.STATUS = #{status}
+	        </if>
+	    </where>
+	    ORDER BY R.CREATED_AT DESC
 	</select>
 	
 	<!-- 신고글 필터링 조회 -->
