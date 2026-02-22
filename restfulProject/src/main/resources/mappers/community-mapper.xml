@@ -36,15 +36,16 @@
 		SELECT COUNT(*)
 		FROM COMMUNITY_POST P
 		JOIN MEMBER M ON P.MEMBER_ID = M.MEMBER_ID
+		WHERE P.STATUS != 'B'
 		<choose>
 			<when test="condition == 'title'">
-				WHERE P.TITLE LIKE '%' || UPPER(#{keyword}) || '%'
+				AND UPPER(P.TITLE) LIKE '%' || UPPER(#{keyword}) || '%'
 			</when>
 			<when test="condition == 'writer'">
-				WHERE M.NAME = UPPER(#{keyword})
+				AND UPPER(M.NAME) = UPPER(#{keyword})
 			</when>
-			<when test="condition =='contetn'">
-				WHERE P.CONTENT LIKE '%' || UPPER(#{keyword}) || '%'
+			<when test="condition =='content'">
+				AND UPPER(P.CONTENT) LIKE '%' || UPPER(#{keyword}) || '%'
 			</when>
 		</choose>
 	</select>
@@ -53,7 +54,8 @@
 	<select id="filterListCount" resultType="_int">
 		SELECT COUNT(*)
 		FROM COMMUNITY_POST
-		WHERE CATEGORY = #{category}
+		WHERE STATUS != 'B' 
+		AND CATEGORY = #{category}
 	</select>
 	
 	<!-- 게시글 목록 조회 -->
@@ -66,8 +68,8 @@
  			  ,P.CONTENT
 			  ,P.VIEW_COUNT
 			  ,P.LIKE_COUNT
-			  ,P.COMMENT_COUNT
-			  ,P.CREATED_AT
+			  ,(SELECT COUNT(*) FROM COMMUNITY_REPLY WHERE POST_ID = P.POST_ID) COMMENT_COUNT
+			  ,P.UPDATED_AT
  			  ,P.CATEGORY
 		FROM COMMUNITY_POST P
 		JOIN MEMBER M ON P.MEMBER_ID = M.MEMBER_ID
@@ -80,9 +82,11 @@
 		SELECT P.POST_ID
  			  ,M.NAME AS NAME
  			  ,P.TITLE
+ 			  ,P.HAS_FILES
+ 			  ,P.CONTENT
 			  ,P.VIEW_COUNT
 			  ,P.LIKE_COUNT
-			  ,P.COMMENT_COUNT
+			  ,(SELECT COUNT(*) FROM COMMUNITY_REPLY WHERE POST_ID = P.POST_ID) COMMENT_COUNT
 			  ,P.UPDATED_AT
  			  ,P.CATEGORY
 		FROM COMMUNITY_POST P
@@ -90,13 +94,13 @@
 		WHERE P.STATUS != 'B'
 		<choose>
 			<when test="condition == 'title'">
-				AND P.TITLE LIKE '%' || UPPER(#{keyword}) || '%'
+				AND UPPER(P.TITLE) LIKE '%' || UPPER(#{keyword}) || '%'
 			</when>
 			<when test="condition == 'writer'">
-				AND M.NAME = UPPER(#{keyword})
+				AND UPPER(M.NAME) = UPPER(#{keyword})
 			</when>
 			<otherwise>
-				AND P.CONTENT LIKE '%' || UPPER(#{keyword}) || '%'
+				AND UPPER(P.CONTENT) LIKE '%' || UPPER(#{keyword}) || '%'
 			</otherwise>
 		</choose>
 		ORDER BY P.UPDATED_AT DESC
@@ -107,9 +111,11 @@
 		SELECT P.POST_ID
  			  ,M.NAME AS NAME
  			  ,P.TITLE
+ 			  ,P.HAS_FILES
+ 			  ,P.CONTENT
 			  ,P.VIEW_COUNT
 			  ,P.LIKE_COUNT
-			  ,P.COMMENT_COUNT
+			  ,(SELECT COUNT(*) FROM COMMUNITY_REPLY WHERE POST_ID = P.POST_ID) COMMENT_COUNT
 			  ,P.UPDATED_AT
  			  ,P.CATEGORY
 		FROM COMMUNITY_POST P

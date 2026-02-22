@@ -86,13 +86,13 @@
     	JOIN MEMBER M2 ON R.TARGET_MEMBER_ID = M2.MEMBER_ID
 		<choose>
 			<when test="condition == 'memberId'">
-				WHERE MEMBER_NAME = UPPER(#{keyword})
+				WHERE UPPER(M1.NAME) = UPPER(#{keyword})
 			</when>
 			<when test="condition == 'targetMemberId'">
-				WHERE TARGET_MEMBER_NAME = UPPER(#{keyword})
+				WHERE UPPER(M2.NAME) = UPPER(#{keyword})
 			</when>
 			<otherwise>
-				WHERE R.DETAIL LIKE '%' || UPPER(#{keyword}) || '%'
+				WHERE UPPER(R.DETAIL) LIKE '%' || UPPER(#{keyword}) || '%'
 			</otherwise>
 		</choose>
 		ORDER BY R.CREATED_AT DESC
