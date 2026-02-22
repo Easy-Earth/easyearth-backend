@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.kh.spring.attendance.controller.AttendanceController;
 import com.kh.spring.common.model.vo.PageInfo;
 import com.kh.spring.common.template.Pagination;
+import com.kh.spring.community.model.service.CommunityServiceImpl;
 import com.kh.spring.member.model.vo.MemberVO;
 import com.kh.spring.report.model.service.ReportsService;
 import com.kh.spring.report.model.vo.ReportsListDTO;
@@ -43,6 +44,7 @@ public class ReportsController {
 			description =  "condition : title(제목) / writer(작성자) / content(내용)   \n\n"
 						+ "keyword : condition에 대한 검색어   \n\n"
 						+ "type(신고 대상 유형) : POST(커뮤니티 게시글) / REPLY(커뮤니티 댓글) / REVIEW (상점 리뷰)  \n\n"
+						+ "reason(신고 사유) : 부적절한 콘텐츠 // 스팸/홍보성 // 욕설/비방 // 기타   \n\n"
 						+ "status(처리 상태) : RECEIVED(접수 완료) / RESOLVED(처리 완료) / REJECTED(반려)   \n\n"
 						+ "				-> 기본 값 : null - 관리자가 접수 처리하기 전 상태, 신고 요청만 보낸 상태")
 	@GetMapping("/list")
@@ -52,35 +54,39 @@ public class ReportsController {
 			@RequestParam(required = false) String condition,
 			@RequestParam(required = false) String keyword,
 			@RequestParam(required = false) String type,
+			@RequestParam(required = false) String reason,
 			@RequestParam(required = false) String status
 	) {
 		
-		HashMap<String, String> map = new HashMap<>();
-		map.put("condition", condition);
-		map.put("keyword", keyword);
-		map.put("type", type);
-		map.put("status", status);
-		
 		int listCount = 0;
-		int boardLimit = 5;
+		int boardLimit = 10;
 		int pageLimit = size;
+
+		HashMap<String, String> map = new HashMap<>();
 		
 		if (keyword != null && !keyword.isEmpty()) {
+			map.put("condition", condition);
+			map.put("keyword", keyword);
 			listCount = service.searchReportsCount(map);  //검색된 개수
 		}else if ((type != null && !type.isEmpty()) || 
+					(reason != null && !reason.isEmpty()) ||
 					(status != null && !status.isEmpty())) {
+			map.put("type", type);
+			map.put("reason", reason);
+			map.put("status", status);
 			listCount = service.filterReportsCount(map);  //필터링된 개수
 		}else {
 			listCount = service.reportListsCount();  //전체 개수
 		}
 		
-		PageInfo pi = Pagination.getPageInfo(listCount, currentPage, 5, size);
+		PageInfo pi = Pagination.getPageInfo(listCount, currentPage ,boardLimit, pageLimit);
 		
 		ArrayList<ReportsVO> list;
 		
 		if (keyword != null && !keyword.isEmpty()) {
 			list = service.searchReportsList(map, pi);
 		}else if ((type != null && !type.isEmpty()) || 
+					(reason != null && !reason.isEmpty()) ||
 					(status != null && !status.isEmpty())) {
 			list = service.filterReportsList(map, pi);
 		}else {
@@ -99,10 +105,7 @@ public class ReportsController {
 			ReportsVO reports = service.reportsDetail(reportsId);
 			
 			if(reports != null) {
-				Map<String, Object> map = new HashMap<>();
-				map.put("reports", reports);
-				
-				return ResponseEntity.ok(map);
+				return ResponseEntity.ok(reports);
 			}else {
 				return ResponseEntity.status(HttpStatus.NOT_FOUND)
 									 .body("해당 신고 내역을 찾을 수 없습니다.");

@@ -28,6 +28,7 @@
 	<select id="listCount" resultType="_int">
 		SELECT COUNT(*)
 		FROM COMMUNITY_POST
+		WHERE STATUS != 'B'
 	</select>
 	
 	<!-- 검색된 게시글 개수 -->
@@ -70,6 +71,7 @@
  			  ,P.CATEGORY
 		FROM COMMUNITY_POST P
 		JOIN MEMBER M ON P.MEMBER_ID = M.MEMBER_ID
+		WHERE P.STATUS != 'B'
 		ORDER BY P.UPDATED_AT DESC
 	</select>
 	
@@ -85,15 +87,16 @@
  			  ,P.CATEGORY
 		FROM COMMUNITY_POST P
 		JOIN MEMBER M ON P.MEMBER_ID = M.MEMBER_ID
+		WHERE P.STATUS != 'B'
 		<choose>
 			<when test="condition == 'title'">
-				WHERE P.TITLE LIKE '%' || UPPER(#{keyword}) || '%'
+				AND P.TITLE LIKE '%' || UPPER(#{keyword}) || '%'
 			</when>
 			<when test="condition == 'writer'">
-				WHERE M.NAME = UPPER(#{keyword})
+				AND M.NAME = UPPER(#{keyword})
 			</when>
 			<otherwise>
-				WHERE P.CONTENT LIKE '%' || UPPER(#{keyword}) || '%'
+				AND P.CONTENT LIKE '%' || UPPER(#{keyword}) || '%'
 			</otherwise>
 		</choose>
 		ORDER BY P.UPDATED_AT DESC
@@ -112,6 +115,7 @@
 		FROM COMMUNITY_POST P
 		JOIN MEMBER M ON P.MEMBER_ID = M.MEMBER_ID
 		WHERE P.CATEGORY = #{category}
+		AND P.STATUS != 'B'
 		ORDER BY P.UPDATED_AT DESC
 	</select>
 	
@@ -129,6 +133,7 @@
  				,P.CATEGORY
  				,P.ORIGIN_NAME
  				,P.CHANGE_NAME
+ 				,P.STATUS
  		FROM COMMUNITY_POST P
  		JOIN MEMBER M ON P.MEMBER_ID = M.MEMBER_ID
  		WHERE P.POST_ID = #{postId}
@@ -278,6 +283,7 @@
 			  ,M.NAME AS NAME
 			  ,CASE
 			  	WHEN R.STATUS = 'N' THEN TO_CLOB('삭제된 댓글입니다.')
+			  	WHEN R.STATUS = 'B' THEN TO_CLOB('신고된 댓글입니다.')
 			  	ELSE R.CONTENT
 			  END AS CONTENT
 			  ,R.LIKE_COUNT

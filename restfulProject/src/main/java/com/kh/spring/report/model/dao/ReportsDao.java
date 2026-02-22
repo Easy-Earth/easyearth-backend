@@ -73,6 +73,18 @@ public class ReportsDao {
 	public int reportsInsert(SqlSessionTemplate sqlSession, Map<String, Object> map) {
 		return sqlSession.insert("reportsMapper.reportsInsert", map);
 	}
+	
+	//신고 카운트 증가
+	public int increaseReportsCount(SqlSessionTemplate sqlSession, String type, int targetId) {
+		if("POST".equals(type)) {
+	        return sqlSession.update("reportsMapper.increasePostReportCount", targetId);
+	    } else if("REPLY".equals(type)) {
+	        return sqlSession.update("reportsMapper.increaseReplyReportCount", targetId);
+	    } else if("REVIEW".equals(type)) {
+	        return sqlSession.update("reportsMapper.increaseReviewReportCount", targetId);
+	    }
+	    return 0;
+	}
 
 	//신고 수정
 	public int reportsUpdate(SqlSessionTemplate sqlSession, ReportsVO reports) {
@@ -108,4 +120,6 @@ public class ReportsDao {
 	public int reportsCheck(SqlSessionTemplate sqlSession, HashMap<String, Integer> map) {
 		return sqlSession.selectOne("reportsMapper.reportsCheck",map);
 	}
+
+
 }
