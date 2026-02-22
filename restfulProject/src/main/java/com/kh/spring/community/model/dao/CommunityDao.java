@@ -23,12 +23,12 @@ public class CommunityDao {
 	
 	//검색된 게시글 개수
 	public int searchListCount(SqlSessionTemplate sqlSession, HashMap<String, String> map) {
-		return sqlSession.selectOne("communityMapper.searchListCount");
+		return sqlSession.selectOne("communityMapper.searchListCount", map);
 	}
 
 	//필터링된 게시글 개수
 	public int filterListCount(SqlSessionTemplate sqlSession, HashMap<String, String> map) {
-		return sqlSession.selectOne("communityMapper.filterListCount");
+		return sqlSession.selectOne("communityMapper.filterListCount", map);
 	}
 
 	//게시글 검색 조회

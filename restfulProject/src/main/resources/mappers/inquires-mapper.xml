@@ -18,13 +18,13 @@
 		JOIN MEMBER M ON I.MEMBER_ID = M.MEMBER_ID
 		<choose>
 			<when test="condition == 'title'">
-				WHERE I.TITLE LIKE '%' || UPPER(#{keyword}) || '%'
+				WHERE UPPER(I.TITLE) LIKE '%' || UPPER(#{keyword}) || '%'
 			</when>
 			<when test="condition == 'writer'">
-				WHERE M.NAME = UPPER(#{keyword})
+				WHERE UPPER(M.NAME) = UPPER(#{keyword})
 			</when>
 			<when test="condition == 'content'">
-				WHERE I.CONTENT LIKE '%' || UPPER(#{keyword}) || '%'
+				WHERE UPPER(I.CONTENT) LIKE '%' || UPPER(#{keyword}) || '%'
 			</when>
 		</choose>
 	</select>
@@ -71,13 +71,13 @@
 		JOIN MEMBER M ON I.MEMBER_ID = M.MEMBER_ID
 		<choose>
 			<when test="condition == 'title'">
-				WHERE I.TITLE LIKE '%' || UPPER(#{keyword}) || '%'
+				WHERE UPPER(I.TITLE) LIKE '%' || UPPER(#{keyword}) || '%'
 			</when>
 			<when test="condition == 'writer'">
-				WHERE M.NAME = UPPER(#{keyword})
+				WHERE UPPER(M.NAME) = UPPER(#{keyword})
 			</when>
 			<when test="condition == 'content'">
-				WHERE I.CONTENT LIKE '%' || UPPER(#{keyword}) || '%'
+				WHERE UPPER(I.CONTENT) LIKE '%' || UPPER(#{keyword}) || '%'
 			</when>
 		</choose>
 		ORDER BY I.IS_FAQ DESC
