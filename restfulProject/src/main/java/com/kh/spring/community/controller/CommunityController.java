@@ -67,6 +67,11 @@ public class CommunityController {
 		if (keyword != null && !keyword.isEmpty()) {
 			map.put("keyword", keyword);
 			map.put("condition", condition);
+			
+			if(category != null && !category.isEmpty()) {
+				map.put("category", category);
+			}
+			
 			listCount = service.searchListCount(map); // 검색된 개수
 			
 		}else if (category != null && !category.isEmpty()) {
@@ -80,7 +85,6 @@ public class CommunityController {
 		PageInfo pi = Pagination.getPageInfo(listCount, currentPage, boardLimit, pageLimit);
 		
 		ArrayList<CommunityPostVO> list;
-		
 		
 		if (keyword != null && !keyword.isEmpty()) {
 			list = service.searchList(map, pi);

@@ -48,6 +48,10 @@
 				AND UPPER(P.CONTENT) LIKE '%' || UPPER(#{keyword}) || '%'
 			</when>
 		</choose>
+		
+		<if test="category != null and category != ''">
+			AND P.CATEGORY = #{category}
+		</if>
 	</select>
 	
 	<!-- 필터링된 게시글 개수 -->
@@ -103,6 +107,10 @@
 				AND UPPER(P.CONTENT) LIKE '%' || UPPER(#{keyword}) || '%'
 			</otherwise>
 		</choose>
+		
+		<if test="category != null and category != ''">
+	        AND P.CATEGORY = #{category}
+	    </if>
 		ORDER BY P.UPDATED_AT DESC
 	</select>
 	

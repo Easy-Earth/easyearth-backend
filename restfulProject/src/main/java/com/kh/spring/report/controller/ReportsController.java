@@ -62,12 +62,20 @@ public class ReportsController {
 		int boardLimit = 10;
 		int pageLimit = size;
 
-		HashMap<String, String> map = new HashMap<>();
+		HashMap<String, Object> map = new HashMap<>();
 		
 		if (keyword != null && !keyword.isEmpty()) {
 			map.put("condition", condition);
 			map.put("keyword", keyword);
 			map.put("status", status);
+			
+			if (type != null && !type.isEmpty()) {
+				map.put("type", type);
+			}
+		    if (reason != null && !reason.isEmpty()) {
+		    	map.put("reason", reason);
+		    }
+			
 			listCount = service.searchReportsCount(map);  //검색된 개수
 		}else if ((type != null && !type.isEmpty()) || 
 					(reason != null && !reason.isEmpty()) ||

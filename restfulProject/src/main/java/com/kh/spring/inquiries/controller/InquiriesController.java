@@ -56,6 +56,11 @@ public class InquiriesController {
 		if (keyword != null && !keyword.isEmpty()) {
 			map.put("keyword", keyword);
 			map.put("condition", condition);
+			
+			if(status != null && !status.isEmpty()) {
+				map.put("status", status);
+			}
+			
 			listCount = service.searchListCount(map); // 검색된 개수
 			
 		}else if (status != null && !status.isEmpty()) {

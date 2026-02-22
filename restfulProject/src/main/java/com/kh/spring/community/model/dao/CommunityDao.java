@@ -226,19 +226,4 @@ public class CommunityDao {
 	}
 
 
-
-
-
-
-	
-
-	
-	
-	
-
-
-
-
-
-
 }

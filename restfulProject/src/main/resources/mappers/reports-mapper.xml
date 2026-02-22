@@ -34,6 +34,12 @@
 	        <if test="status != null and status != ''">
 	            AND R.STATUS = #{status}
 	        </if>
+	        <if test="type != null and type != ''">
+	            AND R.TYPE = #{type}
+	        </if>
+	        <if test="reason != null and reason != ''">
+	            AND R.REASON = #{reason}
+	        </if>
 	    </where>
 	</select>
 	
@@ -107,6 +113,12 @@
 	        </if>
 	        <if test="status != null and status != ''">
 	            AND R.STATUS = #{status}
+	        </if>
+	        <if test="type != null and type != ''">
+	            AND R.TYPE = #{type}
+	        </if>
+	        <if test="reason != null and reason != ''">
+	            AND R.REASON = #{reason}
 	        </if>
 	    </where>
 	    ORDER BY R.CREATED_AT DESC
