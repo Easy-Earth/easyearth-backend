@@ -153,6 +153,48 @@ public class ChatServiceImpl implements ChatService {
                      .orElse(null);
              
              if (existingRoom != null) {
+                 // [Bug Fix] 상대방이 이미 방에 참여 중인지 확인 (나갔거나 거절한 경우 재초대 필요)
+                 ChatRoomUserEntity targetUser = chatRoomUserRepository.findByChatRoomIdAndMemberId(existingRoom.getId(), roomDto.getTargetMemberId())
+                         .orElse(null);
+                 
+                 // 참여 정보가 없거나(퇴장), PENDING/ACCEPTED 상태가 아닌 경우(거절 등) 재초대
+                 if (targetUser == null || !"ACCEPTED".equals(targetUser.getInvitationStatus())) {
+                     log.info("📢 1:1 채팅방 재초대 프로세스 시작 - roomId: {}, targetId: {}", existingRoom.getId(), roomDto.getTargetMemberId());
+                     
+                     MemberEntity targetMember = memberRepository.findById(roomDto.getTargetMemberId())
+                             .orElseThrow(() -> new IllegalArgumentException("대상 회원을 찾을 수 없습니다"));
+                     
+                     // 기존 레코드가 있다면 삭제 (새로운 참여 시간 등을 위해)
+                     if (targetUser != null) {
+                         chatRoomUserRepository.delete(targetUser);
+                         chatRoomUserRepository.flush();
+                     }
+
+                     // PENDING 상태로 다시 추가
+                     addChatRoomUser(existingRoom, targetMember, "MEMBER", "PENDING");
+                     
+                     // 생성자 정보 조회
+                     MemberEntity creator = memberRepository.findById(roomDto.getCreatorId()).orElse(null);
+                     
+                     // 초대 알림 발송
+                     if (creator != null) {
+                         ChatNotificationDto notification = ChatNotificationDto.builder()
+                                .targetMemberId(targetMember.getId())
+                                .type("INVITATION")
+                                .chatRoomId(existingRoom.getId())
+                                .senderName(creator.getName())
+                                .content(creator.getName() + "님이 1:1 대화를 요청했습니다.")
+                                .createdAt(LocalDateTime.now())
+                                .url("/chat/room/" + existingRoom.getId())
+                                .build();
+
+                         eventPublisher.publishEvent(new ChatEvent(targetMember.getId(), notification));
+                         
+                         // 시스템 메시지 기록: "OO님이 대화를 요청했습니다."
+                         saveSystemMessage(existingRoom, creator.getName() + "님이 1:1 대화를 요청했습니다.");
+                     }
+                 }
+
                  return ChatRoomDto.builder()
                          .chatRoomId(existingRoom.getId())
                          .title(existingRoom.getTitle())
@@ -1278,7 +1320,17 @@ public class ChatServiceImpl implements ChatService {
         memberEvent.put("type", "MEMBER_UPDATE");
         memberEvent.put("chatRoomId", roomId);
         
+        // 채팅방 전체에 알림
         eventPublisher.publishEvent(new ChatEvent("/topic/chat/room/" + roomId, memberEvent));
+        
+        // 참여 중인 모든 멤버들의 채팅 목록 갱신을 위해 개인 채널로 알림 전송
+        List<ChatRoomUserEntity> allMembers = chatRoomUserRepository.findAllByChatRoomId(roomId);
+        for (ChatRoomUserEntity member : allMembers) {
+            Map<String, Object> refreshEvent = new HashMap<>();
+            refreshEvent.put("type", "CHAT_LIST_REFRESH");
+            refreshEvent.put("chatRoomId", roomId);
+            eventPublisher.publishEvent(new ChatEvent(member.getMember().getId(), refreshEvent));
+        }
         
         log.info("✅ 초대 수락 완료: memberId={}, memberName={}", memberId, memberName);
     }
@@ -1302,10 +1354,25 @@ public class ChatServiceImpl implements ChatService {
         chatRoomUserRepository.delete(roomUser);
         
         log.info("✅ 초대 거절 완료: memberId={}, 레코드 삭제됨", memberId);
-        
+    
         // 4. 시스템 메시지 전송: "OO님이 초대를 거절했습니다"
         String memberName = roomUser.getMember().getName();
         saveSystemMessage(roomUser.getChatRoom(), memberName + "님이 초대를 거절했습니다.");
+
+        // 5. 멤버 변경 이벤트 전송
+        Map<String, Object> memberEvent = new HashMap<>();
+        memberEvent.put("type", "MEMBER_UPDATE");
+        memberEvent.put("chatRoomId", roomId);
+        eventPublisher.publishEvent(new ChatEvent("/topic/chat/room/" + roomId, memberEvent));
+
+        // 참여 중인 기존 멤버들에게 목록 갱신 알림
+        List<ChatRoomUserEntity> allMembers = chatRoomUserRepository.findAllByChatRoomId(roomId);
+        for (ChatRoomUserEntity member : allMembers) {
+            Map<String, Object> refreshEvent = new HashMap<>();
+            refreshEvent.put("type", "CHAT_LIST_REFRESH");
+            refreshEvent.put("chatRoomId", roomId);
+            eventPublisher.publishEvent(new ChatEvent(member.getMember().getId(), refreshEvent));
+        }
     }
 
     // 프로필 이미지 변경 (채팅 전용)
