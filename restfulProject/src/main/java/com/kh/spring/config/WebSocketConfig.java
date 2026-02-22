@@ -14,6 +14,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     //[연결 주소] 터널 입구를 "/ws-chat"로 설정
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
+        // 1. 순수 웹소켓용 엔드포인트 추가 (시크릿 창 등 타사 쿠키 차단 환경 대비)
+        registry.addEndpoint("/ws-chat")
+                .setAllowedOriginPatterns("*");
+
+        // 2. 기존 브라우저 호환성을 위한 SockJS 엔드포인트 유지
         registry.addEndpoint("/ws-chat")
                 .setAllowedOriginPatterns("*")
                 .withSockJS();
