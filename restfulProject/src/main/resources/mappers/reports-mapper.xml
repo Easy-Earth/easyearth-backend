@@ -158,44 +158,28 @@
 	
 	<!-- 신고 등록 -->
 	<insert id="reportsInsert" parameterType="map">
-	    INSERT INTO REPORTS (
-	        REPORTS_ID
-	        ,MEMBER_ID
-	        ,TARGET_MEMBER_ID
-	        ,TYPE
-	        ,POST_ID
-	        ,REPLY_ID
-	        ,REVIEW_ID
-	        ,REASON
-	        ,DETAIL
-	    ) VALUES (
-	        REPORTS_ID_SEQ.NEXTVAL
-	        ,#{memberId}
-	        ,#{targetMemberId}
-	        ,#{type}
-	        ,<choose>
-	            <when test="type == 'REPLY'">
-	                (SELECT POST_ID FROM COMMUNITY_REPLY WHERE REPLY_ID = #{replyId})
-	            </when>
-	            <when test="type == 'REVIEW'">
-	                (SELECT PRODUCT_ID FROM SHOP_REVIEW WHERE REVIEW_ID = #{reviewId})
-	            </when>
-	            <when test="postId != null and postId != 0">
-	                #{postId}
-	            </when>
-	            <otherwise>NULL</otherwise>
-	        </choose>,
-	        <choose>
-	            <when test="replyId == null or replyId == 0">NULL</when>
-	            <otherwise>#{replyId}</otherwise>
-	        </choose>,
-	        <choose>
-	            <when test="reviewId == null or reviewId == 0">NULL</when>
-	            <otherwise>#{reviewId}</otherwise>
-	        </choose>
-	        ,#{reason}
-	        ,#{detail}
-	    )
+		INSERT INTO REPORTS (
+		REPORTS_ID, MEMBER_ID, TARGET_MEMBER_ID, TYPE,
+		POST_ID, REPLY_ID, REVIEW_ID, REASON, DETAIL
+		) VALUES (
+		REPORTS_ID_SEQ.NEXTVAL, #{memberId}, #{targetMemberId}, #{type},
+		<choose>
+			<when test="type == 'REPLY'">
+				(SELECT POST_ID FROM COMMUNITY_REPLY WHERE REPLY_ID = #{replyId})
+			</when>
+			<when test="type == 'POST'"> #{postId}
+			</when>
+			<otherwise>NULL</otherwise> </choose>,
+		<choose>
+			<when test="replyId != null and replyId != 0">#{replyId}</when>
+			<otherwise>NULL</otherwise>
+		</choose>,
+		<choose>
+			<when test="reviewId != null and reviewId != 0">#{reviewId}</when>
+			<otherwise>NULL</otherwise>
+		</choose>,
+		#{reason}, #{detail}
+		)
 	</insert>
  	
  	<!--

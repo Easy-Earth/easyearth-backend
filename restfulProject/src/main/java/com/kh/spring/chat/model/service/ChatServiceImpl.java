@@ -1,4 +1,4 @@
-﻿package com.kh.spring.chat.model.service;
+package com.kh.spring.chat.model.service;
 
 import java.time.LocalDateTime;
 import java.util.Comparator;
@@ -489,7 +489,7 @@ public class ChatServiceImpl implements ChatService {
     
     // [동시성 제어] 마지막 메시지 업데이트 (OptimisticLock 재시도)
     @CacheEvict(value = "chatRoomDetails", key = "#roomId")
-    private void updateLastMessageWithRetry(Long roomId, String content, LocalDateTime createdAt, String messageType) {
+    public void updateLastMessageWithRetry(Long roomId, String content, LocalDateTime createdAt, String messageType) {
         int maxRetries = 3;
         int retryCount = 0;
         
