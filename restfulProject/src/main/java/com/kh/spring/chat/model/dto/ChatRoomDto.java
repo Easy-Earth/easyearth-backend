@@ -20,15 +20,16 @@ public class ChatRoomDto {
     private String title;
     private String roomType; // SINGLE, GROUP
     private String lastMessageContent;
-    private String lastMessageType; // ✨ [New] 메시지 타입 (TEXT, IMAGE, FILE...)
+    private String lastMessageType; // 메시지 타입 (TEXT, IMAGE, FILE...)
     private LocalDateTime lastMessageAt;
-    private String roomImage; // ✨ [New] 채팅방 이미지 URL
+    private String roomImage; // 채팅방 이미지 URL
     
     // Frontend 편의를 위한 추가 필드
     private int memberCount; // 참여 인원 수
     private String otherMemberName; // 1:1 채팅일 경우 상대방 이름
     private String otherMemberProfile; // 1:1 채팅일 경우 상대방 프로필
     private int unreadCount; // 안 읽은 메시지 수
+    private Long myLastReadMessageId; // 내가 마지막으로 읽은 메시지 ID
     
     // 공지 관련 필드
     private String noticeContent; // 공지 내용

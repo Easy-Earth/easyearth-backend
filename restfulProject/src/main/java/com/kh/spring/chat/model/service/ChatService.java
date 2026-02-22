@@ -21,13 +21,13 @@ public interface ChatService {
     ChatRoomDto createChatRoom(ChatRoomDto roomDto);
 
     // 채팅방 상세 조회
-    ChatRoomDto selectChatRoom(Long roomId);
+    ChatRoomDto selectChatRoom(Long roomId, Long memberId);
 
     // 메시지 저장
     ChatMessageDto saveMessage(ChatMessageDto messageDto);
 
     // 채팅방 메시지 내역 조회 (페이징)
-    List<ChatMessageDto> selectMessageList(Long roomId, Long cursorId, Long memberId);
+    List<ChatMessageDto> selectMessageList(Long roomId, Long cursorId, Long memberId, int limit);
     
     // 메시지 읽음 처리
     void updateReadStatus(Long roomId, Long memberId, Long lastMessageId);
@@ -41,8 +41,8 @@ public interface ChatService {
     // 멤버 강퇴
     void kickMember(Long chatRoomId, Long targetMemberId, Long requesterId);
     
-    // 메시지 삭제 (Soft Delete)
-    void softDeleteMessage(Long messageId, Long memberId);
+    // 메시지 삭제 (Soft Delete) — requesterId: 방장 권한 삭제 시 전달
+    void softDeleteMessage(Long messageId, Long memberId, Long requesterId);
     
     // 채팅방 공지 관리 (설정/해제)
     void setNotice(Long roomId, Long memberId, Long messageId);

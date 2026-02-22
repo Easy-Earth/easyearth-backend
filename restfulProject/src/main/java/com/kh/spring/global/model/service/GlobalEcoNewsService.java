@@ -40,14 +40,14 @@ public class GlobalEcoNewsService {
             "https://rss.nytimes.com/services/xml/rss/nyt/Weather.xml"
     );
 
-    // [뉴스 조회] 캐시 데이터 반환 (없으면 갱신)
+    // 뉴스 조회 캐시 데이터 반환 (없으면 갱신)
     public String getGlobalEcoNews() {
         // 캐시 확인 (String 타입으로 로드)
         String cached = fileCacheService.load(CACHE_FILE, String.class);
         
         // 캐시가 존재하고 비어있지 않은 경우
         if (cached != null && !cached.isEmpty()) {
-            // [중요] 구버전 캐시(배열 '[')인 경우 호환되지 않으므로 갱신
+            // 구버전 캐시(배열 '[')인 경우 호환되지 않으므로 갱신
             if (cached.trim().startsWith("[")) {
                 log.info(">>> 구버전 뉴스 캐시 감지. 갱신을 수행합니다.");
                 return refreshGlobalNews();
@@ -58,7 +58,7 @@ public class GlobalEcoNewsService {
         return refreshGlobalNews();
     }
 
-    // [뉴스 갱신] API 호출 및 파일 저장
+    // 뉴스 갱신 API 호출 및 파일 저장
     public String refreshGlobalNews() {
         log.info(">>> 글로벌 환경 뉴스 갱신 시작...");
         String newData = fetchGlobalNewsFromApi();
@@ -73,7 +73,7 @@ public class GlobalEcoNewsService {
         return newData;
     }
 
-    // [뉴스 수집] NYT RSS 파싱 -> Gemini 번역/요약
+    // 뉴스 수집 NYT RSS 파싱 -> Gemini 번역/요약
     private String fetchGlobalNewsFromApi() {
         try {
             RestTemplate restTemplate = new RestTemplate();
@@ -179,7 +179,7 @@ public class GlobalEcoNewsService {
         }
     }
 
-    // [Helper] XML 태그 값 추출
+    // Helper XML 태그 값 추출
     private String getTagValue(String tag, Element element) {
         NodeList nodeList = element.getElementsByTagName(tag);
         if (nodeList != null && nodeList.getLength() > 0) {

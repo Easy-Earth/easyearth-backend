@@ -17,9 +17,8 @@ public class ChatEventListener {
     private final SimpMessagingTemplate messagingTemplate;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handleInvitationEvent(ChatInvitationEvent event) {
-        log.info("🔔 [Transaction Committed] Sending Invitation Notification to user: {}", event.getTargetMemberId());
-        
-        messagingTemplate.convertAndSend("/topic/user/" + event.getTargetMemberId(), event.getNotification());
+    public void handleChatEvent(ChatEvent event) {
+        log.info("🔔 [Transaction Committed] Sending WebSocket Event to: {}", event.getDestination());
+        messagingTemplate.convertAndSend(event.getDestination(), event.getPayload());
     }
 }

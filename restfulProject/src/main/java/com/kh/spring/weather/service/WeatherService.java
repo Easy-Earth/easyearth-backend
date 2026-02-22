@@ -40,7 +40,7 @@ public class WeatherService {
 
     // --- Public Methods (Cache Read) ---
 
-    // [단기예보] 조회 (캐시 우선)
+    // 단기예보 조회 (캐시 우선)
     public List<ForecastDto> getForecastList() {
         // 캐시 확인
         ForecastDto[] cached = fileCacheService.load(CACHE_FORECAST, ForecastDto[].class);
@@ -53,7 +53,7 @@ public class WeatherService {
 
     // --- Private Fetch Methods & Refresh Logic ---
     
-    // [단기예보] API 호출 및 캐시 갱신
+    // 단기예보 API 호출 및 캐시 갱신
     public List<ForecastDto> refreshForecastList() {
         List<ForecastDto> data = fetchForecastList(); // API 호출
         if (!data.isEmpty()) {
@@ -62,7 +62,7 @@ public class WeatherService {
         return data;
     }
 
-    // [단기예보] 공공데이터 API 데이터 조회
+    // 단기예보 공공데이터 API 데이터 조회
     private List<ForecastDto> fetchForecastList() {
         String serviceKey = "0520e76efb72e41ae374ba77a910d0264246d16b23c171e4e817e576b2a1f52d";
         LocalDateTime now = LocalDateTime.now(); // 현재 시간
@@ -114,7 +114,7 @@ public class WeatherService {
     }
 	
 
-    // [기상관측] 조회 (캐시 우선)
+    // 기상관측 조회 (캐시 우선)
     public List<ObsDto> getObsList() {
         ObsDto[] cached = fileCacheService.load(CACHE_OBS, ObsDto[].class);
         if (cached != null) {
@@ -123,7 +123,7 @@ public class WeatherService {
         return refreshObsList();
     }
 
-    // [기상관측] API 호출 및 캐시 갱신
+    // 기상관측 API 호출 및 캐시 갱신
     public List<ObsDto> refreshObsList() {
         List<ObsDto> data = fetchObsList();
         if (!data.isEmpty()) {
@@ -132,7 +132,7 @@ public class WeatherService {
         return data;
     }
 
-    // [기상관측] 기상청 HUB API 데이터 조회
+    // 기상관측 기상청 HUB API 데이터 조회
     private List<ObsDto> fetchObsList() {
         StringBuilder response = new StringBuilder();
 
@@ -167,7 +167,7 @@ public class WeatherService {
         return parseTextToObsList(response.toString());
     }
 
-    // [Helper] 텍스트 -> ObsDto 파싱
+    // Helper 텍스트 -> ObsDto 파싱
     private List<ObsDto> parseTextToObsList(String rawData) {
         return rawData.lines()
         .filter(line -> !line.startsWith("#")) // 주석 라인 제거
@@ -208,7 +208,7 @@ public class WeatherService {
         try { return Integer.parseInt(s); } catch (Exception e) { return null; }
     }
     
-    // [미세먼지] 조회 (캐시 우선)
+    // 미세먼지 조회 (캐시 우선)
     public List<DustDto> getDustList() {
         DustDto[] cached = fileCacheService.load(CACHE_DUST, DustDto[].class);
         if (cached != null) {
@@ -217,7 +217,7 @@ public class WeatherService {
         return refreshDustList();
     }
 
-    // [미세먼지] API 호출 및 캐시 갱신
+    // 미세먼지 API 호출 및 캐시 갱신
     public List<DustDto> refreshDustList() {
         List<DustDto> data = fetchDustList();
         if (!data.isEmpty()) {
@@ -226,7 +226,7 @@ public class WeatherService {
         return data;
     }
 
-    // [미세먼지] 기상청 HUB API 데이터 조회
+    // 미세먼지 기상청 HUB API 데이터 조회
     private List<DustDto> fetchDustList() {
         StringBuilder response = new StringBuilder();
         
@@ -260,7 +260,7 @@ public class WeatherService {
         return parseTextToDustList(response.toString());
     }
 
-    // [Helper] 텍스트 -> DustDto 파싱
+    // Helper 텍스트 -> DustDto 파싱
     private List<DustDto> parseTextToDustList(String rawData) {
         return rawData.lines()
                 .filter(line -> !line.startsWith("#")) // 주석 라인 제거
@@ -281,7 +281,7 @@ public class WeatherService {
                 .collect(Collectors.toList());
     }
 
-    // [자외선] 조회 (캐시 우선)
+    // 자외선 조회 (캐시 우선)
     public List<UvDto> getUvList() {
         UvDto[] cached = fileCacheService.load(CACHE_UV, UvDto[].class);
         if (cached != null) {
@@ -290,7 +290,7 @@ public class WeatherService {
         return refreshUvList();
     }
 
-    // [자외선] API 호출 및 캐시 갱신
+    // 자외선 API 호출 및 캐시 갱신
     public List<UvDto> refreshUvList() {
         List<UvDto> data = fetchUvList();
         if (!data.isEmpty()) {
@@ -299,7 +299,7 @@ public class WeatherService {
         return data;
     }
 
-    // [자외선] 기상청 HUB API 데이터 조회
+    // 자외선 기상청 HUB API 데이터 조회
     private List<UvDto> fetchUvList() {
         StringBuilder response = new StringBuilder();
         
@@ -331,7 +331,7 @@ public class WeatherService {
         return parseTextToUvList(response.toString());
     }
 
-    // [Helper] 텍스트 -> UvDto 파싱
+    // Helper 텍스트 -> UvDto 파싱
     private List<UvDto> parseTextToUvList(String rawData) {
         return rawData.lines()
                 .filter(line -> !line.startsWith("#")) // 주석 라인 제거
@@ -357,7 +357,7 @@ public class WeatherService {
                 .collect(Collectors.toList());
     }
 
-    // [테스트] 데이터 통합 조회
+    // 테스트 데이터 통합 조회
     public Map<String, Object> getCheckWeather() {
         Map<String, Object> weatherData = new HashMap<>();
         
@@ -386,7 +386,7 @@ public class WeatherService {
         return weatherData;
     }
 
-    // [Helper] 예보 기준 날짜 계산
+    // Helper 예보 기준 날짜 계산
     private String getBaseDate(LocalDateTime now) {
         // 02:10 이전이면 어제 날짜 사용
         if (now.getHour() < 2 || (now.getHour() == 2 && now.getMinute() < 10)) {
@@ -395,7 +395,7 @@ public class WeatherService {
         return now.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
     }
 
-    // [Helper] 예보 기준 시간 계산
+    // Helper 예보 기준 시간 계산
     private String getBaseTime(LocalDateTime now) {
         // Base Time: 02, 05, 08, 11, 14, 17, 20, 23 (3시간 간격)
         // API 제공 시간: Base Time + 10분 뒤 (02:10, 05:10...)
@@ -425,7 +425,7 @@ public class WeatherService {
         return String.format("%02d00", baseHour);
     }
 
-    // [스케줄러] 전체 데이터 강제 갱신
+    // 스케줄러 전체 데이터 강제 갱신
     public void refreshAllWeatherData() {
         refreshForecastList();
         refreshObsList();
