@@ -66,29 +66,34 @@ public class ChatController {
     // 1. 실시간 채팅 (WebSocket/STOMP)
     // ======================================================================
     
-    // 실시간 메시지 전송 (WebSocket)
+    // ======================================================================
+    // 1. 실시간 채팅 (WebSocket/STOMP)
+    // ======================================================================
+    
+    // [웹소켓 진입점] 프론트엔드가 "/app/chat/message" 목적지로 메시지를 쏘면 이 메서드가 낚아챕니다.
     @MessageMapping("/chat/message")
     public void sendMessage(ChatMessageDto messageDto) {
         log.info("메시지 수신: {}", messageDto);
         
         try {
-            // 1. DB에 메시지 저장 (트랜잭션 처리)
+            // 1. DB에 메시지 먼저 안전하게 저장합니다. (누가 보냈는지, 내용은 뭔지 테이블에 INSERT)
             ChatMessageDto savedMessage = chatService.saveMessage(messageDto);
             log.info("✅ 저장된 메시지 - messageId: {}, unreadCount: {}", 
                 savedMessage.getMessageId(), savedMessage.getUnreadCount());
             
-            // 2. 구독자들에게 메시지 전송 (채팅방 안)
+            // 2. 메시지가 DB에 잘 저장되었다면, 이 방("/topic/chat/room/방번호")을 구독(쳐다보고)하고 있는 모든 화면(프론트)에 메시지를 쏴줍니다.
             messagingTemplate.convertAndSend("/topic/chat/room/" + messageDto.getChatRoomId(), savedMessage);
             
-            // 3. 글로벌 알림 전송 (Service에서 비동기 처리, 트랜잭션 경계 분리)
+            // 3. 메시지 발송과는 별개로, '안 읽음 뱃지'나 '푸시 알람'등을 처리하기 위한 이벤트를 백그라운드에서 동작시킵니다.
             chatService.sendGlobalNotifications(savedMessage);
             
         } catch (IllegalArgumentException e) {
             log.error("메시지 전송 실패 (유효성 검증): {}", e.getMessage());
             
-            // 에러 메시지 전송 (사용자에게 알림)
+            // [에러 처리 1] 만약 방에 없는 회원이거나, 글자수가 넘쳤을 때 등 에러가 나면
+            // 방 전체가 아니라, 메시지를 '보냈던 사람 한 명'에게만 1:1로 에러 사유를 전송해서 팝업을 띄우게 합니다.
             ChatMessageDto errorMsg = ChatMessageDto.builder()
-                    .messageType("ERROR") // [Fix] type -> messageType
+                    .messageType("ERROR") // 에러 타입 명시
                     .content(e.getMessage())
                     .chatRoomId(messageDto.getChatRoomId())
                     .build();
@@ -96,8 +101,10 @@ public class ChatController {
             
         } catch (Exception e) {
             log.error("메시지 전송 중 알 수 없는 오류 발생", e);
+            
+             // [에러 처리 2] DB가 죽었거나 알 수 없는 서버 에러일 때도 마찬가지로 당사자에게 에러를 알립니다.
              ChatMessageDto errorMsg = ChatMessageDto.builder()
-                    .messageType("ERROR") // [Fix] type -> messageType
+                    .messageType("ERROR") 
                     .content("메시지 전송 중 오류가 발생했습니다.")
                     .chatRoomId(messageDto.getChatRoomId())
                     .build();
@@ -195,58 +202,60 @@ public class ChatController {
     
     private final ChatFileUtil chatFileUtil; 
 
-    // 파일 업로드 (이미지/파일)
-    @Operation(summary = "채팅 파일 업로드", description = "이미지/파일을 업로드하고 URL을 반환받습니다. (저장위치: /uploadFiles/chat/message/)")
+    // 파일 업로드 (이미지 및 일반 파일)
+    // 채팅에서 "사진전송" 버튼을 누르면 웹소켓이 아니라 1회성 HTTP 통신으로 이 메서드가 실행됩니다. (멀티파트 폼 데이터 방식)
+    @Operation(summary = "채팅 파일 업로드", description = "이미지/파일을 서버 하드디스크에 저장하고, 꺼내볼 수 있는 URL 주소를 문자열로 응답합니다.")
     @PostMapping(value = "/upload", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) {
         try {
-            // [보안] 파일 크기 검증 (10MB 제한)
+            // [보안 검증 1] 파일 크기 제한 (10MB 이상 업로드 방지하여 서버 터짐 예방)
             if (file.getSize() > 10 * 1024 * 1024) {
                 return ResponseEntity.badRequest().body("파일 크기는 10MB를 초과할 수 없습니다");
             }
             
-            // [보안] 파일명 검증
+            // [보안 검증 2] 파일명 자체가 없는 깡통 파일인지 검사
             String originalFilename = file.getOriginalFilename();
             if (originalFilename == null || originalFilename.isEmpty()) {
                 return ResponseEntity.badRequest().body("파일명이 유효하지 않습니다");
             }
             
-            // [보안] 확장자 존재 여부 검증
+            // [보안 검증 3] .jpg, .png 처럼 점(.)이 없는 파일 거르기
             if (!originalFilename.contains(".")) {
                 return ResponseEntity.badRequest().body("파일 확장자가 필요합니다");
             }
             
-            // [보안] 파일 확장자 검증
+            // [보안 검증 4] 관리자(개발자)가 허락한 안전한 확장자만 화이트리스트 검사 (해킹 파일.exe 등 원천 차단)
             String ext = originalFilename.substring(originalFilename.lastIndexOf(".")).toLowerCase();
             List<String> allowedExts = Arrays.asList(".jpg", ".jpeg", ".png", ".gif", ".pdf", ".txt", ".zip");
             if (!allowedExts.contains(ext)) {
                 return ResponseEntity.badRequest().body("허용되지 않는 파일 확장자입니다");
             }
             
-            // [보안] MIME 타입 검증 (확장자 위장 방지)
+            // [보안 검증 5] 파일의 실제 내용물(MIME TYPE) 검증 (이름만 .jpg로 바꾼 바이러스 방지)
             String contentType = file.getContentType();
             if (contentType == null) {
                 return ResponseEntity.badRequest().body("파일 타입을 확인할 수 없습니다");
             }
             
             List<String> allowedMimes = Arrays.asList(
-                "image/jpeg", "image/png", "image/gif",  // 이미지
-                "application/pdf",                        // PDF
-                "text/plain",                             // 텍스트
-                "application/zip", "application/x-zip-compressed"  // ZIP
+                "image/jpeg", "image/png", "image/gif",  // 이미지류
+                "application/pdf",                        // 문서류
+                "text/plain",                             
+                "application/zip", "application/x-zip-compressed"  // 압축류
             );
             
             if (!allowedMimes.contains(contentType)) {
                 return ResponseEntity.badRequest().body("허용되지 않는 파일 형식입니다 (MIME: " + contentType + ")");
             }
             
-        	// "chat/message" 폴더에 저장
+            // 모든 검문소를 통과했다면, 실제 하드디스크의 "chat/message" 폴더에 저장하라고 유틸 클래스에 위임합니다.
             String savedFileName = chatFileUtil.saveFile(file, "chat/message");
             
-            // 접근 가능한 URL 반환 (/chat/file/message/파일명)
+            // 프론트엔드가 <img src="/chat/file/message/어쩌구저쩌구.jpg"> 로 화면에 띄울 수 있도록 경로 문자열만 반환합니다.
             String fileUrl = "/chat/file/message/" + savedFileName;
             
             return ResponseEntity.ok(fileUrl);
+            
         } catch (Exception e) {
             log.error("File Upload Failed", e);
             return ResponseEntity.internalServerError().body("Upload Failed");

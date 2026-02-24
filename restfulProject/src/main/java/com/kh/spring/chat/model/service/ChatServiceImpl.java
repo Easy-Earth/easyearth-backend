@@ -237,41 +237,46 @@ public class ChatServiceImpl implements ChatService {
                 .build();
     }
 
-    // 채팅방 입장
+    // [핵심 기능 1] 채팅방 입장 로직
+    // 유저가 방 목록에서 특정 방을 클릭하거나, 새로운 방에 초대받아 들어갈 때 실행됩니다.
     @Override
-    @CacheEvict(value = "chatRoomDetails", key = "#roomId")
+    @CacheEvict(value = "chatRoomDetails", key = "#roomId") // 방명부가 바뀌었으니 기존 캐시(임기저장소)를 날려버려 최신화합니다.
     public void joinChatRoom(Long roomId, Long memberId) {
-        // 이미 참여 중인지 확인(db 조회)
+        
+        // 1. 이미 이 방의 명부(ChatRoomUserEntity)에 내 이름이 있는지 DB를 뒤져봅니다.
         ChatRoomUserEntity existingUser = chatRoomUserRepository.findByChatRoomIdAndMemberId(roomId, memberId).orElse(null);
+        
         if (existingUser != null) {
-            // 이미 존재하지만 PENDING 상태라면
+            // 2. 이미 내 이름이 명부에 있는데, 아직 수락 안 한 '대기 상태(PENDING)'라면?
             if ("PENDING".equals(existingUser.getInvitationStatus())) {
-                // [변경] GROUP 채팅방은 초대를 수락해야만 입장 가능 (자동 수락 방지)
+                
+                // [변경점: 그룹 채팅 제한] 단톡방(GROUP)은 "들어갈게요!" 버튼을 눌러야만 들어갈 수 있도록 강제합니다. (자동 끌려감 방지)
                 if ("GROUP".equals(existingUser.getChatRoom().getRoomType())) {
                     throw new IllegalArgumentException("초대를 수락해야 입장할 수 있습니다.");
                 }
 
-                // SINGLE 채팅방은 기존 로직 유지 (들어가면 자동 수락)
+                // 1:1(SINGLE) 갠톡방은 방을 열기만 해도 자동으로 초대를 '수락(ACCEPTED)'한 것으로 처리해버립니다.
                 existingUser.setInvitationStatus("ACCEPTED");
                 chatRoomUserRepository.save(existingUser);
                 
-                // [System Message] 초대 수락 메시지
+                // 시스템(Admin)의 입을 빌려 "OOO님이 초대를 수락했습니다" 라는 회색 안내 문구를 방 전체에 뿌려줍니다.
                 saveSystemMessage(existingUser.getChatRoom(), existingUser.getMember().getName() + "님이 초대를 수락했습니다.");
             }
-            return;
+            return; // 이미 들어와서 처리 끝났으니 여기서 메서드를 종료합니다.
         }
 
-        //참여중이라면 채팅방과 멤버 정보를 매핑 엔티티에 저장
+        // 3. 만약 명부에 내 이름이 아예 없다면? (완전 처음 들어오는 상황)
+        // 진짜 있는 방이 맞는지, 진짜 있는 회원이 맞는지 한 번 더 깐깐하게 DB에서 조회합니다.
         ChatRoomEntity chatRoom = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다"));
         
         MemberEntity member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다"));
 
-        // 공통 메서드 사용
+        // 4. 이 방의 참여자 명단 테이블(ChatRoomUserEntity)에 내 이름을 새로 써넣습니다. (일반 멤버 자격, 수락 상태)
         addChatRoomUser(chatRoom, member, "MEMBER", "ACCEPTED");
         
-        // [System Message] 입장 메시지 생성
+        // 5. "OOO님이 들어왔습니다." 라는 입장 환영 회색 시스템 문구를 띄워줍니다.
         saveSystemMessage(chatRoom, member.getName() + "님이 들어왔습니다.");
     }
 
@@ -405,20 +410,22 @@ public class ChatServiceImpl implements ChatService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "채팅방을 찾을 수 없습니다."));
     }
     
-    // 메시지 저장
+    // [핵심 기능 2] 메시지 저장 로직
+    // 누군가 "엔터"를 쳐서 메시지가 백엔드 컨트롤러에 도달하면 이 메서드가 호출됩니다. (가장 많이 실행되는 함수 중 하나)
     @Override
-    @Transactional
+    @Transactional // 도중에 에러가 나면 보낸 메시지를 싹 다 무효화(Rollback)하는 안전마개를 씌웁니다.
     public ChatMessageDto saveMessage(ChatMessageDto messageDto) {
-        // 1. 채팅방 조회
+        
+        // 1. 누가 어느 '방'에 보냈어? 방 정보 검증
         ChatRoomEntity chatRoom = chatRoomRepository.findById(messageDto.getChatRoomId())
                 .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다"));
 
-        // [보안] 발신자가 채팅방 멤버인지 확인
+        // [보안] 이 사람이 남의 방에서 외부 해킹으로 메시지를 보낸 건 아닌지 '명부'를 확인합니다.
         ChatRoomUserEntity senderInfo = chatRoomUserRepository.findByChatRoomIdAndMemberId(
                 messageDto.getChatRoomId(), messageDto.getSenderId())
                 .orElseThrow(() -> new IllegalArgumentException("채팅방 멤버만 메시지를 보낼 수 있습니다"));
 
-        // 1:1 채팅의 경우 상대방이 수락(ACCEPTED)해야만 메시지 전송 가능
+        // [비즈니스 로직 방어] 아직 갠톡방 상대방이 내 초대를 수락 안 했다면(PENDING) 혼잣말 보내기를 차단합니다.
         if ("SINGLE".equals(chatRoom.getRoomType())) {
             chatRoomUserRepository.findFirstByChatRoomIdAndMemberIdNot(chatRoom.getId(), senderInfo.getMember().getId())
                 .ifPresent(otherUser -> {
@@ -428,11 +435,11 @@ public class ChatServiceImpl implements ChatService {
                 });
         }
 
-        // 2. 발신자 조회
+        // 2. 발신자 회원 정보 조회
         MemberEntity sender = memberRepository.findById(messageDto.getSenderId())
                 .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다"));
 
-        // 3. 메시지 엔티티 생성 및 저장
+        // 3. 실제 DB 테이블에 꽂힐 예쁜 엔티티(객체 모형)를 조립(Builder)합니다.
         ChatMessageEntity.ChatMessageEntityBuilder messageBuilder = ChatMessageEntity.builder()
                 .chatRoom(chatRoom)
                 .sender(sender) 
@@ -440,50 +447,53 @@ public class ChatServiceImpl implements ChatService {
                 .messageType(messageDto.getMessageType())
                 .createdAt(LocalDateTime.now());
         
-        // [답장/인용] 부모 메시지 연결
+        // [답장 특수 기능] 만약 이 메시지가 기존 메시지를 인용(답장)한 거라면?
         if (messageDto.getParentMessageId() != null) {
             ChatMessageEntity parent = chatMessageRepository.findById(messageDto.getParentMessageId())
                     .orElse(null);
             if (parent != null) {
-                // [보안] 부모 메시지가 같은 채팅방에 속해 있는지 확인
+                // [보안] 엉뚱한 방의 남의 메시지를 인용한 건 아닌지 교차 검증합니다.
                 if (!parent.getChatRoom().getId().equals(messageDto.getChatRoomId())) {
                     throw new IllegalArgumentException("부모 메시지는 같은 채팅방에 있어야 합니다");
                 }
+                // 부모 메시지의 꼬리표를 현재 메시지에 달아줍니다.
                 messageBuilder.parentMessage(parent);
                 
-                // [Fix] 실시간 응답을 위해 DTO에 부모 메시지 정보 채우기
+                // 프론트엔드가 인용 부분을 그리기 쉽도록, 보낼 DTO 상자에 원본 내용을 미리 채워 넣어줍니다.
                 messageDto.setParentMessageContent(parent.getContent());
                 messageDto.setParentMessageSenderName(parent.getSender().getName());
             }
         }
         
+        // 조립 완료 후, 진짜 DB에 INSERT 명령을 날립니다!
         ChatMessageEntity messageEntity = messageBuilder.build();
-        
         ChatMessageEntity savedMessage = chatMessageRepository.save(messageEntity);
         
-        // 4. 채팅방의 마지막 메시지 정보 업데이트 (OptimisticLock 재시도)
+        // 4. 채팅방 겉모습(방 목록)에서 보일 [최근 메시지 1줄 모바일 뷰]를 제가 방금 쓴 글로 갈아끼웁니다.
+        // 엄청 여러 명이 0.001초 간격으로 보내더라도 에러가 안 나게끔 재시도 로직(OptimisticLockRetry)을 별도로 돌립니다.
         updateLastMessageWithRetry(chatRoom.getId(), messageDto.getContent(), savedMessage.getCreatedAt(), messageDto.getMessageType());
         
-        // 5. [개선] 발신자 자동 읽음 처리
+        // 5. 내가 방금 쓴 글이니까, 내 화면에 나 스스로 안 읽은 '1' 표시는 없어야겠죠? 나 스스로의 읽음 카운트를 자동 갱신합니다.
         try {
             updateReadStatus(chatRoom.getId(), sender.getId(), savedMessage.getId());
         } catch (Exception e) {
             log.warn("발신자 자동 읽음 처리 실패: {}", e.getMessage());
-            // 읽음 처리 실패는 메시지 전송에 영향을 주지 않도록 warn 로그만 남김
+            // 읽음 처리에 실패했다고 해서 내 메시지가 전송 안 되면 짜증 나겠죠? 에러만 남기고 정상 진행시킵니다.
         }
         
-        // 6. 저장된 메시지를 DTO로 변환하여 반환
+        // 6. DB에 들어간 실제 ID 번호와 시간 등을 DTO 상자에 예쁘게 담아서 프론트에 넘겨줄 준비를 합니다.
         messageDto.setMessageId(savedMessage.getId());
         messageDto.setCreatedAt(savedMessage.getCreatedAt());
         messageDto.setSenderName(sender.getName());
         messageDto.setSenderProfileImage(sender.getProfileImageUrl());
         
-        // [수정] 방금 보낸 메시지의 안 읽은 사람 수 계산 (발신자 제외 모든 사람)
+        // 7. 이 글을 아직 안 읽은 사람 수(전체 인원 - 1명(나))를 계산해서 노란색 숫자 카운트에 사용합니다.
         Integer unreadCount = calculateUnreadCount(savedMessage);
         messageDto.setUnreadCount(unreadCount);
         log.info("💬 메시지 저장 완료 - messageId: {}, unreadCount: {}, content: {}", 
             savedMessage.getId(), unreadCount, messageDto.getContent());
         
+        // 완성된 상자를 반환하면, Controller가 이걸 받아서 웹소켓으로 푱! 쏩니다.
         return messageDto;
     }
     
@@ -685,89 +695,94 @@ public class ChatServiceImpl implements ChatService {
         }
     }
 
-    // 메시지 읽음 처리
+    // [핵심 기능 3] 메시지 읽음 처리 (안 읽은 개수 까내리기)
+    // 유저가 방에 들어갔을 때, 스크롤을 내렸을 때 빈번하게 호출되어 읽음 상태를 최신화시킵니다.
     @Override
-    @CacheEvict(value = "chatRoomDetails", key = "#roomId + '_' + #memberId")
+    @CacheEvict(value = "chatRoomDetails", key = "#roomId + '_' + #memberId") // "나 읽었어!" 라고 신고하면 내 방 정보 캐시를 비웁니다.
     public void updateReadStatus(Long roomId, Long memberId, Long lastMessageId) {
+        
+        // 1. 방 참여 명부에서 내 정보를 꺼내옵니다.
         ChatRoomUserEntity roomUser = chatRoomUserRepository.findByChatRoomIdAndMemberId(roomId, memberId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자가 채팅방에 없습니다"));
         
         ChatRoomEntity chatRoom = roomUser.getChatRoom();
-        Long currentTotalCount = chatRoom.getTotalMessageCount();
+        Long currentTotalCount = chatRoom.getTotalMessageCount(); // 이 방의 평생 메시지 누적 샌드백 개수
         if (currentTotalCount == null) {
             currentTotalCount = 0L;
         }
 
-        // [Fix] lastMessageId가 없으면(방 입장 시) 가장 최신 메시지 ID로 설정
-        // 즉, "방금 들어왔으니 현재까지의 모든 메시지를 읽었다"고 간주
+        // 2. 만약 프론트가 "몇 번 메시지까지 읽었는지" 안 알려주고 그냥 방을 열기만 했다면? (lastMessageId == null)
+        // 가장 최신 메시지의 번호를 DB에서 캐온 뒤 "아 너 그냥 안 밀리고 다 읽은 걸로 쳐줄게!" 라고 퉁칩니다.
         if (lastMessageId == null) {
              Optional<ChatMessageEntity> lastMsg = chatMessageRepository.findFirstByChatRoomIdOrderByCreatedAtDesc(roomId);
              if (lastMsg.isPresent()) {
                  lastMessageId = lastMsg.get().getId();
              } else {
-                 return; // 메시지가 없으면 처리 불필요
+                 return; // 애초에 방에 보낸 메시지가 0개면 읽음 처리 할 것도 없이 나갑니다.
              }
         }
 
-        // 기존 마지막 읽은 메시지 ID (업데이트 전 상태)
+        // 3. 내가 과거에 '마지막으로 읽었다'고 도장 찍었던 메시지 고유 번호
         Long oldLastReadId = roomUser.getLastReadMessageId();
 
-        // [중요] 이미 더 최신 메시지를 읽은 기록이 있다면, 과거 ID로 덮어쓰지 않도록 방어 로직 추가
+        // [중요 보안] 실수나 프론트 버그로 "야 나 어제 메시지 1번까지만 읽었어" 로 옛날 정보를 보낼 경우, 
+        // 100번까지 다 본 내 정보가 뒤로 되돌려져서(백섭) 안 읽은 카운터가 폭주할 수 있습니다. 이를 막아줍니다.
         if (oldLastReadId != null && lastMessageId <= oldLastReadId) {
             return;
         }
 
-        // ID 기반 읽음 처리 업데이트
+        // 4. "나 이 번호까지 다 읽었다!!" 라고 명부에 도장을 찍어줍니다.
         roomUser.updateLastReadMessageId(lastMessageId);
-        // DB 테이블의 카운트 컬럼 업데이트 (참고용, 실제 로직은 Repository Count 사용)
+        
+        // (보조) 1차원적인 숫자로 안읽음개수 뺄셈을 하기 위한 카운터도 같이 갱신해줍니다.
         roomUser.updateLastReadMessageCount(currentTotalCount);
         
-        // 읽음 상태 변경을 DB에 즉시 반영
+        // DB 테이블에 즉시 반영 (Flush)
         chatRoomUserRepository.saveAndFlush(roomUser);
 
         
-        // 읽음 처리 후 영향받는 메시지들의 unreadCount 재계산
-        // (안 읽은 상태였다가 이번에 읽음 처리된 메시지들)
+        // 5. 프론트엔드가 노란색 '1' 배지를 실시간으로 깎아내리기 위해 어떤 메시지의 배지가 까졌는지 계산합니다.
+        // 내가 이번에 새롭게 '읽음' 처리로 추가된 구간의 메시지들을 DB에서 긁어모읍니다.
         List<ChatMessageEntity> affectedMessages;
         if (oldLastReadId == null) {
-             // 처음 읽는 경우 -> lastMessageId 이하 모든 메시지 갱신
+             // 처음 방에 들어온 뉴비: 0번부터 내가 본 곳까지 싹 다
              affectedMessages = chatMessageRepository.findByChatRoomIdAndIdLessThanEqual(roomId, lastMessageId);
         } else {
-             // 기존에 읽은 기록이 있는 경우 -> oldLastReadId < id <= lastMessageId 범위만 갱신
+             // 기존 유저: "전에 읽었던 번호(old)" 초과 ~ "지금 읽은 번호(last)" 이하의 메시지들
              affectedMessages = chatMessageRepository.findByChatRoomIdAndIdGreaterThanAndIdLessThanEqual(
                      roomId, oldLastReadId, lastMessageId);
         }
         
-        // [최적화] 여기서 전체 유저 목록을 한 번만 조회
+        // 성능 향상(최적화) 포인트: 방 멤버 100명 명단을 매번 메시지마다 DB에서 긁지 않고, 한 방에 긁어다 둡니다.
         List<ChatRoomUserEntity> allUsers = chatRoomUserRepository.findAllByChatRoomId(roomId);
 
+        // Map 통에 담기: [메시지 10번 = 안읽은사람 2명], [메시지 11번 = 안읽은사람 3명] ...
         Map<Long, Integer> unreadCountMap = new HashMap<>();
         for (ChatMessageEntity message : affectedMessages) {
-            // [최적화] 조회해둔 allUsers 재사용
             Integer count = calculateUnreadCount(message, allUsers);
             unreadCountMap.put(message.getId(), count);
         }
         
-        // 실시간 갱신 이벤트 전송 (업데이트된 unreadCount 포함)
+        // 6. 이 귀중한 정보(누가 얼마나 숫자가 깎였는지 맵)를 모조리 담아서 웹소켓 '이벤트 봉투'에 넣고 쏩니다!
         Map<String, Object> readEvent = new HashMap<>();
         readEvent.put("type", "READ_UPDATE");
-        readEvent.put("memberId", memberId);
+        readEvent.put("memberId", memberId); // 내가 읽었소!
         readEvent.put("lastMessageId", lastMessageId);
-        readEvent.put("unreadCountMap", unreadCountMap);  // 메시지별 업데이트된 unreadCount
+        readEvent.put("unreadCountMap", unreadCountMap);  // 메시지별 바뀐 노란 딱지 개수표
         
+        // 이 방에 있는 모든 화면에 뿌려버립니다! (노란 딱지가 뿅 하고 실시간으로 사라지게 됨)
         eventPublisher.publishEvent(new ChatEvent("/topic/chat/room/" + roomId + "/read", readEvent));
         
-        // 읽은 사용자 개인 채널로 목록 갱신 신호 전송 (unreadCount 즉시 반영)
+        // 7. 내 채팅방 목록(바깥 화면)에서도 "안 읽은 개수 0표시" 최신화를 하라며 나 자신에게 1:1 이벤트를 쏩니다.
         Map<String, Object> listRefreshEvent = new HashMap<>();
         listRefreshEvent.put("type", "CHAT_LIST_REFRESH");
         listRefreshEvent.put("chatRoomId", roomId);
         eventPublisher.publishEvent(new ChatEvent(memberId, listRefreshEvent));
         
-        // 방의 다른 멤버들(주로 발신자)에게 개인 채널로도 READ_UPDATE 전송
-        // → 발신자가 방 밖에 있어도 메시지 옆 unreadCount(1)를 즉시 갱신하기 위함
+        // 8. 발신자가 방 밖(목록 화면)에 있더라도 자기가 쓴 글 숫자 깎이는 걸 알려주기 위해, 다른 팀원들에게도 개인 톡을 보냅니다.
         for (ChatRoomUserEntity user : allUsers) {
             Long userId = user.getMember().getId();
-            if (!userId.equals(memberId)) { // 읽은 사람(수신자) 제외, 나머지(발신자 등)에게 전송
+            if (!userId.equals(memberId)) { // 읽은 본인은 제외!
                 Map<String, Object> personalReadEvent = new HashMap<>();
                 personalReadEvent.put("type", "READ_UPDATE");
                 personalReadEvent.put("memberId", memberId);
