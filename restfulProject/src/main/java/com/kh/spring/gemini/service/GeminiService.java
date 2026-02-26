@@ -16,7 +16,7 @@ public class GeminiService {
 
     public String custom(String question,String prompt) {
     	// API 호출
-        String apiKey = "AIzaSyAN6T6db86pCX6ZOln1-sqeQ2sbxPLQS8U"; 
+        String apiKey = "AIzaSyBO7YUZR_Wana-H1Mmj5D6-opXN3YyBwQk";
         Client client = Client.builder().apiKey(apiKey).build();
 
         try {

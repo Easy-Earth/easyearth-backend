@@ -2,7 +2,7 @@
 <!DOCTYPE mapper
   PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-  
+
 <mapper namespace="com.kh.spring.ecotree.model.dao.EcoTreeMapper">
 
     <resultMap id="ecoTreeResultMap" type="com.kh.spring.ecotree.model.vo.EcoTreeVO">
@@ -15,7 +15,7 @@
 
     <!-- 회원의 나무 정보와 월렛의 누적 포인트를 함께 조회 -->
     <select id="selectTreeByMemberId" parameterType="int" resultMap="ecoTreeResultMap">
-        SELECT 
+        SELECT
             E.MEMBER_ID,
             E.TREE_LEVEL,
             E.SYNCED_EXP,

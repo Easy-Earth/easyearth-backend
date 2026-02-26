@@ -13,6 +13,7 @@ import java.util.Map;
 @RequestMapping("/api/quiz")
 @RequiredArgsConstructor
 @Tag(name = "퀴즈 API", description = "퀴즈 API")
+@CrossOrigin(origins = "http://13.125.123.75:5173", allowCredentials = "true")
 public class QuizController {
 
     private final QuizService quizService;

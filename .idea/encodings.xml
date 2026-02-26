@@ -3,5 +3,6 @@
   <component name="Encoding">
     <file url="file://$PROJECT_DIR$/restfulProject/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/restfulProject/src/main/java/com/kh/spring/chat/model/service/ChatServiceImpl.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/restfulProject/src/main/resources" charset="UTF-8" />
   </component>
 </project>

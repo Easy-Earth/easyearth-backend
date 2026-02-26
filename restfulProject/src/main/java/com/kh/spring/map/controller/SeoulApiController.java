@@ -12,6 +12,7 @@ import java.util.List;
 @RequestMapping("/api/seoul")
 @RequiredArgsConstructor
 @Tag(name = "서울맵 API", description = "서울맵 API(필터링 / 상세조회)")
+@CrossOrigin(origins = "http://13.125.123.75:5173", allowCredentials = "true")
 public class SeoulApiController {
 
     private final SeoulMapService seoulMapService;

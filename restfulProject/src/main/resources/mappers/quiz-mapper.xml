@@ -3,7 +3,7 @@
 <mapper namespace="com.kh.spring.quiz.mapper.QuizMapper">
 
     <select id="selectQuizListByDifficulty" resultType="com.kh.spring.quiz.model.vo.Quiz">
-        SELECT 
+        SELECT
             QUIZ_NO,
             DIFFICULTY,
             POINT,

@@ -30,6 +30,10 @@ target/
 *.iws
 *.iml
 *.ipr
+*.properties
+*.yml
+.DS_Store
+
 
 ### NetBeans ###
 /nbproject/private/

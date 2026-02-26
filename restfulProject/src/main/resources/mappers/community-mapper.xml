@@ -2,7 +2,7 @@
 <!DOCTYPE mapper
   PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-  
+
 <mapper namespace = "communityMapper">
 
 	<resultMap id="communityPostResultSet" type="CommunityPostVO">
@@ -13,7 +13,7 @@
         <result column="CATEGORY" property="category"/>
         <result column="HAS_FILES" property="hasFiles"/>
         <result column="CREATE_AT" property="createAt"/>
-        
+
         <!-- 1 : N 관계인 첨부파일 처리 -->
         <collection property="fileList" ofType="PostFilesVO" javaType="ArrayList">
             <id column="FILES_ID" property="filesId"/>
@@ -30,7 +30,7 @@
 		FROM COMMUNITY_POST
 		WHERE STATUS != 'B'
 	</select>
-	
+
 	<!-- 검색된 게시글 개수 -->
 	<select id="searchListCount" resultType="_int">
 		SELECT COUNT(*)
@@ -48,20 +48,20 @@
 				AND UPPER(P.CONTENT) LIKE '%' || UPPER(#{keyword}) || '%'
 			</when>
 		</choose>
-		
+
 		<if test="category != null and category != ''">
 			AND P.CATEGORY = #{category}
 		</if>
 	</select>
-	
+
 	<!-- 필터링된 게시글 개수 -->
 	<select id="filterListCount" resultType="_int">
 		SELECT COUNT(*)
 		FROM COMMUNITY_POST
-		WHERE STATUS != 'B' 
+		WHERE STATUS != 'B'
 		AND CATEGORY = #{category}
 	</select>
-	
+
 	<!-- 게시글 목록 조회 -->
 	<select id="communityList" resultType="CommunityPostVO">
 		SELECT P.POST_ID
@@ -80,7 +80,7 @@
 		WHERE P.STATUS != 'B'
 		ORDER BY P.UPDATED_AT DESC
 	</select>
-	
+
 	<!-- 게시글 검색 조회 -->
 	<select id="searchList" resultType="CommunityPostVO" parameterType="hashmap">
 		SELECT P.POST_ID
@@ -107,13 +107,13 @@
 				AND UPPER(P.CONTENT) LIKE '%' || UPPER(#{keyword}) || '%'
 			</otherwise>
 		</choose>
-		
+
 		<if test="category != null and category != ''">
 	        AND P.CATEGORY = #{category}
 	    </if>
 		ORDER BY P.UPDATED_AT DESC
 	</select>
-	
+
 	<!-- 게시글 필터링 조회 -->
 	<select id="filterList" resultType="CommunityPostVO" parameterType="hashmap">
 		SELECT P.POST_ID
@@ -132,7 +132,7 @@
 		AND P.STATUS != 'B'
 		ORDER BY P.UPDATED_AT DESC
 	</select>
-	
+
  	<!-- 게시글 상세보기 -->
  	<select id="communityDetail" parameterType="_int" resultType="CommunityPostVO">
  		SELECT P.POST_ID
@@ -152,7 +152,7 @@
  		JOIN MEMBER M ON P.MEMBER_ID = M.MEMBER_ID
  		WHERE P.POST_ID = #{postId}
  	</select>
- 	
+
  	<!-- 게시글 등록 -->
  	<insert id="communityInsert" parameterType="CommunityPostVO">
  		<selectKey keyProperty = "postId" resultType = "int" order = "BEFORE">
@@ -173,9 +173,9 @@
  			,#{content}
  			,#{hasFiles}
  			,#{category}
- 		)	
+ 		)
  	</insert>
- 	
+
  	<!-- 첨부파일 추가 -->
  	<insert id="insertPostFile">
  		INSERT INTO POST_FILES (
@@ -203,7 +203,7 @@
  			</foreach>
  		) A
  	</insert>
- 
+
  	<!-- 게시글 수정 - 텍스트 정보 수정 -->
     <update id="updatePost" parameterType="CommunityPostVO">
         UPDATE COMMUNITY_POST
@@ -274,21 +274,21 @@
 		WHERE POST_ID = #{postId}
 		ORDER BY FILES_ID ASC
  	</select>
- 	
+
  	<!-- 게시글 삭제 -->
  	<delete id="communityDelete" parameterType="_int">
  		DELETE FROM COMMUNITY_POST
  		WHERE
  		POST_ID = #{postId}
  	</delete>
- 	
+
 	<!-- 게시글 조회수 증가 -->
 	<update id="increaseViewCount" parameterType="_int">
 		UPDATE COMMUNITY_POST
 		SET VIEW_COUNT = VIEW_COUNT + 1
 		WHERE POST_ID = #{postId}
-	</update> 
-	
+	</update>
+
 	<!-- 댓글 목록 조회 -->
 	<select id="replyList" parameterType="_int" resultType="CommunityReplyVO">
 		SELECT R.REPLY_ID
@@ -310,22 +310,22 @@
 		JOIN MEMBER M ON R.MEMBER_ID = M.MEMBER_ID
 		WHERE R.POST_ID = #{postId}
 		ORDER BY R.GROUP_ID ASC,
-				 R.REPLY_ID ASC 
+				 R.REPLY_ID ASC
 	</select>
-	
+
 	<!-- 부모 댓글 정보 조회  -->
 	<select id="selectParentReply" parameterType="_int" resultType="CommunityReplyVO">
-		SELECT * 
-		FROM COMMUNITY_REPLY 
+		SELECT *
+		FROM COMMUNITY_REPLY
 		WHERE REPLY_ID = #{replyId}
 	</select>
-	
+
 	<!-- 댓글 등록 -->
 	<insert id="replyInsert" parameterType="CommunityReplyVO">
 		<selectKey keyProperty="replyId" resultType="_int" order="BEFORE">
 			SELECT REPLY_ID_SEQ.NEXTVAL FROM DUAL
 		</selectKey>
-		INSERT INTO 
+		INSERT INTO
 		COMMUNITY_REPLY (REPLY_ID
 						,POST_ID
 						,MEMBER_ID
@@ -352,14 +352,14 @@
 				  ,'Y'
 		)
 	</insert>
-	
+
 	<!-- 댓글 수 증감 값 DB 업데이트 -->
 	<update id="updatePostCommentCount" parameterType="map">
 		UPDATE COMMUNITY_POST
 		SET COMMENT_COUNT = COMMENT_COUNT + #{count}
 		WHERE POST_ID = #{postId}
 	</update>
-	
+
 	<!-- 댓글 수정 -->
 	<update id="replyUpdate" parameterType="CommunityReplyVO">
 		UPDATE COMMUNITY_REPLY
@@ -367,7 +367,7 @@
 		WHERE REPLY_ID = #{replyId}
 		AND MEMBER_ID = #{memberId}
 	</update>
-	
+
 	<!-- 댓글 삭제 -->
  	<update id="replyDelete" parameterType="CommunityReplyVO">
  		UPDATE COMMUNITY_REPLY
@@ -375,7 +375,7 @@
  		WHERE REPLY_ID = #{replyId}
  		AND MEMBER_ID = #{memberId}
  	</update>
- 		
+
 	<!-- 이미 좋아요를 누른 게시글인지 확인 -->
 	<select id="checkPostLike" parameterType="map" resultType="_int">
 		SELECT COUNT(*)
@@ -383,10 +383,10 @@
 		WHERE POST_ID = #{postId}
 		AND MEMBER_ID = #{memberId}
 	</select>
-	
+
 	<!-- 게시글 좋아요 등록 -->
  	<insert id="insertPostLike" parameterType="map">
- 		INSERT INTO 
+ 		INSERT INTO
  		COMMUNITY_POST_LIKES (
  			PL_ID
  			,POST_ID
@@ -401,7 +401,7 @@
  			,'Y'
  		)
  	</insert>
- 		
+
 	<!-- 게시글 좋아요 상태 변경 -->
 	<update id="changePostLike" parameterType="map">
 		UPDATE COMMUNITY_POST_LIKES
@@ -409,7 +409,7 @@
 		WHERE POST_ID = #{postId}
 		AND MEMBER_ID = #{memberId}
 	</update>
-	
+
 	<!-- 게시글 좋아요 상태 변경 값 가져오기 -->
 	<select id="getPostLikeStatus" parameterType="map" resultType="string">
 		SELECT STATUS
@@ -417,14 +417,14 @@
 		WHERE POST_ID = #{postId}
 		AND MEMBER_ID = #{memberId}
 	</select>
- 	
+
  	<!-- 게시글 좋아요 증감 값 DB 업데이트 -->
  	<update id="updatePostLikeCount" parameterType="map">
  		UPDATE COMMUNITY_POST
  		SET LIKE_COUNT = LIKE_COUNT + #{count}
  		WHERE POST_ID = #{postId}
  	</update>
- 	
+
  	<!-- 이미 좋아요를 누른 댓글인지 확인 -->
 	<select id="checkReplyLike" parameterType="map" resultType="_int">
 		SELECT COUNT(*)
@@ -433,10 +433,10 @@
 		AND POST_ID = #{postId}
 		AND MEMBER_ID = #{memberId}
 	</select>
-	
+
 	<!-- 댓글 좋아요 등록 -->
  	<insert id="insertReplyLike" parameterType="map">
- 		INSERT INTO 
+ 		INSERT INTO
  		COMMUNITY_REPLY_LIKES (
  			RL_ID
  			,REPLY_ID
@@ -453,16 +453,16 @@
  			,'Y'
  		)
  	</insert>
- 		
+
 	<!-- 댓글 좋아요 상태 변경 -->
 	<update id="changeReplyLike" parameterType="map">
 		UPDATE COMMUNITY_REPLY_LIKES
 		SET STATUS = DECODE(STATUS, 'Y', 'N', 'Y')
-		WHERE REPLY_ID = #{replyId} 
+		WHERE REPLY_ID = #{replyId}
 		AND POST_ID = #{postId}
 		AND MEMBER_ID = #{memberId}
 	</update>
- 	
+
  	<!-- 댓글 좋아요 상태 변경 값 가져오기 -->
  	<select id="getReplyLikeStatus" parameterType="map" resultType="string">
  		SELECT STATUS
@@ -471,12 +471,12 @@
  		AND POST_ID = #{postId}
  		AND MEMBER_ID = #{memberId}
  	</select>
- 	
+
  	<!-- 댓글 좋아요 증감 값 DB 업데이트 -->
  	<update id="updateReplyLikeCount" parameterType="map">
  		UPDATE COMMUNITY_REPLY
  		SET LIKE_COUNT = LIKE_COUNT + #{count}
  		WHERE REPLY_ID = #{replyId}
  	</update>
- 	
+
 </mapper>
