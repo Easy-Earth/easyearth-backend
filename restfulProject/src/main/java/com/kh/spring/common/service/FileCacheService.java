@@ -10,8 +10,8 @@ import java.nio.file.Paths;
 
 @Service
 public class FileCacheService {
-
-    private final String DATA_DIR = System.getProperty("user.home") + "/uploadFiles/mainpage/";
+    
+    private final String DATA_DIR = System.getProperty("java.io.tmpdir") + File.separator + "easyearth_cache" + File.separator;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public FileCacheService() {

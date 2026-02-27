@@ -2,21 +2,21 @@
 <!DOCTYPE mapper
   PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-  
+
 <mapper namespace="itemMapper">
-  	
+
   	<!-- 포인트상점 아이템 조회 매퍼 -->
   	<select id="storeItem" resultType="ItemVO">
   		SELECT *
   		FROM ITEM
   		ORDER BY PRICE
   	</select>
-  	
+
   	<!-- 포인트상점 보유중인 아이템 조회 매퍼 -->
   	<select id="storeMyItem"
 	        parameterType="int"
 	        resultType="UserItemList">
-	
+
 	    SELECT
 	        UI.UI_ID,
 	        UI.ITEM_ID,
@@ -38,7 +38,7 @@
 	    WHERE UI.USER_ID = #{memberId}
 		ORDER BY PRICE
 	</select>
-	
+
 	<!-- 전체 아이템 중 특정 하나 조회 -->
 	<select id="itemsDetail" parameterType="int" resultType="ItemVO">
 		SELECT ITEM_ID,
@@ -53,10 +53,10 @@
 		FROM ITEM
 		WHERE ITEM_ID = #{itemId}
 	</select>
-	
+
 	<!-- 보유 아이템 중 특정 하나 조회 -->
 	<select id="myItemsDetail" parameterType="map" resultType="UserItemList">
-		SELECT 
+		SELECT
 	        I.ITEM_ID,
 	        I.NAME,
 	        I.DESCRIPTION,
@@ -77,15 +77,15 @@
 	       AND UI.USER_ID = #{userId}
 	    WHERE I.ITEM_ID = #{itemId}
 	</select>
-	
-	
+
+
 	<!-- 보유중인 아이템 수 조회 -->
 	<select id="itemCount" parameterType="int" resultType="int">
 		SELECT COUNT(*)
 		FROM USER_ITEMS
 		WHERE USER_ID = #{memberId}
 	</select>
-	
+
 	<!-- 카테고리별 아이템 조회 -->
 	<select id="itemCategories" parameterType="string" resultType="ItemVO">
 		SELECT
@@ -102,7 +102,7 @@
 		WHERE CATEGORY = #{category}
 		ORDER BY PRICE
 	</select>
-	
+
 	<!-- 등급별 아이템 조회 -->
 	<select id="itemRarity" parameterType="string" resultType="ItemVO">
 		SELECT
@@ -120,7 +120,7 @@
 		ORDER BY PRICE
 	</select>
 
-  	
+
   	<!-- 포인트상점 아이템 구매 -->
   	<insert id="buyItem" parameterType="UserItemsVO">
 	    INSERT INTO USER_ITEMS (
@@ -141,7 +141,7 @@
 	        #{category}
 	    )
 	</insert>
-	
+
 	<!-- 아이템 구매시 포인트 차감 -->
 	<update id="deductItemPoint" parameterType="hashmap">
 		UPDATE POINT_WALLET
@@ -186,12 +186,12 @@
 	<select id="selectStatus" parameterType="map" resultType="string">
 		SELECT IS_EQUIPPED FROM USER_ITEMS WHERE ITEM_ID = #{itemId} AND USER_ID = #{userId}
 	</select>
-	
+
 	<!-- 아이템 장착 해제 -->
 	<update id="updateStatus" parameterType="map">
 		UPDATE USER_ITEMS SET IS_EQUIPPED = 'N' WHERE ITEM_ID = #{itemId} AND USER_ID=#{userId}
 	</update>
-	
+
 	<!-- 랜덤뽑기 -->
 	<select id="randomPull" parameterType="string" resultType="ItemVO">
 		SELECT * FROM (
@@ -251,5 +251,5 @@
 		WHERE MEMBER_ID = #{memberId}
 		AND NOW_POINT >= 1000
 	</update>
-  
+
 </mapper>

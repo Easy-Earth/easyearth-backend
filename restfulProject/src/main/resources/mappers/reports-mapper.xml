@@ -2,15 +2,15 @@
 <!DOCTYPE mapper
   PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-  
+
 <mapper namespace = "reportsMapper">
 
 	<!-- 신고글 전체 개수 -->
 	<select id="reportListsCount" resultType="_int">
-		SELECT COUNT(*) 
+		SELECT COUNT(*)
 		FROM REPORTS
 	</select>
-	
+
 	<!-- 검색된 신고글 개수 -->
 	<select id="searchReportsCount" parameterType="hashmap" resultType="_int">
 	    SELECT COUNT(*)
@@ -42,7 +42,7 @@
 	        </if>
 	    </where>
 	</select>
-	
+
 	<!-- 필터링된 신고글 개수 -->
 	<select id="filterReportsCount" parameterType="hashmap" resultType="_int">
 		SELECT COUNT(*)
@@ -59,7 +59,7 @@
 	        </if>
     	</where>
 	</select>
-	
+
 	<!-- 신고글 목록 조회 -->
 	<select id="reportsList" resultType="ReportsVO">
 		SELECT R.REPORTS_ID
@@ -79,7 +79,7 @@
     	JOIN MEMBER M2 ON R.TARGET_MEMBER_ID = M2.MEMBER_ID
 		ORDER BY R.CREATED_AT DESC
 	</select>
-	
+
 	<!-- 신고글 검색 조회 -->
 	<select id="searchReportsList" parameterType="hashmap" resultType="ReportsVO">
 	    SELECT R.REPORTS_ID
@@ -123,7 +123,7 @@
 	    </where>
 	    ORDER BY R.CREATED_AT DESC
 	</select>
-	
+
 	<!-- 신고글 필터링 조회 -->
 	<select id="filterReportsList" parameterType="hashmap" resultType="ReportsVO">
 		SELECT R.REPORTS_ID
@@ -154,7 +154,7 @@
 	    </where>
     	ORDER BY R.CREATED_AT DESC
 	</select>
-	
+
 	<!-- 신고글 상세보기 -->
 	<select id="reportsDetail" resultType="ReportsVO">
 	    SELECT R.REPORTS_ID
@@ -171,17 +171,17 @@
 	          ,R.RESOLVED_AT
 	          ,M1.NAME AS MEMBER_NAME
 	          ,M2.NAME AS TARGET_MEMBER_NAME
-			  ,CASE 
+			  ,CASE
               	WHEN R.TYPE = 'REPLY' THEN (SELECT POST_ID FROM COMMUNITY_REPLY WHERE REPLY_ID = R.REPLY_ID)
-              	ELSE R.POST_ID 
+              	ELSE R.POST_ID
           	   END AS PARENT_ID
 	    FROM REPORTS R
 	    JOIN MEMBER M1 ON R.MEMBER_ID = M1.MEMBER_ID
 	    JOIN MEMBER M2 ON R.TARGET_MEMBER_ID = M2.MEMBER_ID
 	    WHERE R.REPORTS_ID = #{reportsId}
 	</select>
-		
-	
+
+
 	<!-- 신고 등록 -->
 	<insert id="reportsInsert" parameterType="map">
 		INSERT INTO REPORTS (
@@ -207,7 +207,7 @@
 		#{reason}, #{detail}
 		)
 	</insert>
- 	
+
  	<!--
  	신고 수정
  	<update id="reportsUpdate" parameterType="ReportsVO">
@@ -218,7 +218,7 @@
  		AND MEMBER_ID = #{memberId}
  		AND STATUS IS NULL
  	</update>
- 	
+
  	신고 삭제
  	<delete id="reportsDelete" parameterType="_int">
  		DELETE FROM REPORTS
@@ -227,11 +227,11 @@
  		AND STATUS IS NULL
  	</delete>
  	-->
- 	
+
  	<!-- 신고글 상태 처리 - 관리자 권한 -->
  	<update id="reportsStatus">
- 		UPDATE REPORTS 
-	    SET STATUS = #{status}, 
+ 		UPDATE REPORTS
+	    SET STATUS = #{status},
 	    <choose>
             <when test="status == 'RECEIVED'">
                 RESOLVED_AT = NULL
@@ -273,7 +273,7 @@
 	        </when>
 	        <when test='type == "REVIEW"'>
 	            UPDATE ECO_SHOP_REVIEW SET STATUS = 'B' WHERE ESR_ID = #{reviewId}
-	        </when> 
+	        </when>
 	    </choose>
 	</update>
 

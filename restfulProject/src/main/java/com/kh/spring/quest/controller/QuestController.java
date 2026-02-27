@@ -3,12 +3,7 @@ package com.kh.spring.quest.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.kh.spring.quest.model.vo.Quest;
@@ -21,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequestMapping("/api/quest")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://13.125.123.75:5173", allowCredentials = "true")
 public class QuestController {
 
     private final QuestService questService;

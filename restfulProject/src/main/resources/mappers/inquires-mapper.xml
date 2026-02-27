@@ -2,12 +2,12 @@
 <!DOCTYPE mapper
   PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-  
+
 <mapper namespace = "inquiriesMapper">
-	
+
 	<!-- 건의글 총 개수 -->
 	<select id="listCount" resultType="_int">
-		SELECT COUNT(*) 
+		SELECT COUNT(*)
 		FROM INQUIRIES
 	</select>
 
@@ -28,7 +28,7 @@
 					AND UPPER(I.CONTENT) LIKE '%' || UPPER(#{keyword}) || '%'
 				</when>
 			</choose>
-			
+
 			<if test="status != null and status != ''">
 	            AND I.STATUS = #{status}
 	        </if>
@@ -88,7 +88,7 @@
 					AND UPPER(I.CONTENT) LIKE '%' || UPPER(#{keyword}) || '%'
 				</when>
 			</choose>
-			
+
 			<if test="status != null and status != ''">
 	            AND I.STATUS = #{status}
 	        </if>
@@ -115,14 +115,14 @@
 		ORDER BY I.IS_FAQ DESC
 				,I.UPDATED_AT DESC
 	</select>
-	
+
 	<!-- 건의글 조회수 증가 -->
 	<update id="increaseCount" parameterType="_int">
 		UPDATE INQUIRIES
 		SET VIEW_COUNT = VIEW_COUNT + 1
 		WHERE INQUIRIES_ID = #{inquiriesId}
 	</update>
-	
+
 	<!-- 건의글 상세보기 -->
 	<select id="inquiriesDetail" parameterType="_int" resultType="InquiriesVO">
 		SELECT I.INQUIRIES_ID
@@ -160,7 +160,7 @@
 			,#{isFaq}
 		)
 	</insert>
-	
+
 	<!-- 건의글 수정 -->
 	<update id="inquiriesUpdate" parameterType="map">
 		UPDATE INQUIRIES
@@ -172,18 +172,18 @@
 		WHERE INQUIRIES_ID = #{inquiriesId}
 		AND MEMBER_ID = #{memberId}
 	</update>
-	
+
 	<!-- 건의글 삭제 -->
 	<delete id="inquiriesDelete" parameterType="map">
 		DELETE FROM INQUIRIES
 		WHERE INQUIRIES_ID = #{inquiriesId}
 		AND MEMBER_ID = #{memberId}
 	</delete>
-	
+
 	<!-- 건의글 상태 처리 - 관리자 권한 -->
  	<update id="inquiriesStatus">
-		UPDATE INQUIRIES 
-	    SET STATUS = #{status}, 
+		UPDATE INQUIRIES
+	    SET STATUS = #{status},
 	    <choose>
            <when test="status == 'COMPLETED'">
                RESOLVED_AT = SYSDATE
@@ -201,6 +201,6 @@
 		SET ADMIN_REPLY = #{adminReply}
 		WHERE INQUIRIES_ID = #{inquiriesId}
 	</update>
-	
- 	
+
+
 </mapper>

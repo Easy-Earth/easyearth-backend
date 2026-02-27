@@ -30,6 +30,10 @@ target/
 *.iws
 *.iml
 *.ipr
+*.properties
+*.yml
+.DS_Store
+
 
 ### NetBeans ###
 /nbproject/private/
@@ -52,3 +56,7 @@ sql/
 *.sql
 
 # EasyEarth Backend Rules
+/restfulProject/src/main/resources/static/application.properties
+/restfulProject/src/main/resources/static/application-local.properties
+/restfulProject/build.log
+/restfulProject/build_error*.log

@@ -44,7 +44,7 @@
 
     <!-- 오늘의 퀘스트 진행 현황 조회 -->
     <select id="selectDailyQuestsWithStatus" resultType="com.kh.spring.quest.model.vo.Quest">
-        SELECT Q.*, 
+        SELECT Q.*,
                CASE WHEN H.STATUS = 'Y' THEN 1 ELSE 0 END as completed
         FROM QUEST Q
         JOIN INTEGRATED_HISTORY H ON Q.QUEST_NO = H.REF_ID

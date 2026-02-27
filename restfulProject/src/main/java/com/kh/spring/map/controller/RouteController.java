@@ -6,10 +6,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -17,6 +14,7 @@ import java.util.Map;
 @Tag(name="길찾기 API", description = "길찾기 API ")
 @RequestMapping("/api/route")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://13.125.123.75:5173", allowCredentials = "true")
 public class RouteController {
 
     private final OrsRouteService orsRouteService;

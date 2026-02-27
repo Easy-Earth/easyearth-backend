@@ -39,8 +39,8 @@ public class SecurityConfig {
                         .requestMatchers("/member/login", "/member/join", "/member/checkId/**", "/api/auth/kakao").permitAll()
                         .requestMatchers("/items/**", "/items/*/equip/**").permitAll()
                         .requestMatchers("/ws-chat/**").permitAll()
-
-                        .requestMatchers("/community/post/insert").authenticated()
+                        .requestMatchers("/kakao/callback").permitAll()
+                        .requestMatchers("/community/post/insert", "/inquiries/post/insert").authenticated()
 
                         .anyRequest().permitAll()
                 )
@@ -53,7 +53,12 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOrigins(List.of("http://localhost:5173"));
+        config.setAllowedOrigins(List.of(
+                "http://localhost:5173",
+                "http://13.125.123.75:8080",
+                "http://13.125.123.75",
+                "http://13.125.123.75:5173"
+        ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization"));
