@@ -1,5 +1,6 @@
 package com.kh.spring.gemini.service;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import com.google.genai.Client;
 import com.google.genai.types.GenerateContentResponse;
@@ -8,7 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
 public class GeminiService {
-
+    @Value("${gemini.api.key}")
+    private String apiKey;
     @Autowired
     private com.kh.spring.common.service.FileCacheService fileCacheService;
     
@@ -16,7 +18,6 @@ public class GeminiService {
 
     public String custom(String question,String prompt) {
     	// API 호출
-        String apiKey = "AIzaSyBO7YUZR_Wana-H1Mmj5D6-opXN3YyBwQk";
         Client client = Client.builder().apiKey(apiKey).build();
 
         try {
@@ -56,7 +57,6 @@ public class GeminiService {
         prompt.append("5. 전체 길이는 3문장 내외로 너무 길지 않게 해줘.\n");
 
         // API 호출
-        String apiKey = "AIzaSyAN6T6db86pCX6ZOln1-sqeQ2sbxPLQS8U"; 
         Client client = Client.builder().apiKey(apiKey).build();
 
         try {
@@ -91,7 +91,6 @@ public class GeminiService {
         prompt.append("  ...\n");
         prompt.append("]\n");
 
-        String apiKey = "AIzaSyAN6T6db86pCX6ZOln1-sqeQ2sbxPLQS8U"; 
         Client client = Client.builder().apiKey(apiKey).build();
 
         try {
