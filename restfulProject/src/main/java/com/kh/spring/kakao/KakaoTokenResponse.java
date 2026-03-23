@@ -11,4 +11,3 @@ public class KakaoTokenResponse {
     private String scope;
 }
 
-// 2. 사용자 정보를 담을 DTO (필요한 것만 추출)

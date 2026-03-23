@@ -18,7 +18,6 @@ public class TransitRouteService {
     private final RestTemplate restTemplate = new RestTemplate();
 
     public Map<String, Object> getTransitRoute(Double startX, Double startY, Double goalX, Double goalY) {
-        // 1. 경로 검색 API URL 구성
         String searchUrl = UriComponentsBuilder.fromHttpUrl("https://api.odsay.com/v1/api/searchPubTransPathT")
                 .queryParam("SX", startX)
                 .queryParam("SY", startY)
@@ -37,16 +36,13 @@ public class TransitRouteService {
             Map resultBody = (Map) response.get("result");
             List pathList = (List) resultBody.get("path");
 
-            // 2. 가장 최적의 경로(첫 번째) 가져오기
             Map bestPath = (Map) pathList.get(0);
             Map info = (Map) bestPath.get("info");
 
-            // 기본 정보 추출
             double distanceKm = Double.parseDouble(info.get("totalDistance").toString()) / 1000.0;
             int totalTime = Integer.parseInt(info.get("totalTime").toString());
             int payment = Integer.parseInt(info.get("payment").toString());
 
-            // 3. 방법 B: 상세 경로 그래픽(Polyline) 데이터 가져오기 추가
             String mapObj = info.get("mapObj").toString();
             String graphicUrl = UriComponentsBuilder.fromHttpUrl("https://api.odsay.com/v1/api/loadLaneGraphic")
                     .queryParam("mapObject", "0:0@" + mapObj)
@@ -56,13 +52,11 @@ public class TransitRouteService {
             Map<String, Object> graphicResponse = restTemplate.getForObject(graphicUrl, Map.class);
             Object polylineData = (graphicResponse != null) ? graphicResponse.get("result") : null;
 
-            // 4. 환경 수치 계산 및 결과 조립
             Map<String, Object> result = calculateEcoMetrics(distanceKm, totalTime);
             result.put("payment", payment);
             result.put("transitCount", info.get("busTransitCount") + " (버스) / " + info.get("subwayTransitCount") + " (지하철)");
             result.put("subPaths", bestPath.get("subPath"));
 
-            // 지도용 상세 좌표 데이터 추가
             result.put("polyline", polylineData);
 
             return result;
