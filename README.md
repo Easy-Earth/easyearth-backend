@@ -91,7 +91,22 @@
 
 ---
 
-## ⚙️ 아키텍처 구조
+## 폴더 구조
 
-```text
-Controller → Service → DAO → VO
+src/
+├─ main/
+│  ├─ java/
+│  │  └─ com/
+│  │     ├─ controller/
+│  │     ├─ service/
+│  │     ├─ dao/
+│  │     ├─ vo/
+│  │     ├─ config/
+│  │     └─ util/
+│
+│  └─ resources/
+│     ├─ mapper/
+│     ├─ application.yml
+│     └─ static/
+│
+└─ test/
