@@ -17,7 +17,6 @@ public class SeoulMapClient {
     @Value("${seoulmap.theme-key}")
     private String themeKey;
     @Value("${seoulmap.contents-path}")
-    ///openapi/v5/{themeKey}/public/themes/contents
     private String contentsPath;
 
     public String fetchMapData(String combinedIds, Double x, Double y, Integer distance, String keyword) {

@@ -11,13 +11,12 @@ import java.util.Map;
 @Service
 public class OrsRouteService {
 
-    @Value("${ors.api.key:eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjIzNDhlZDgxMzBjOTRjZTdiNWNhMmNjOGRkYmE5MTkwIiwiaCI6Im11cm11cjY0In0=}")
+    @Value("${ors.api-key}")
     private String apiKey;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
     public Map<String, Object> getRouteWithEcoInfo(Double startX, Double startY, Double goalX, Double goalY, String mode) {
-        // ORS API 호출 URL
         String url = String.format(
                 "https://api.openrouteservice.org/v2/directions/%s?api_key=%s&start=%f,%f&end=%f,%f",
                 mode, apiKey, startX, startY, goalX, goalY
@@ -28,9 +27,9 @@ public class OrsRouteService {
             List features = (List) response.get("features");
             Map firstFeature = (Map) features.get(0);
 
-            // 1. 요약 정보 추출 (거리, 시간)
+            //  요약 정보 추출 (거리, 시간)
             Map summary = (Map) ((Map) firstFeature.get("properties")).get("summary");
-            // 2. 경로 좌표 추출 (지도에 그릴 선 데이터)
+            //  경로 좌표 추출 (지도에 그릴 선 데이터)
             Map geometry = (Map) firstFeature.get("geometry");
 
             double distanceMeters = Double.parseDouble(summary.get("distance").toString());
@@ -57,11 +56,9 @@ public class OrsRouteService {
         double co2Saved = 0;
         double treeEffect = 0;
 
-        // 환경 컨셉: 자동차(driving-car) 대비 절약 수치 계산
-        // 도보나 자전거일 때만 절약 수치를 계산합니다.
         if (mode.equals("foot-walking") || mode.equals("cycling-regular")) {
-            co2Saved = distanceKm * 0.21; // 중형차 평균 탄소 배출량 210g/km 가정
-            treeEffect = co2Saved / 6.6;  // 소나무 한 그루 연간 흡수량 6.6kg 기준 (단순화)
+            co2Saved = distanceKm * 0.21;
+            treeEffect = co2Saved / 6.6;
         }
 
         Map<String, Object> result = new HashMap<>();

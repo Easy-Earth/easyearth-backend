@@ -87,18 +87,16 @@ public class SeoulMapService {
                             .lat(itemNode.path("COT_COORD_Y").asDouble())
                             .lng(itemNode.path("COT_COORD_X").asDouble())
                             .contsId(contsId)
-                            .escId(escId) // 👈 판별된 카테고리 ID 할당
+                            .escId(escId)
                             .build();
 
                     ecoShopService.insertEcoShop(newShop);
                     realShopId = newShop.getShopId();
                 }
 
-                // 프론트엔드 전달 데이터 세팅
                 objectNode.put("shopId", realShopId);
 
                 if (realShopId > 0) {
-                    // 🚨 리뷰 리스트 호출 (이 부분이 있어야 리뷰가 보입니다!)
                     List<ReviewerName> reviews = ecoShopService.reviewList(realShopId);
                     objectNode.set("reviews", objectMapper.valueToTree(reviews));
 

@@ -163,28 +163,33 @@ public class ItemController {
 	public ResponseEntity<?> randomPull(@PathVariable int memberId) {
 		RandomPullHistory randomPullHistory = new RandomPullHistory();
 		int randomNum = (int) (Math.random() * 100) + 1;
-		//1~69 : COMMON 69%
-		//70~94 : RARE  25%
-		//95~99 : EPIC 5%
-		//100 : LEGENDARY 1%
+
 		if (randomNum <= 40) randomPullHistory.setRarity("COMMON");
 		else if (randomNum <= 70) randomPullHistory.setRarity("RARE");
 		else if (randomNum <= 90) randomPullHistory.setRarity("EPIC");
 		else randomPullHistory.setRarity("LEGENDARY");
+
 		randomPullHistory.setMemberId(memberId);
 
-		int result = service.randomPull(randomPullHistory);
-		if(result == 2) {
-			return ResponseEntity.ok("중복 아이템 당첨.. 500포인트가 환급되었습니다.");
-		}
-		else if(result==-1) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("포인트가 부족합니다. (최소 1000P 필요)");
-		}
-		else if(result > 0) {
-			return ResponseEntity.ok(randomPullHistory);
-		}
-		else {
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("랜덤뽑기 오류 발생");
+		try {
+			int result = service.randomPull(randomPullHistory);
+
+			if (result == 2) {
+				return ResponseEntity.ok("중복 아이템 당첨.. 500포인트가 환급되었습니다.");
+			} else if (result == 1) {
+				return ResponseEntity.ok(randomPullHistory);
+			} else {
+				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("랜덤뽑기 오류 발생");
+			}
+
+		} catch (RuntimeException e) {
+			String message = e.getMessage();
+
+			if (message != null && message.contains("포인트가 부족")) {
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(message);
+			}
+
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(message);
 		}
 	}
 

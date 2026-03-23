@@ -131,40 +131,48 @@ public class ItemServiceImpl implements ItemService {
 		
     }
 
-	
+
 	@Override
+	@Transactional
 	public int randomPull(RandomPullHistory randomPullHistory) {
+		// 1. 포인트 차감
 		int payResult = dao.deductPoint(sqlSession, randomPullHistory.getMemberId());
-
 		if (payResult <= 0) {
-			return -1; // 포인트 부족 등을 의미하는 코드
+			throw new RuntimeException("포인트가 부족합니다. (최소 1000P 필요)");
 		}
-		// 1. 등급에 맞는 랜덤 아이템 조회
+
+		// 2. 등급에 맞는 랜덤 아이템 조회
 		ItemVO item = dao.randomPull(sqlSession, randomPullHistory.getRarity());
-
-		if (item != null) {
-			// 뽑힌 아이템 정보 세팅
-			randomPullHistory.setItemId(item.getItemId());
-			randomPullHistory.setPrice(item.getPrice());
-			randomPullHistory.setItemName(item.getName());
-			randomPullHistory.setDescription(item.getDescription());
-			randomPullHistory.setIsOnSale(item.getIsOnSale());
-			randomPullHistory.setCategory(item.getCategory());
-			// 2. 중복 체크: 이미 해당 유저가 이 아이템을 가지고 있는지 확인
-			// (Dao에 checkDuplicateItem 메서드 추가 필요)
-			int count = dao.checkDuplicateItem(sqlSession, randomPullHistory);
-
-			if (count > 0) {
-				// [중복 발생] 아이템 대신 500포인트 지급
-				// (Dao에 addPoint 메서드 추가 필요)
-				int pointResult = dao.addPoint(sqlSession, randomPullHistory.getMemberId());
-				return pointResult > 0 ? 2 : 0; // 2는 중복 보상 성공을 의미하는 임의 코드
-			} else {
-				// [신규 획득] USER_ITEMS에 인서트
-				return dao.insertItemToMember(sqlSession, randomPullHistory);
-			}
+		if (item == null) {
+			throw new RuntimeException("해당 등급의 아이템 조회에 실패했습니다.");
 		}
-		return 0;
+
+		// 3. 뽑힌 아이템 정보 세팅
+		randomPullHistory.setItemId(item.getItemId());
+		randomPullHistory.setPrice(item.getPrice());
+		randomPullHistory.setItemName(item.getName());
+		randomPullHistory.setDescription(item.getDescription());
+		randomPullHistory.setIsOnSale(item.getIsOnSale());
+		randomPullHistory.setCategory(item.getCategory());
+
+		// 4. 중복 체크
+		int count = dao.checkDuplicateItem(sqlSession, randomPullHistory);
+
+		if (count > 0) {
+			// 5-1. 중복이면 500포인트 환급
+			int pointResult = dao.addPoint(sqlSession, randomPullHistory.getMemberId());
+			if (pointResult <= 0) {
+				throw new RuntimeException("중복 보상 처리에 실패했습니다.");
+			}
+			return 2; // 중복 보상 성공
+		} else {
+			// 5-2. 신규면 USER_ITEMS에 추가
+			int insertResult = dao.insertItemToMember(sqlSession, randomPullHistory);
+			if (insertResult <= 0) {
+				throw new RuntimeException("아이템 지급에 실패했습니다.");
+			}
+			return 1; // 신규 아이템 획득 성공
+		}
 	}
 
 }
